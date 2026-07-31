@@ -16,6 +16,16 @@ export class ErrorInterceptor implements HttpInterceptor {
     constructor(private injector: Injector) {}
 
     intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+        // Don't intercept OAuth requests - errors should reach the login component
+        if (req.url.includes('/oauth/')) {
+            return next.handle(req).pipe(
+                catchError((error: HttpErrorResponse) => {
+                    console.error('HTTP Error:', error);
+                    return throwError(() => error);
+                })
+            );
+        }
+
         return next.handle(req).pipe(
             catchError((error: HttpErrorResponse) => {
                 if (error.status === 401 || error.status === 403) {

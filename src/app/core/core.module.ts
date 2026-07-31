@@ -18,7 +18,7 @@ import { DatapointService } from './services/datapoint.service';
 import { DeviceService } from './services/device.service';
 import { LocationService } from './services/location.service';
 
-// Hier später für Keycloak tauschen:
+// TODO: Later swap to Keycloak:
 // import { KeycloakAuthService } from './auth/keycloak-auth.service';
 // { provide: AuthService, useClass: KeycloakAuthService }
 
