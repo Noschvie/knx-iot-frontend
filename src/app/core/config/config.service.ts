@@ -14,6 +14,12 @@ export interface ApiInfo {
     endpoints: Record<string, string>;
 }
 
+/**
+ * API Version - centralized configuration
+ * Ensures all services use the same API version
+ */
+const API_VERSION = '/api/v2';
+
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
     private apiInfo: ApiInfo | null = null;
@@ -40,11 +46,29 @@ export class ConfigService {
         return this.apiInfo;
     }
 
+    /**
+     * Get base URL for API calls (e.g., http://localhost:8080)
+     */
     getApiBase(): string {
         return this.config?.apiBase ?? '';
     }
 
+    /**
+     * Get the full API endpoint URL including a version
+     * e.g., http://localhost:8080/api/v2
+     */
+    getApiEndpoint(): string {
+        return `${this.getApiBase()}${API_VERSION}`;
+    }
+
     getWebSocketBase(): string {
         return this.config?.wsBase ?? '';
+    }
+
+    /**
+     * Get API version string
+     */
+    getApiVersion(): string {
+        return API_VERSION;
     }
 }
