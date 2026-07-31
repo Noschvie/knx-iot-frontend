@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map } from 'rxjs';
 import { environment } from '@environments/environment';
+
+import { AuthService } from './auth.service';
 
 export interface OAuthToken {
     access_token: string;
@@ -9,16 +11,16 @@ export interface OAuthToken {
     expires_in: number;
 }
 
-@Injectable({ providedIn: 'root' })
-export class OAuthService {
+@Injectable()
+export class OAuthService extends AuthService {
     private token$ = new BehaviorSubject<string | null>(null);
-    private tokenExpiresAt = 0;
 
     constructor(private http: HttpClient) {
+        super();
         this.loadToken();
     }
 
-    login(username: string, password: string): Observable<OAuthToken> {
+    login(username: string, password: string): Observable<void> {
         const body = new URLSearchParams({
             grant_type: 'password',
             username,
@@ -29,28 +31,24 @@ export class OAuthService {
         return this.http.post<OAuthToken>(
             `${environment.apiBase}${environment.tokenEndpoint}`,
             body.toString(),
-            {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         ).pipe(
             tap(token => {
                 localStorage.setItem('access_token', token.access_token);
                 localStorage.setItem('token_expires_at', String(Date.now() + token.expires_in * 1000));
                 this.token$.next(token.access_token);
-            })
+            }),
+            map(() => void 0)
         );
     }
 
     getToken(): string | null {
-        const token = this.token$.value || localStorage.getItem('access_token');
-
-        // Check if expired
-        const expiresAt = parseInt(localStorage.getItem('token_expires_at') || '0');
+        const token = this.token$.value ?? localStorage.getItem('access_token');
+        const expiresAt = parseInt(localStorage.getItem('token_expires_at') ?? '0', 10);
         if (Date.now() > expiresAt) {
             this.logout();
             return null;
         }
-
         return token;
     }
 

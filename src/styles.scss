@@ -1,5 +1,62 @@
-﻿/* Globale Styles - Platzhalter */
+﻿@use '@angular/material' as mat;
+
+// Helles Theme definieren
+$knx-light-theme: mat.define-theme((
+        color: (
+                theme-type: light,
+                primary: mat.$azure-palette,
+                tertiary: mat.$blue-palette,
+        ),
+        typography: (
+                brand-family: 'Roboto, sans-serif',
+        ),
+        density: (
+                scale: 0,
+        )
+));
+
+html {
+  @include mat.core();
+  @include mat.all-component-themes($knx-light-theme);
+}
+
 html, body {
   height: 100%;
   margin: 0;
+  font-family: Roboto, sans-serif;
+  background-color: #f5f5f5;
+  color: #212121;
+}
+
+// Dark Theme definieren
+$knx-dark-theme: mat.define-theme((
+        color: (
+                theme-type: dark,
+                primary: mat.$azure-palette,
+                tertiary: mat.$blue-palette,
+        ),
+        typography: (
+                brand-family: 'Roboto, sans-serif',
+        ),
+        density: (
+                scale: 0,
+        )
+));
+
+html {
+  @include mat.all-component-themes($knx-dark-theme);
+  @include mat.core();
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, sans-serif;
+  background-color: #1a1a2e;
+  color: #e0e0e0;
+}
+
+// Login-Seite: Card soll heller sein als der Hintergrund
+.login-card {
+  background-color: #16213e !important;
 }
