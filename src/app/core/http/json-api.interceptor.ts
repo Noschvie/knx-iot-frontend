@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@angular/core';
+﻿import { Injectable, Injector } from '@angular/core';
 import {
   HttpEvent,
   HttpHandler,
@@ -10,7 +10,7 @@ import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class JsonApiInterceptor implements HttpInterceptor {
-  constructor(private auth: AuthService) {}
+  constructor(private injector: Injector) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // OAuth- und Asset-Requests nicht anfassen
@@ -18,7 +18,8 @@ export class JsonApiInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    const token = this.auth.getToken();
+    const auth = this.injector.get(AuthService);
+    const token = auth.getToken();
     let headers = req.headers.set('Accept', 'application/vnd.api+json');
 
     if (token) {

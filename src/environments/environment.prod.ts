@@ -2,8 +2,8 @@ export const environment = {
     production: true,
     apiBase: 'https://api.knx-iot.example.com',
     wsBase: 'wss://api.knx-iot.example.com',
-    clientId: 'knx-frontend-prod',
-    clientSecret: '', // Via env var in Docker
+    clientId: 'knx-default-client',
+    clientSecret: 'change-me-in-production',
     tokenEndpoint: '/oauth/access',
     discoveryUrl: '/.well-known/knx',
     logging: {
