@@ -1,7 +1,7 @@
 export const environment = {
     production: false,
-    apiBase: 'https://api.knx-iot.example.com',
-    wsBase: 'ws://api.knx-iot.example.com',
+    apiBase: 'http://localhost:8080',
+    wsBase: 'ws://localhost:8080',
     clientId: 'knx-default-client',
     clientSecret: 'change-me-in-production',
     tokenEndpoint: '/oauth/access',
@@ -12,7 +12,7 @@ export const environment = {
         logLevel: 'debug'
     },
     features: {
-        enableMockData: true,
+        enableMockData: false,
         enableDevTools: true,
         enablePerformanceMonitoring: true
     }
