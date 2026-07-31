@@ -22,17 +22,25 @@ export class OAuthService extends AuthService {
     }
 
     login(username: string, password: string): Observable<void> {
+        // Use Resource Owner Password Credentials Grant
         const body = new URLSearchParams({
             grant_type: 'password',
             username,
             password,
-            client_id: environment.clientId
+            scope: 'read write'
         });
+
+        // Basic Auth: base64(client_id:client_secret)
+        const credentials = btoa(`${environment.clientId}:${environment.clientSecret}`);
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${credentials}`
+        };
 
         return this.http.post<OAuthToken>(
             `${this.config.getApiBase()}${environment.tokenEndpoint}`,
             body.toString(),
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            { headers }
         ).pipe(
             tap(token => {
                 localStorage.setItem('access_token', token.access_token);
