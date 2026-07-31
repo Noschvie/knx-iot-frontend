@@ -1,30 +1,28 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAppInitializer, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { CoreModule } from './core/core.module';
 import { LayoutModule } from './features/layout/layout.module';
-
-// Interceptors
-import { JsonApiInterceptor } from './core/http/json-api.interceptor';
-import { ErrorInterceptor } from './core/http/error.interceptor';
+import { ConfigService } from './core/config/config.service';
 
 @NgModule({
     declarations: [AppComponent],
     imports: [
         BrowserModule,
-        BrowserAnimationsModule,
-        HttpClientModule,
         AppRoutingModule,
         CoreModule,
         LayoutModule
     ],
     providers: [
-        { provide: HTTP_INTERCEPTORS, useClass: JsonApiInterceptor, multi: true },
-        { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true }
+        provideHttpClient(withInterceptorsFromDi()),
+        provideAnimations(),
+        provideAppInitializer(() => firstValueFrom(inject(ConfigService).loadConfig()))
     ],
     bootstrap: [AppComponent]
 })

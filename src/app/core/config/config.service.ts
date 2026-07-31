@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError } from 'rxjs';
-import { environment } from '@environments/environment';
 
 export interface AppConfig {
     apiBase: string;
@@ -32,7 +31,7 @@ export class ConfigService {
     }
 
     loadApiInfo(): Observable<ApiInfo> {
-        return this.http.get<ApiInfo>(`${environment.apiBase}/info`).pipe(
+        return this.http.get<ApiInfo>(`${this.getApiBase()}/info`).pipe(
             tap(info => this.apiInfo = info)
         );
     }
@@ -42,10 +41,10 @@ export class ConfigService {
     }
 
     getApiBase(): string {
-        return environment.apiBase;
+        return this.config?.apiBase ?? '';
     }
 
     getWebSocketBase(): string {
-        return environment.wsBase;
+        return this.config?.wsBase ?? '';
     }
 }
