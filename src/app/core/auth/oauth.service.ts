@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, tap, map } from 'rxjs';
 import { environment } from '@environments/environment';
 
 import { AuthService } from './auth.service';
+import { ConfigService } from '../config/config.service';
 
 export interface OAuthToken {
     access_token: string;
@@ -15,7 +16,7 @@ export interface OAuthToken {
 export class OAuthService extends AuthService {
     private token$ = new BehaviorSubject<string | null>(null);
 
-    constructor(private http: HttpClient) {
+    constructor(private http: HttpClient, private config: ConfigService) {
         super();
         this.loadToken();
     }
@@ -29,7 +30,7 @@ export class OAuthService extends AuthService {
         });
 
         return this.http.post<OAuthToken>(
-            `${environment.apiBase}${environment.tokenEndpoint}`,
+            `${this.config.getApiBase()}${environment.tokenEndpoint}`,
             body.toString(),
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         ).pipe(
