@@ -9,6 +9,8 @@ import { JsonApiInterceptor } from './http/json-api.interceptor';
 import { ErrorInterceptor } from './http/error.interceptor';
 import { WebSocketService } from './websocket/websocket.service';
 import { ConfigService } from './config/config.service';
+import {MockAuthService} from "@core/auth/mock-auth.service";
+import { environment } from "@environments/environment";
 
 // Hier später für Keycloak tauschen:
 // import { KeycloakAuthService } from './auth/keycloak-auth.service';
@@ -17,7 +19,10 @@ import { ConfigService } from './config/config.service';
 @NgModule({
   imports: [CommonModule, HttpClientModule],
   providers: [
-    { provide: AuthService, useClass: OAuthService },
+    {
+      provide: AuthService,
+      useClass: environment.features.enableMockData ? MockAuthService : OAuthService
+    },
     AuthGuard,
     WebSocketService,
     ConfigService,
