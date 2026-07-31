@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, catchError } from 'rxjs';
 import { environment } from '@environments/environment';
 
 export interface AppConfig {
@@ -23,7 +23,10 @@ export class ConfigService {
     constructor(private http: HttpClient) {}
 
     loadConfig(): Observable<AppConfig> {
-        return this.http.get<AppConfig>('/assets/config.json').pipe(
+        return this.http.get<AppConfig>('/assets/config/app-config.local.json').pipe(
+            catchError(() =>
+                this.http.get<AppConfig>('/assets/config/app-config.json')
+            ),
             tap(cfg => this.config = cfg)
         );
     }
