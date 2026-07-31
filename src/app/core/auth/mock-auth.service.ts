@@ -1,10 +1,14 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
+
+// Mock credentials for development — do not use in production
+const MOCK_USERNAME = 'admin';
+const MOCK_PASSWORD = 'admin';
 
 /**
  * Mock implementation for frontend development without a backend.
- * Every login attempt is immediately treated as successful.
+ * Valid credentials: admin / admin
  * Activation: swap the provider in core.module.ts.
  */
 @Injectable()
@@ -12,9 +16,14 @@ export class MockAuthService extends AuthService {
     private loggedIn = false;
 
     login(username: string, password: string): Observable<void> {
-        console.log(`[MockAuth] Login as "${username}" (no backend call)`);
-        this.loggedIn = true;
-        return of(void 0);
+        if (username === MOCK_USERNAME && password === MOCK_PASSWORD) {
+            console.log(`[MockAuth] Login successful as "${username}"`);
+            this.loggedIn = true;
+            return of(void 0);
+        }
+
+        console.warn(`[MockAuth] Login failed for "${username}"`);
+        return throwError(() => ({ status: 401, message: 'Invalid credentials' }));
     }
 
     logout(): void {

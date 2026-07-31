@@ -150,7 +150,10 @@ export class LoginComponent {
     const { username, password } = this.form.value;
 
     this.auth.login(username, password).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => {
+        this.loading = false;
+        this.router.navigate(['/dashboard']);
+      },
       error: err => {
         this.loading = false;
         this.errorMessage =
