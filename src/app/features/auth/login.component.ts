@@ -156,6 +156,8 @@ export class LoginComponent {
     this.auth.login(username, password).subscribe({
       next: () => {
         this.loading = false;
+        console.log(`[Login Success] ✓ Successfully authenticated as client: ${username}`);
+        console.log(`[Login Success] Navigating to dashboard...`);
         this.router.navigate(['/dashboard']);
       },
       error: err => {

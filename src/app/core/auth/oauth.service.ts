@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map, catchError, forkJoin } from 'rxjs';
 import { throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 
@@ -13,46 +13,43 @@ export interface OAuthToken {
     expires_in: number;
 }
 
+interface TokenPair {
+    read: string | null;
+    write: string | null;
+}
+
 @Injectable()
 export class OAuthService extends AuthService {
-    private token$ = new BehaviorSubject<string | null>(null);
+    private tokens$ = new BehaviorSubject<TokenPair>({ read: null, write: null });
 
     constructor(private http: HttpClient, private config: ConfigService) {
         super();
-        this.loadToken();
+        this.loadTokens();
     }
 
     login(username: string, password: string): Observable<void> {
         // Client Credentials Grant: use username as client_id, password as client_secret
-        const body = new URLSearchParams({
-            grant_type: 'client_credentials',
-            scope: 'manage'
-        });
+        // Request both read and write tokens in parallel
+        console.log(`[OAuth] Starting login for client: ${username}`);
+        const readTokenReq = this.fetchToken(username, password, 'read');
+        const writeTokenReq = this.fetchToken(username, password, 'write');
 
-        // Basic Auth: base64(client_id:client_secret)
-        const credentials = btoa(`${username}:${password}`);
-        const headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${credentials}`
-        };
-
-        const url = `${this.config.getApiBase()}${environment.tokenEndpoint}`;
-        console.debug('[OAuth] Login request:', {
-            url,
-            grantType: 'client_credentials',
-            scope: 'manage',
-            clientId: username
-        });
-
-        return this.http.post<OAuthToken>(url, body.toString(), { headers }).pipe(
-            tap(token => {
-                console.debug('[OAuth] Login successful, token received');
-                localStorage.setItem('access_token', token.access_token);
-                localStorage.setItem('token_expires_at', String(Date.now() + token.expires_in * 1000));
-                this.token$.next(token.access_token);
+        return forkJoin([readTokenReq, writeTokenReq]).pipe(
+            tap(([readToken, writeToken]) => {
+                console.log(`[OAuth] ✓ Login successful! Both tokens received:`);
+                console.log(`[OAuth]   - Read token (expires in ${readToken.expires_in}s)`);
+                console.log(`[OAuth]   - Write token (expires in ${writeToken.expires_in}s)`);
+                localStorage.setItem('access_token_read', readToken.access_token);
+                localStorage.setItem('access_token_write', writeToken.access_token);
+                localStorage.setItem('token_expires_at_read', String(Date.now() + readToken.expires_in * 1000));
+                localStorage.setItem('token_expires_at_write', String(Date.now() + writeToken.expires_in * 1000));
+                this.tokens$.next({
+                    read: readToken.access_token,
+                    write: writeToken.access_token
+                });
             }),
             catchError((error: HttpErrorResponse) => {
-                console.error('[OAuth] Login failed:', {
+                console.error('[OAuth] ✗ Login failed:', {
                     status: error.status,
                     statusText: error.statusText,
                     message: error.error?.error_description || error.message
@@ -63,30 +60,64 @@ export class OAuthService extends AuthService {
         );
     }
 
+    private fetchToken(clientId: string, clientSecret: string, scope: string): Observable<OAuthToken> {
+        const body = new URLSearchParams({
+            grant_type: 'client_credentials',
+            scope
+        });
+
+        const credentials = btoa(`${clientId}:${clientSecret}`);
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${credentials}`
+        };
+
+        const url = `${this.config.getApiBase()}${environment.tokenEndpoint}`;
+        console.debug(`[OAuth] Requesting ${scope} token...`);
+
+        return this.http.post<OAuthToken>(url, body.toString(), { headers });
+    }
+
     getToken(): string | null {
-        const token = this.token$.value ?? localStorage.getItem('access_token');
-        const expiresAt = parseInt(localStorage.getItem('token_expires_at') ?? '0', 10);
+        // For backwards compatibility, return read token
+        return this.getReadToken();
+    }
+
+    getReadToken(): string | null {
+        const token = this.tokens$.value.read ?? localStorage.getItem('access_token_read');
+        const expiresAt = parseInt(localStorage.getItem('token_expires_at_read') ?? '0', 10);
         if (Date.now() > expiresAt) {
-            this.logout();
+            return null;
+        }
+        return token;
+    }
+
+    getWriteToken(): string | null {
+        const token = this.tokens$.value.write ?? localStorage.getItem('access_token_write');
+        const expiresAt = parseInt(localStorage.getItem('token_expires_at_write') ?? '0', 10);
+        if (Date.now() > expiresAt) {
             return null;
         }
         return token;
     }
 
     isAuthenticated(): boolean {
-        return this.getToken() !== null;
+        return this.getReadToken() !== null && this.getWriteToken() !== null;
     }
 
     logout(): void {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('token_expires_at');
-        this.token$.next(null);
+        localStorage.removeItem('access_token_read');
+        localStorage.removeItem('access_token_write');
+        localStorage.removeItem('token_expires_at_read');
+        localStorage.removeItem('token_expires_at_write');
+        this.tokens$.next({ read: null, write: null });
     }
 
-    private loadToken(): void {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            this.token$.next(token);
+    private loadTokens(): void {
+        const readToken = localStorage.getItem('access_token_read');
+        const writeToken = localStorage.getItem('access_token_write');
+        if (readToken || writeToken) {
+            this.tokens$.next({ read: readToken, write: writeToken });
         }
     }
 }

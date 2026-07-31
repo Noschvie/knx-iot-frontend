@@ -7,19 +7,30 @@ import {
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
+import { OAuthService } from '../auth/oauth.service';
 
 @Injectable()
 export class JsonApiInterceptor implements HttpInterceptor {
   constructor(private injector: Injector) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // OAuth- und Asset-Requests nicht anfassen
+    // Don't intercept OAuth or asset requests
     if (req.url.includes('/oauth/') || req.url.includes('/assets/')) {
       return next.handle(req);
     }
 
     const auth = this.injector.get(AuthService);
-    const token = auth.getToken();
+    let token: string | null = null;
+
+    // Select token based on HTTP method: read for GET/HEAD, write for POST/PUT/PATCH/DELETE
+    if (auth instanceof OAuthService) {
+      const isReadOperation = req.method === 'GET' || req.method === 'HEAD';
+      token = isReadOperation ? auth.getReadToken() : auth.getWriteToken();
+    } else {
+      // Fallback for non-OAuth auth services
+      token = auth.getToken();
+    }
+
     let headers = req.headers.set('Accept', 'application/vnd.api+json');
 
     if (token) {
