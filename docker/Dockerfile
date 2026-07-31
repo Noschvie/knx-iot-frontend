@@ -13,7 +13,9 @@ FROM nginx:alpine
 
 COPY --from=build /build/dist/knx-iot-frontend/browser /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/entrypoint.sh"]

@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    environment:
+      - API_BASE=${API_BASE}
+      - WS_BASE=${WS_BASE}
     ports:
       - "8080:80"
     restart: unless-stopped

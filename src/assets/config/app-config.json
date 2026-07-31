@@ -1,0 +1,4 @@
+{
+  "apiBase": "https://api.knx-iot.example.com",
+  "wsBase": "ws://api.knx-iot.example.com"
+}

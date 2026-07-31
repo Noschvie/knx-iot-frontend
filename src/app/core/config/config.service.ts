@@ -3,6 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '@environments/environment';
 
+export interface AppConfig {
+    apiBase: string;
+    wsBase: string;
+}
+
 export interface ApiInfo {
     name: string;
     version: string;
@@ -13,8 +18,15 @@ export interface ApiInfo {
 @Injectable({ providedIn: 'root' })
 export class ConfigService {
     private apiInfo: ApiInfo | null = null;
+    private config: AppConfig | null = null;
 
     constructor(private http: HttpClient) {}
+
+    loadConfig(): Observable<AppConfig> {
+        return this.http.get<AppConfig>('/assets/config.json').pipe(
+            tap(cfg => this.config = cfg)
+        );
+    }
 
     loadApiInfo(): Observable<ApiInfo> {
         return this.http.get<ApiInfo>(`${environment.apiBase}/info`).pipe(

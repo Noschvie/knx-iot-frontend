@@ -20,8 +20,13 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.config.loadApiInfo().subscribe({
-      next: info => console.log('API Info:', info),
-      error: err => console.error('Failed to load API info:', err)
+      next: () => {
+        this.config.loadApiInfo().subscribe({
+          next: info => console.log('API Info:', info),
+          error: err => console.error('Failed to load API info:', err)
+        });
+      },
+      error: err => console.error('Failed to load config:', err)
     });
 
     if (!this.auth.isAuthenticated()) {
