@@ -36,30 +36,31 @@ import { AuthService } from '../../core/auth/auth.service';
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Username</mat-label>
-              <input matInput formControlName="username" autocomplete="username" />
+              <mat-label>Client ID</mat-label>
+              <input matInput formControlName="username" autocomplete="username" placeholder="OAuth Client ID" />
               <mat-error *ngIf="form.get('username')?.hasError('required')">
-                Username is required
+                Client ID is required
               </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Password</mat-label>
+              <mat-label>Client Secret</mat-label>
               <input
                 matInput
                 [type]="hidePassword ? 'password' : 'text'"
                 formControlName="password"
                 autocomplete="current-password"
+                placeholder="OAuth Client Secret"
               />
               <button
                 mat-icon-button matSuffix type="button"
                 (click)="hidePassword = !hidePassword"
-                [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+                [attr.aria-label]="hidePassword ? 'Show secret' : 'Hide secret'"
               >
                 <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
               <mat-error *ngIf="form.get('password')?.hasError('required')">
-                Password is required
+                Client Secret is required
               </mat-error>
             </mat-form-field>
 
@@ -147,6 +148,9 @@ export class LoginComponent {
 
     this.loading = true;
     this.errorMessage = '';
+
+    // Note: Username/password are used for UI flow compatibility but ignored by backend.
+    // The backend uses Client Credentials Grant (app credentials only).
     const { username, password } = this.form.value;
 
     this.auth.login(username, password).subscribe({
@@ -156,10 +160,15 @@ export class LoginComponent {
       },
       error: err => {
         this.loading = false;
-        this.errorMessage =
-            err.status === 401
-                ? 'Invalid credentials. Please try again.'
-                : 'Login failed. Please check your connection.';
+        // Show backend error message if available, otherwise show generic message
+        if (err.error?.error_description) {
+            this.errorMessage = err.error.error_description;
+        } else if (err.status === 401 || err.status === 400) {
+            this.errorMessage = 'Invalid client credentials. Please verify your Client ID and Secret.';
+        } else {
+            this.errorMessage = `Login failed: ${err.statusText || 'Unknown error'}. Please check your connection.`;
+        }
+        console.error('[Login] Error details:', err);
       }
     });
   }

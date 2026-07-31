@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, tap, map, catchError } from 'rxjs';
+import { throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 
 import { AuthService } from './auth.service';
@@ -22,30 +23,41 @@ export class OAuthService extends AuthService {
     }
 
     login(username: string, password: string): Observable<void> {
-        // Use Resource Owner Password Credentials Grant
+        // Client Credentials Grant: use username as client_id, password as client_secret
         const body = new URLSearchParams({
-            grant_type: 'password',
-            username,
-            password,
-            scope: 'read write'
+            grant_type: 'client_credentials',
+            scope: 'manage'
         });
 
         // Basic Auth: base64(client_id:client_secret)
-        const credentials = btoa(`${environment.clientId}:${environment.clientSecret}`);
+        const credentials = btoa(`${username}:${password}`);
         const headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': `Basic ${credentials}`
         };
 
-        return this.http.post<OAuthToken>(
-            `${this.config.getApiBase()}${environment.tokenEndpoint}`,
-            body.toString(),
-            { headers }
-        ).pipe(
+        const url = `${this.config.getApiBase()}${environment.tokenEndpoint}`;
+        console.debug('[OAuth] Login request:', {
+            url,
+            grantType: 'client_credentials',
+            scope: 'manage',
+            clientId: username
+        });
+
+        return this.http.post<OAuthToken>(url, body.toString(), { headers }).pipe(
             tap(token => {
+                console.debug('[OAuth] Login successful, token received');
                 localStorage.setItem('access_token', token.access_token);
                 localStorage.setItem('token_expires_at', String(Date.now() + token.expires_in * 1000));
                 this.token$.next(token.access_token);
+            }),
+            catchError((error: HttpErrorResponse) => {
+                console.error('[OAuth] Login failed:', {
+                    status: error.status,
+                    statusText: error.statusText,
+                    message: error.error?.error_description || error.message
+                });
+                return throwError(() => error);
             }),
             map(() => void 0)
         );
