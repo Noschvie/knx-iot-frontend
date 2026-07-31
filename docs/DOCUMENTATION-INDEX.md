@@ -344,10 +344,6 @@ QA:
 ### 3-Step Quick Start
 
 **Step 1: Project Setup (30 min)**
-```bash
-# Follow ANGULAR-GETTING-STARTED.md
-# Result: Running Angular app redirecting to /login
-```
 
 **Step 2: First Component (2 hours)**
 ```

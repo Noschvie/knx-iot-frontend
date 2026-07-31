@@ -314,7 +314,7 @@ npm install @angular/cdk echarts ngx-echarts @ngx-translate/core
 # 4. Create folder structure
 mkdir -p src/app/{core/{auth,http,api,websocket},shared,features}
 
-# 5. Copy files from ANGULAR-GETTING-STARTED.md
+# 5. Copy files
 # (OAuthService, Interceptors, etc.)
 
 # 6. Start dev server
