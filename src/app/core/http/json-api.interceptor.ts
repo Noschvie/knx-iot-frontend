@@ -13,8 +13,12 @@ export class JsonApiInterceptor implements HttpInterceptor {
   constructor(private auth: AuthService) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const token = this.auth.getToken();
+    // OAuth- und Asset-Requests nicht anfassen
+    if (req.url.includes('/oauth/') || req.url.includes('/assets/')) {
+      return next.handle(req);
+    }
 
+    const token = this.auth.getToken();
     let headers = req.headers.set('Accept', 'application/vnd.api+json');
 
     if (token) {
