@@ -20,17 +20,17 @@ import {
  * Core service for Datapoint CRUD and real-time value operations
  *
  * API Endpoints:
- * - GET /api/v2/datapoints              List all datapoints (paginated)
- * - GET /api/v2/datapoints/:id          Get single datapoint
- * - GET /api/v2/datapoints/values       Get latest values
- * - GET /api/v2/datapoints/:id/history  Historical data
- * - GET /api/v2/datapoints/:id/timeseries  Time-series for charts
- * - PUT /api/v2/datapoints/values       Write values
- * - POST /api/v2/datapoints/:id/read    Request current value (manual read)
+ * - GET /datapoints              List all datapoints (paginated)
+ * - GET /datapoints/:id          Get single datapoint
+ * - GET /datapoints/values       Get latest values
+ * - GET /datapoints/:id/history  Historical data
+ * - GET /datapoints/:id/timeseries  Time-series for charts
+ * - PUT /datapoints/values       Write values
+ * - POST /datapoints/:id/read    Request current value (manual read)
  */
 @Injectable({ providedIn: 'root' })
 export class DatapointService {
-  private apiBase: string = '';
+  private apiEndpoint: string = '';
 
   // Cached data
   private datapointsCache$ = new BehaviorSubject<Datapoint[]>([]);
@@ -41,16 +41,16 @@ export class DatapointService {
     private http: HttpClient,
     private configService: ConfigService
   ) {
-    this.apiBase = this.configService.getApiBase();
+    this.apiEndpoint = this.configService.getApiEndpoint();
   }
 
   /**
    * Get all datapoints with optional filtering and pagination
-   * GET /api/v2/datapoints
+   * GET /datapoints
    */
   getAll(options?: QueryOptions): Observable<Datapoint[]> {
     const query = options ? buildQueryString(options) : 'page[limit]=100';
-    const url = `${this.apiBase}/api/v2/datapoints?${query}`;
+    const url = `${this.apiEndpoint}/datapoints?${query}`;
 
     return this.http.get<JsonApiResponse<DatapointResource[]>>(url).pipe(
       map(response => this.transformDatapoints(response.data as DatapointResource[])),
@@ -64,10 +64,10 @@ export class DatapointService {
 
   /**
    * Get a single datapoint by ID
-   * GET /api/v2/datapoints/:id
+   * GET /datapoints/{id}
    */
   getById(id: string): Observable<Datapoint | null> {
-    const url = `${this.apiBase}/api/v2/datapoints/${encodeURIComponent(id)}`;
+    const url = `${this.apiEndpoint}/datapoints/${encodeURIComponent(id)}`;
 
     return this.http.get<JsonApiResponse<DatapointResource>>(url).pipe(
       map(response => this.transformDatapoint(response.data as DatapointResource)),
@@ -80,8 +80,8 @@ export class DatapointService {
   }
 
   /**
-   * Get latest values for multiple datapoints
-   * GET /api/v2/datapoints/values
+   * Get the latest values for multiple datapoints
+   * GET /datapoints/values
    *
    * Returns most recent value updates (sorted by -lastUpdated)
    */
@@ -90,7 +90,7 @@ export class DatapointService {
       page: { limit },
       sort: '-lastUpdated'
     });
-    const url = `${this.apiBase}/api/v2/datapoints/values?${query}`;
+    const url = `${this.apiEndpoint}/datapoints/values?${query}`;
 
     return this.http.get<JsonApiResponse<DatapointResource[]>>(url).pipe(
       map(response => this.transformDatapoints(response.data as DatapointResource[])),
@@ -110,14 +110,14 @@ export class DatapointService {
 
   /**
    * Get historical data for a datapoint
-   * GET /api/v2/datapoints/:id/history
+   * GET /datapoints/:id/history
    */
   getHistory(
     datapointId: string,
     params?: HistoryQueryParams
   ): Observable<any[]> {
-    const query = params ? buildQueryString(params) : 'page[limit]=50&sort=-timestamp';
-    const url = `${this.apiBase}/api/v2/datapoints/${encodeURIComponent(datapointId)}/history?${query}`;
+    const query = params ? buildQueryString(params) : 'page[limit]=50';
+    const url = `${this.apiEndpoint}/datapoints/${encodeURIComponent(datapointId)}/timeseries?${query}`;
 
     return this.http.get<JsonApiResponse>(url).pipe(
       map(response => response.data || []),
@@ -130,14 +130,14 @@ export class DatapointService {
 
   /**
    * Get time-series aggregated data (for charts)
-   * GET /api/v2/datapoints/:id/timeseries
+   * GET /datapoints/:id/timeseries
    */
   getTimeseries(
     datapointId: string,
     params?: TimeSeriesQueryParams
   ): Observable<TimeSeriesPoint[]> {
     const query = params ? buildQueryString(params) : 'aggregation=hourly&page[limit]=1000';
-    const url = `${this.apiBase}/api/v2/datapoints/${encodeURIComponent(datapointId)}/timeseries?${query}`;
+    const url = `${this.apiEndpoint}/datapoints/${encodeURIComponent(datapointId)}/timeseries?${query}`;
 
     return this.http.get<JsonApiResponse>(url).pipe(
       map(response => {
@@ -153,7 +153,7 @@ export class DatapointService {
 
   /**
    * Write value(s) to datapoint(s)
-   * PUT /api/v2/datapoints/values
+   * PUT /datapoints/values
    *
    * Example:
    * {
@@ -171,7 +171,7 @@ export class DatapointService {
       }))
     };
 
-    const url = `${this.apiBase}/api/v2/datapoints/values`;
+    const url = `${this.apiEndpoint}/datapoints/values`;
     return this.http.put<JsonApiResponse>(url, payload).pipe(
       tap(() => {
         // Update local cache
@@ -189,31 +189,16 @@ export class DatapointService {
   }
 
   /**
-   * Manually request current value from datapoint (read)
-   * POST /api/v2/datapoints/:id/read
+   * Manually request the current value from datapoint (read)
+   * POST /datapoints/:id/read
    */
   readValue(datapointId: string): Observable<Datapoint | null> {
-    const url = `${this.apiBase}/api/v2/datapoints/${encodeURIComponent(datapointId)}/read`;
+    const url = `${this.apiEndpoint}/datapoints/${encodeURIComponent(datapointId)}/read`;
 
     return this.http.post<JsonApiResponse<DatapointResource>>(url, {}).pipe(
       map(response => this.transformDatapoint(response.data as DatapointResource)),
       catchError(err => {
         console.error(`Error reading datapoint ${datapointId}:`, err);
-        return of(null);
-      })
-    );
-  }
-
-  /**
-   * Get statistics for a datapoint
-   * GET /api/v2/datapoints/:id/stats
-   */
-  getStats(datapointId: string): Observable<DatapointStats | null> {
-    const url = `${this.apiBase}/api/v2/datapoints/${encodeURIComponent(datapointId)}/stats`;
-
-    return this.http.get<any>(url).pipe(
-      catchError(err => {
-        console.error(`Error fetching stats for ${datapointId}:`, err);
         return of(null);
       })
     );
@@ -273,4 +258,3 @@ export class DatapointService {
     return (resources || []).map(r => this.transformDatapoint(r));
   }
 }
-

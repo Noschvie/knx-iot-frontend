@@ -175,7 +175,7 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
-   * Get status badge color for device
+   * Get status badge color for the device
    */
   getStatusColor(status: string): string {
     switch (status) {
@@ -185,4 +185,3 @@ export class DashboardComponent implements OnInit {
     }
   }
 }
-

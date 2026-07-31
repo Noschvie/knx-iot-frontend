@@ -16,23 +16,23 @@ import {
  */
 @Injectable({ providedIn: 'root' })
 export class DeviceService {
-  private apiBase: string = '';
+  private apiEndpoint: string = '';
   private devicesCache$ = new BehaviorSubject<Device[]>([]);
 
   constructor(
     private http: HttpClient,
     private configService: ConfigService
   ) {
-    this.apiBase = this.configService.getApiBase();
+    this.apiEndpoint = this.configService.getApiEndpoint();
   }
 
   /**
    * Get all devices
-   * GET /api/v2/devices
+   * GET /devices
    */
   getAll(options?: QueryOptions): Observable<Device[]> {
     const query = options ? buildQueryString(options) : 'page[limit]=100';
-    const url = `${this.apiBase}/api/v2/devices?${query}`;
+    const url = `${this.apiEndpoint}/devices?${query}`;
 
     return this.http.get<JsonApiResponse<DeviceResource[]>>(url).pipe(
       map(response => this.transformDevices(response.data as DeviceResource[])),
@@ -45,11 +45,11 @@ export class DeviceService {
   }
 
   /**
-   * Get single device
-   * GET /api/v2/devices/:id
+   * Get a single device
+   * GET /devices/:id
    */
   getById(id: string): Observable<Device | null> {
-    const url = `${this.apiBase}/api/v2/devices/${encodeURIComponent(id)}`;
+    const url = `${this.apiEndpoint}/devices/${encodeURIComponent(id)}`;
 
     return this.http.get<JsonApiResponse<DeviceResource>>(url).pipe(
       map(response => this.transformDevice(response.data as DeviceResource)),
@@ -62,10 +62,14 @@ export class DeviceService {
 
   /**
    * Get devices for a specific location
-   * GET /api/v2/locations/:locationId/devices
+   * GET /api/v1/locations/{locationId}/children/{deviceId}
+   * or filter via: GET /api/v1/devices?filter[location]={locationId}
    */
   getByLocation(locationId: string): Observable<Device[]> {
-    const url = `${this.apiBase}/api/v2/locations/${encodeURIComponent(locationId)}/devices`;
+    const query = buildQueryString({
+      filter: { location: locationId }
+    });
+    const url = `${this.apiEndpoint}/devices?${query}`;
 
     return this.http.get<JsonApiResponse<DeviceResource[]>>(url).pipe(
       map(response => this.transformDevices(response.data as DeviceResource[])),
@@ -110,4 +114,3 @@ export class DeviceService {
     return (resources || []).map(r => this.transformDevice(r));
   }
 }
-
