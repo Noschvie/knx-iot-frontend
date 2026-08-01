@@ -173,10 +173,21 @@ export class MonitorComponent implements OnInit, OnDestroy {
             this.liveBuffer.setConnected(true);
             console.log('[Monitor] ✓ WebSocket connected');
           } else if (message.type === 'connection_error') {
-            // WebSocket connection error - log for debugging
-            console.warn('[Monitor] WebSocket connection error:', message.error);
+            // WebSocket connection error
+            console.warn('[Monitor] WebSocket connection error (code:', message.code, '):', message.error);
             this.isConnected = false;
             this.liveBuffer.setConnected(false);
+          } else if (message.type === 'connection_closed') {
+            // WebSocket connection closed
+            console.warn('[Monitor] WebSocket connection closed (code:', message.code, 'reason:', message.reason, ')');
+            this.isConnected = false;
+            this.liveBuffer.setConnected(false);
+
+            // Attempt to reconnect after delay
+            setTimeout(() => {
+              console.log('[Monitor] Attempting to reconnect WebSocket...');
+              this.connectWebSocket();
+            }, 5000); // Wait 5 seconds before attempting reconnect
           } else if (message.type === 'datapoint_updated') {
             this.handleDatapointUpdate(message);
           } else if (message.type === 'batch') {
@@ -190,11 +201,23 @@ export class MonitorComponent implements OnInit, OnDestroy {
           console.error('[Monitor] WebSocket subscription error:', err);
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
+
+          // Attempt to reconnect after delay
+          setTimeout(() => {
+            console.log('[Monitor] Attempting to reconnect WebSocket after error...');
+            this.connectWebSocket();
+          }, 5000); // Wait 5 seconds before attempting reconnect
         },
         complete: () => {
-          console.log('[Monitor] WebSocket connection closed');
+          console.log('[Monitor] WebSocket subscription completed');
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
+
+          // Attempt to reconnect after delay
+          setTimeout(() => {
+            console.log('[Monitor] Attempting to reconnect WebSocket after completion...');
+            this.connectWebSocket();
+          }, 5000); // Wait 5 seconds before attempting reconnect
         }
       });
   }

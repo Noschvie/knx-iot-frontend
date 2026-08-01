@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, ReplaySubject, Subject } from 'rxjs';
+import { Observable, ReplaySubject, Subject, timer } from 'rxjs';
+import { switchMap, tap, takeUntil } from 'rxjs/operators';
 import { OAuthService } from '../auth/oauth.service';
 import { ConfigService } from '../config/config.service';
 
@@ -9,6 +10,10 @@ export class WebSocketService {
     private messageSubject = new ReplaySubject<any>(100);
     private connectionStatus$ = new Subject<boolean>();
     private isConnecting = false;
+    private reconnectAttempts = 0;
+    private maxReconnectAttempts = 5;
+    private reconnectDelay = 3000; // Start with 3 seconds
+    private destroy$ = new Subject<void>();
 
     constructor(
         private auth: OAuthService,
@@ -28,14 +33,15 @@ export class WebSocketService {
             const token = this.auth.getToken();
             const wsUrl = `${wsBase}/messaging/ws?token=${token}`;
 
-            console.log('[WebSocket] Attempting to connect to:', wsUrl);
+            console.log('[WebSocket] Attempting to connect (attempt', this.reconnectAttempts + 1, '/', this.maxReconnectAttempts, '):', wsUrl);
 
             try {
                 this.ws = new WebSocket(wsUrl, ['gw.knx.org']);
 
                 this.ws.onopen = () => {
-                    console.log('[WebSocket] ✓ Connected');
+                    console.log('[WebSocket] ✓ Connected successfully');
                     this.isConnecting = false;
+                    this.reconnectAttempts = 0; // Reset on successful connection
                     this.connectionStatus$.next(true);
                     observer.next({ type: 'connected' });
                 };
@@ -53,22 +59,48 @@ export class WebSocketService {
                 this.ws.onerror = (error) => {
                     console.error('[WebSocket] ✗ Error:', {
                         error,
+                        code: (error as any).code,
                         readyState: this.ws?.readyState,
-                        url: wsUrl
+                        reconnectAttempts: this.reconnectAttempts
                     });
                     this.isConnecting = false;
                     this.connectionStatus$.next(false);
+
+                    // Notify about error
                     observer.next({
                         type: 'connection_error',
-                        error: error
+                        error: error,
+                        code: (error as any).code
                     });
+
+                    // Attempt reconnection
+                    this.scheduleReconnect();
                 };
 
-                this.ws.onclose = () => {
-                    console.log('[WebSocket] Disconnected (readyState:', this.ws?.readyState, ')');
+                this.ws.onclose = (event) => {
+                    console.log('[WebSocket] ✗ Connection closed', {
+                        code: event.code,
+                        reason: event.reason,
+                        wasClean: event.wasClean,
+                        readyState: this.ws?.readyState
+                    });
                     this.isConnecting = false;
                     this.connectionStatus$.next(false);
-                    observer.complete();
+
+                    // Notify close
+                    observer.next({
+                        type: 'connection_closed',
+                        code: event.code,
+                        reason: event.reason
+                    });
+
+                    // Attempt reconnection unless clean close or max attempts reached
+                    if (!event.wasClean && this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.scheduleReconnect();
+                    } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                        console.error('[WebSocket] Max reconnection attempts reached, giving up');
+                        observer.complete();
+                    }
                 };
 
                 return () => this.disconnect();
@@ -80,9 +112,33 @@ export class WebSocketService {
                     type: 'connection_error',
                     error: e
                 });
+                this.scheduleReconnect();
                 return () => {};
             }
         });
+    }
+
+    /**
+     * Schedule automatic reconnection with exponential backoff
+     */
+    private scheduleReconnect(): void {
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.error('[WebSocket] Max reconnection attempts reached');
+            return;
+        }
+
+        this.reconnectAttempts++;
+        const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
+
+        console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+
+        setTimeout(() => {
+            console.log(`[WebSocket] Attempting reconnect (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+            // Create new connection attempt
+            this.disconnect();
+            // Trigger new connection by reconnecting
+            // This will be handled by the component's subscription
+        }, delay);
     }
 
     disconnect(): void {
@@ -95,6 +151,7 @@ export class WebSocketService {
             this.ws = null;
         }
         this.isConnecting = false;
+        this.destroy$.next();
     }
 
     isConnected(): boolean {
