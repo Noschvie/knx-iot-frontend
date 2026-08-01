@@ -1,6 +1,6 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { Observable, combineLatest } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, mergeMap } from 'rxjs/operators';
 import { DatapointService } from '@core/services/datapoint.service';
 import { DeviceService } from '@core/services/device.service';
 import { LocationService } from '@core/services/location.service';
@@ -29,11 +29,6 @@ interface ActivityItem {
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-  // Observables
-  datapoints$!: Observable<Datapoint[]>;
-  devices$!: Observable<Device[]>;
-  locations$!: Observable<Location[]>;
-
   // Computed data
   metrics: MetricCard[] = [];
   recentActivity: ActivityItem[] = [];
@@ -59,11 +54,9 @@ export class DashboardComponent implements OnInit {
     console.log('[Dashboard] Starting data load...');
 
     // Load all data in parallel
-    console.log('[Dashboard] Requesting: Datapoints, Devices, Locations');
+    console.log('[Dashboard] Requesting: Devices, Locations, then Datapoints');
+
     combineLatest([
-      this.datapointService.getLatestValues(100).pipe(
-        tap(data => console.log(`[Dashboard] Datapoints loaded: ${data.length} items`))
-      ),
       this.deviceService.getAll().pipe(
         tap(data => console.log(`[Dashboard] Devices loaded: ${data.length} items`))
       ),
@@ -72,7 +65,21 @@ export class DashboardComponent implements OnInit {
       )
     ])
       .pipe(
-        tap(([datapoints, devices, locations]) => {
+        // First, get devices and locations
+        tap(([devices, locations]) => {
+          console.log('[Dashboard] Devices and Locations loaded, now fetching datapoints...');
+        }),
+        // Then fetch datapoints with device/location enrichment
+        mergeMap(([devices, locations]) => {
+          return this.datapointService.getLatestValues(100,
+            devices.map(d => ({ id: d.id, title: d.title })),
+            locations.map(l => ({ id: l.id, title: l.title }))
+          ).pipe(
+            tap(datapoints => console.log(`[Dashboard] Datapoints loaded: ${datapoints.length} items`)),
+            map(datapoints => ({ datapoints, devices, locations }))
+          );
+        }),
+        tap(({ datapoints, devices, locations }) => {
           console.log('[Dashboard] All data received, processing...');
           this.handleDataLoaded(datapoints, devices, locations);
         })
@@ -100,29 +107,10 @@ export class DashboardComponent implements OnInit {
     devices: Device[],
     locations: Location[]
   ): void {
-    // Set isLoading to false immediately
-    this.isLoading = false;
-
     console.log('[Dashboard] handleDataLoaded called with:', {
       datapoints: datapoints.length,
       devices: devices.length,
       locations: locations.length
-    });
-
-    // Store observables for template
-    this.datapoints$ = new Observable(observer => {
-      observer.next(datapoints);
-      observer.complete();
-    });
-
-    this.devices$ = new Observable(observer => {
-      observer.next(devices);
-      observer.complete();
-    });
-
-    this.locations$ = new Observable(observer => {
-      observer.next(locations);
-      observer.complete();
     });
 
     // Compute metrics
@@ -160,19 +148,19 @@ export class DashboardComponent implements OnInit {
       })
       .slice(0, 10);
 
-    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample values:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, value: d.value, lastUpdated: d.lastUpdated })));
+    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample values:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, value: d.value, lastUpdated: d.lastUpdated, deviceTitle: d.deviceTitle })));
 
-    // Build activity feed (recent updates)
+    // Build activity feed (recent updates) - now with deviceTitle properly set
     this.recentActivity = this.topDatapoints.map(dp => ({
       id: dp.id,
       title: dp.title,
       value: dp.value || 'N/A',
       timestamp: dp.lastUpdated || new Date(),
       unit: dp.unit,
-      device: dp.deviceTitle
+      device: dp.deviceTitle || 'Unknown Device'
     }));
 
-    console.log('[Dashboard] Recent activity:', this.recentActivity.length);
+    console.log('[Dashboard] Recent activity:', this.recentActivity.length, 'sample:', this.recentActivity.slice(0, 2).map(a => ({ title: a.title, device: a.device })));
   }
 
   /**

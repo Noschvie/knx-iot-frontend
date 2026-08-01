@@ -82,8 +82,9 @@ export class DatapointService {
    * GET /datapoints/values
    *
    * Returns most recent value updates (sorted by -lastUpdated)
+   * Optionally accepts devices/locations for enrichment
    */
-  getLatestValues(limit: number = 100): Observable<Datapoint[]> {
+  getLatestValues(limit: number = 100, devices?: { id: string; title: string }[], locations?: { id: string; title: string }[]): Observable<Datapoint[]> {
     const query = buildQueryString({
       page: { limit },
       sort: '-lastUpdated'
@@ -94,7 +95,7 @@ export class DatapointService {
     return this.http.get<JsonApiResponse<DatapointResource[]>>(url).pipe(
       map(response => {
         console.log('[Datapoint Service] Response received, transforming data...');
-        return this.transformDatapoints(response.data as DatapointResource[]);
+        return this.transformDatapoints(response.data as DatapointResource[], devices, locations);
       }),
       tap(datapoints => {
         console.log(`[Datapoint Service] ✓ Latest values retrieved: ${datapoints.length} datapoints`);
@@ -238,7 +239,14 @@ export class DatapointService {
   /**
    * Transform JSON:API resource to flat DTO
    */
-  private transformDatapoint(resource: DatapointResource): Datapoint {
+  private transformDatapoint(
+    resource: DatapointResource,
+    devices?: { id: string; title: string }[],
+    locations?: { id: string; title: string }[]
+  ): Datapoint {
+    const deviceId = (resource.relationships?.device?.data as any)?.id;
+    const locationId = (resource.relationships?.location?.data as any)?.id;
+
     return {
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
@@ -251,8 +259,10 @@ export class DatapointService {
       // Unit can be direct attribute or in meta['@unit']
       unit: (resource.attributes as any).unit || resource.attributes.meta?.['@unit'],
 
-      deviceId: (resource.relationships?.device?.data as any)?.id,
-      locationId: (resource.relationships?.location?.data as any)?.id,
+      deviceId: deviceId,
+      deviceTitle: devices?.find(d => d.id === deviceId)?.title,
+      locationId: locationId,
+      locationTitle: locations?.find(l => l.id === locationId)?.title,
       functionId: (resource.relationships?.function?.data as any)?.id,
 
       readable: resource.attributes.readable ?? true,
@@ -264,9 +274,13 @@ export class DatapointService {
   /**
    * Transform array of JSON:API resources
    */
-  private transformDatapoints(resources: DatapointResource[]): Datapoint[] {
+  private transformDatapoints(
+    resources: DatapointResource[],
+    devices?: { id: string; title: string }[],
+    locations?: { id: string; title: string }[]
+  ): Datapoint[] {
     console.log('[Datapoint Service] Transforming resources:', resources?.length || 0);
-    const result = (resources || []).map(r => this.transformDatapoint(r));
+    const result = (resources || []).map(r => this.transformDatapoint(r, devices, locations));
     console.log('[Datapoint Service] Transformation complete. Total:', result.length);
     return result;
   }
