@@ -16,7 +16,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
 
-import { Subject, Observable, combineLatest, of } from 'rxjs';
+import { Subject, Observable, combineLatest } from 'rxjs';
 import { takeUntil, debounceTime, startWith } from 'rxjs/operators';
 
 import { Datapoint } from '@shared/models';
@@ -70,7 +70,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
 
   // Filter form
   filterForm: FormGroup;
-  dptTypes$: Observable<string[]>;
+  dptTypes: string[] = [];
   private dptTypesSet: Set<string> = new Set();
 
   // Cleanup
@@ -103,9 +103,6 @@ export class MonitorComponent implements OnInit, OnDestroy {
       dptTypes: [[]],
       qualityValid: [undefined]
     });
-
-    // Initialize dptTypes$ with empty array
-    this.dptTypes$ = of([]);
   }
 
    ngOnInit(): void {
@@ -161,16 +158,15 @@ export class MonitorComponent implements OnInit, OnDestroy {
            // Always update datapoints, even if empty
            this.datapoints = datapoints || [];
 
-           // Collect unique DPT types for filter dropdown
-           (datapoints || []).forEach(dp => {
-             if (dp.dptType) {
-               this.dptTypesSet.add(dp.dptType);
-             }
-           });
+            // Collect unique DPT types for filter dropdown
+            (datapoints || []).forEach(dp => {
+              if (dp.dptType) {
+                this.dptTypesSet.add(dp.dptType);
+              }
+            });
 
-           // Convert Set to array for Observable
-           const typeArray = Array.from(this.dptTypesSet).sort();
-           this.dptTypes$ = of(typeArray);
+            // Convert Set to array
+            this.dptTypes = Array.from(this.dptTypesSet).sort();
 
            // Initialize buffer
            this.liveBuffer.initialize(datapoints || []);
@@ -320,11 +316,11 @@ export class MonitorComponent implements OnInit, OnDestroy {
     */
    private updateDisplayedDatapoints(): void {
      const filterCriteria: LiveFilterCriteria = {
-       searchTerm: this.filterForm.get('searchTerm')?.value,
-       devices: this.filterForm.get('devices')?.value || [],
-       locations: this.filterForm.get('locations')?.value || [],
-       dptTypes: this.filterForm.get('dptTypes')?.value || [],
-       qualityValid: this.filterForm.get('qualityValid')?.value
+       searchTerm: this.filterForm.get('searchTerm')?.value ?? undefined,
+       devices: this.filterForm.get('devices')?.value ?? [],
+       locations: this.filterForm.get('locations')?.value ?? [],
+       dptTypes: this.filterForm.get('dptTypes')?.value ?? [],
+       qualityValid: this.filterForm.get('qualityValid')?.value ?? undefined
      };
 
      this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
@@ -338,9 +334,9 @@ export class MonitorComponent implements OnInit, OnDestroy {
        hasError: this.hasError,
        filterCriteria: {
          searchTerm: filterCriteria.searchTerm || 'none',
-         devices: filterCriteria.devices.length || 0,
-         locations: filterCriteria.locations.length || 0,
-         dptTypes: filterCriteria.dptTypes.length || 0
+         devices: filterCriteria.devices?.length || 0,
+         locations: filterCriteria.locations?.length || 0,
+         dptTypes: filterCriteria.dptTypes?.length || 0
        }
      });
    }
