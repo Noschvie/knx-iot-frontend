@@ -91,16 +91,16 @@ export class DashboardComponent implements OnInit {
           );
         }),
         tap(({ datapoints, devices, locations }) => {
-          console.log('[Dashboard] ✓ All data received, processing...');
+          console.log('[Dashboard] All data received, processing...');
           this.handleDataLoaded(datapoints, devices, locations);
         })
       )
       .subscribe(
         () => {
-          console.log('[Dashboard] ✅ Background data loaded successfully - UI updated');
+          console.log('[Dashboard] Background data loaded successfully - UI updated');
         },
         (error) => {
-          console.error('[Dashboard] ❌ ERROR loading dashboard data!', {
+          console.error('[Dashboard] ERROR loading dashboard data!', {
             status: error?.status || 'unknown',
             statusText: error?.statusText || 'unknown',
             message: error?.message || error?.toString(),
