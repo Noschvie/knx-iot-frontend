@@ -235,48 +235,39 @@ export class DatapointService {
 
   // ========== PRIVATE HELPERS ==========
 
-   /**
-    * Transform JSON:API resource to flat DTO
-    */
-   private transformDatapoint(resource: DatapointResource): Datapoint {
-     return {
-       id: resource.id,
-       title: resource.attributes.title || 'Unknown',
-       description: resource.attributes.description,
-       value: resource.attributes.value,
-       valueRaw: resource.attributes.valueRaw,
-       lastUpdated: (resource.attributes as any).timestamp ? new Date((resource.attributes as any).timestamp) : resource.attributes.lastUpdated ? new Date(resource.attributes.lastUpdated) : undefined,
-       dptType: resource.attributes.meta?.['@type'],
-       unit: resource.attributes.meta?.['@unit'],
+  /**
+   * Transform JSON:API resource to flat DTO
+   */
+  private transformDatapoint(resource: DatapointResource): Datapoint {
+    return {
+      id: resource.id,
+      title: resource.attributes.title || 'Unknown',
+      description: resource.attributes.description,
+      value: resource.attributes.value,
+      valueRaw: resource.attributes.valueRaw,
+      // API provides 'timestamp' field (from spec), fallback to 'lastUpdated'
+      lastUpdated: (resource.attributes as any).timestamp ? new Date((resource.attributes as any).timestamp) : resource.attributes.lastUpdated ? new Date(resource.attributes.lastUpdated) : undefined,
+      dptType: resource.attributes.meta?.['@type'],
+      // Unit can be direct attribute or in meta['@unit']
+      unit: (resource.attributes as any).unit || resource.attributes.meta?.['@unit'],
 
-       deviceId: (resource.relationships?.device?.data as any)?.id,
-       locationId: (resource.relationships?.location?.data as any)?.id,
-       functionId: (resource.relationships?.function?.data as any)?.id,
+      deviceId: (resource.relationships?.device?.data as any)?.id,
+      locationId: (resource.relationships?.location?.data as any)?.id,
+      functionId: (resource.relationships?.function?.data as any)?.id,
 
-       readable: resource.attributes.readable ?? true,
-       writable: resource.attributes.writable ?? false,
-       qualityValid: resource.attributes.qualityValid ?? true
-     };
-   }
+      readable: resource.attributes.readable ?? true,
+      writable: resource.attributes.writable ?? false,
+      qualityValid: resource.attributes.qualityValid ?? true
+    };
+  }
 
-   /**
-    * Transform array of JSON:API resources
-    */
-   private transformDatapoints(resources: DatapointResource[]): Datapoint[] {
-     console.log('[Datapoint Service] Transforming resources:', resources?.length || 0);
-     const result = (resources || []).map(r => {
-       const transformed = this.transformDatapoint(r);
-       console.log('[Datapoint Service] Transformed datapoint:', {
-         title: transformed.title,
-         value: transformed.value,
-         unit: transformed.unit,
-         lastUpdated: transformed.lastUpdated,
-         readable: transformed.readable,
-         writable: transformed.writable
-       });
-       return transformed;
-     });
-     console.log('[Datapoint Service] Transformation complete. Total:', result.length);
-     return result;
-   }
+  /**
+   * Transform array of JSON:API resources
+   */
+  private transformDatapoints(resources: DatapointResource[]): Datapoint[] {
+    console.log('[Datapoint Service] Transforming resources:', resources?.length || 0);
+    const result = (resources || []).map(r => this.transformDatapoint(r));
+    console.log('[Datapoint Service] Transformation complete. Total:', result.length);
+    return result;
+  }
 }

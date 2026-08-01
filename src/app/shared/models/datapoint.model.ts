@@ -20,8 +20,10 @@ export interface DatapointAttributes {
   // Value Information
   value?: string;          // Current decoded value
   valueRaw?: string;       // Hex representation
-  lastUpdated?: string;    // ISO-8601 timestamp
-  
+  timestamp?: string;      // ISO-8601 timestamp (API spec)
+  lastUpdated?: string;    // Alternative timestamp field
+  unit?: string;           // Unit from API (e.g., "unit:PERCENT")
+
   // Capabilities
   readable?: boolean;
   writable?: boolean;

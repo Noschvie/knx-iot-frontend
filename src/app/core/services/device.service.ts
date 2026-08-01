@@ -104,14 +104,17 @@ export class DeviceService {
   private transformDevice(resource: DeviceResource): Device {
     const datapointsData = resource.relationships?.datapoints?.data;
 
-    // Manufacturer kann in zwei Orten sein: direkt in attributes ODER in meta
+    // Manufacturer can be in attributes directly or in meta
     const manufacturer = (resource.attributes as any).manufacturer ||
         (resource.attributes.meta?.['knx:manufacturer']);
     const product = (resource.attributes as any).product ||
         (resource.attributes.meta?.['knx:product']);
     const serialNumber = (resource.attributes as any).serialNumber ||
         resource.attributes.meta?.['knx:serialNumber'];
-    const physicalAddress = (resource.attributes as any).physicalAddress ||
+
+    // Address: Try individualAddress (from spec) first, then physicalAddress, then meta
+    const physicalAddress = (resource.attributes as any).individualAddress ||
+        (resource.attributes as any).physicalAddress ||
         resource.attributes.meta?.['knx:physicalAddress'];
 
     return {
@@ -137,16 +140,7 @@ export class DeviceService {
 
   private transformDevices(resources: DeviceResource[]): Device[] {
     console.log('[Device Service] Transforming resources:', resources?.length || 0);
-    const result = (resources || []).map(r => {
-      const transformed = this.transformDevice(r);
-      console.log('[Device Service] Transformed device:', {
-        title: transformed.title,
-        manufacturer: transformed.manufacturer,
-        address: transformed.physicalAddress,
-        status: transformed.status
-      });
-      return transformed;
-    });
+    const result = (resources || []).map(r => this.transformDevice(r));
     console.log('[Device Service] Transformation complete. Total:', result.length);
     return result;
   }

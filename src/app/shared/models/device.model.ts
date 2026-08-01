@@ -21,6 +21,7 @@ export interface DeviceAttributes {
 
   // Physical address
   physicalAddress?: string;   // "1.2.3" for KNX
+  individualAddress?: string; // KNX address (from API spec)
 
   // Status
   status?: 'online' | 'offline' | 'unknown' | string;
