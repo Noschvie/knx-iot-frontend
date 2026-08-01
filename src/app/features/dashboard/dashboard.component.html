@@ -2,14 +2,14 @@
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-container">
     <mat-spinner></mat-spinner>
-    <p>Dashboard wird geladen...</p>
+    <p>Loading dashboard...</p>
   </div>
 
   <!-- Error State -->
   <div *ngIf="errorMessage && !isLoading" class="error-container">
     <mat-icon>error</mat-icon>
     <p>{{ errorMessage }}</p>
-    <button mat-raised-button color="primary" (click)="refresh()">Erneut versuchen</button>
+    <button mat-raised-button color="primary" (click)="refresh()">Try Again</button>
   </div>
 
   <!-- Dashboard Content -->
@@ -17,7 +17,7 @@
     <!-- Header -->
     <div class="dashboard-header">
       <h1>Dashboard</h1>
-      <button mat-icon-button (click)="refresh()" matTooltip="Aktualisieren">
+      <button mat-icon-button (click)="refresh()" matTooltip="Refresh">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -37,15 +37,15 @@
     <div class="activity-section">
       <mat-card class="activity-card">
         <mat-card-header>
-          <mat-card-title>Letzte Aktivität</mat-card-title>
-          <mat-card-subtitle>Zuletzt aktualisierte Datapoints</mat-card-subtitle>
+          <mat-card-title>Recent Activity</mat-card-title>
+          <mat-card-subtitle>Most recently updated datapoints</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
           <!-- Empty State -->
           <div *ngIf="recentActivity.length === 0" class="empty-state">
             <mat-icon>info</mat-icon>
-            <p>Keine Datapoint-Aktivität vorhanden</p>
+            <p>No datapoint activity available</p>
           </div>
 
           <!-- Activity List -->

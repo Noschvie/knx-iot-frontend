@@ -100,6 +100,12 @@ export class DashboardComponent implements OnInit {
     devices: Device[],
     locations: Location[]
   ): void {
+    console.log('[Dashboard] handleDataLoaded called with:', {
+      datapoints: datapoints.length,
+      devices: devices.length,
+      locations: locations.length
+    });
+
     // Store observables for template
     this.datapoints$ = new Observable(observer => {
       observer.next(datapoints);
@@ -140,6 +146,8 @@ export class DashboardComponent implements OnInit {
       }
     ];
 
+    console.log('[Dashboard] Metrics computed:', this.metrics);
+
     // Get top 10 most recently updated datapoints
     this.topDatapoints = datapoints
       .filter(d => d.value !== undefined && d.value !== null)
@@ -150,6 +158,8 @@ export class DashboardComponent implements OnInit {
       })
       .slice(0, 10);
 
+    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length);
+
     // Build activity feed (recent updates)
     this.recentActivity = this.topDatapoints.map(dp => ({
       id: dp.id,
@@ -159,6 +169,8 @@ export class DashboardComponent implements OnInit {
       unit: dp.unit,
       device: dp.deviceTitle
     }));
+
+    console.log('[Dashboard] Recent activity:', this.recentActivity.length);
   }
 
   /**
