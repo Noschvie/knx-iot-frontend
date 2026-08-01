@@ -10,6 +10,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { CoreModule } from './core/core.module';
 import { LayoutModule } from './features/layout/layout.module';
 import { ConfigService } from './core/config/config.service';
+import { LoggerService } from './shared/services/logger.service';
 
 @NgModule({
     declarations: [AppComponent],
@@ -22,6 +23,13 @@ import { ConfigService } from './core/config/config.service';
     providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideAnimations(),
+        // Initialize LoggerService FIRST, before any other config
+        provideAppInitializer(() => {
+            // Get and initialize logger service to hijack console methods
+            inject(LoggerService);
+            return Promise.resolve();
+        }),
+        // Then load configuration
         provideAppInitializer(() => firstValueFrom(inject(ConfigService).loadConfig()))
     ],
     bootstrap: [AppComponent]
