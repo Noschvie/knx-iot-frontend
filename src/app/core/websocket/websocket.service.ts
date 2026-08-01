@@ -31,13 +31,19 @@ export class WebSocketService {
             const token = this.auth.getToken();
             const wsUrl = `${wsBase}/messaging/ws?token=${token}`;
 
-            console.log('[WebSocket] Attempting to connect (attempt', this.reconnectAttempts + 1, '/', this.maxReconnectAttempts, '):', wsUrl);
+            console.log('[WebSocket] 🔌 ATTEMPTING CONNECTION', {
+                wsBase: wsBase,
+                wsUrl: wsUrl,
+                tokenAvailable: !!token,
+                attempt: this.reconnectAttempts + 1,
+                maxAttempts: this.maxReconnectAttempts
+            });
 
             try {
                 this.ws = new WebSocket(wsUrl, ['gw.knx.org']);
 
                 this.ws.onopen = () => {
-                    console.log('[WebSocket] ✓ Connected successfully');
+                    console.log('[WebSocket] ✅ Connected successfully');
                     this.isConnecting = false;
                     this.reconnectAttempts = 0; // Reset on successful connection
                     this.connectionStatus$.next(true);
@@ -55,11 +61,17 @@ export class WebSocketService {
                 };
 
                 this.ws.onerror = (error) => {
-                    console.error('[WebSocket] ✗ Error:', {
-                        error,
-                        code: (error as any).code,
+                    console.error('[WebSocket] ❌ ERROR', {
+                        error: error,
+                        wsUrl: wsUrl,
                         readyState: this.ws?.readyState,
-                        reconnectAttempts: this.reconnectAttempts
+                        reconnectAttempts: this.reconnectAttempts,
+                        errorEvent: {
+                            type: (error as any).type,
+                            code: (error as any).code,
+                            reason: (error as any).reason,
+                            wasClean: (error as any).wasClean
+                        }
                     });
                     this.isConnecting = false;
                     this.connectionStatus$.next(false);
@@ -68,7 +80,8 @@ export class WebSocketService {
                     observer.next({
                         type: 'connection_error',
                         error: error,
-                        code: (error as any).code
+                        code: (error as any).code,
+                        wsUrl: wsUrl
                     });
 
                     // Attempt reconnection
@@ -76,10 +89,11 @@ export class WebSocketService {
                 };
 
                 this.ws.onclose = (event) => {
-                    console.log('[WebSocket] ✗ Connection closed', {
+                    console.log('[WebSocket] ❌ CLOSED', {
                         code: event.code,
                         reason: event.reason,
                         wasClean: event.wasClean,
+                        wsUrl: wsUrl,
                         readyState: this.ws?.readyState
                     });
                     this.isConnecting = false;
@@ -89,7 +103,8 @@ export class WebSocketService {
                     observer.next({
                         type: 'connection_closed',
                         code: event.code,
-                        reason: event.reason
+                        reason: event.reason,
+                        wsUrl: wsUrl
                     });
 
                     // Attempt reconnection unless clean close or max attempts reached
@@ -103,12 +118,17 @@ export class WebSocketService {
 
                 return () => this.disconnect();
             } catch (e) {
-                console.error('[WebSocket] Connection exception:', e);
+                console.error('[WebSocket] ❌ CONNECTION EXCEPTION', {
+                    error: e,
+                    wsUrl: wsUrl,
+                    message: (e as any).message
+                });
                 this.isConnecting = false;
                 this.connectionStatus$.next(false);
                 observer.next({
                     type: 'connection_error',
-                    error: e
+                    error: e,
+                    wsUrl: wsUrl
                 });
                 this.scheduleReconnect();
                 return () => {};
