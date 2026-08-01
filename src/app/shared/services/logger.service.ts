@@ -137,6 +137,7 @@ export class LoggerService {
     this.ensureServices();
 
     if (!this.http) {
+      this.originalLog('[Logger Service] HTTP client not ready, cannot send logs');
       return;
     }
 
@@ -144,9 +145,9 @@ export class LoggerService {
       const hostname = window.location.hostname || 'knx-frontend';
       const tag = 'knx-iot-frontend';
 
-      // Send it to local UDP-bridge service (running in Docker on port 9514)
-      // The bridge will forward to Syslog server via UDP
-      const bridgeUrl = `http://localhost:9514/syslog`;
+      // Send to local UDP-bridge service running in the same Docker container
+      // Use window.location.hostname to connect to the bridge on the correct host
+      const bridgeUrl = `http://${window.location.hostname}:9514/syslog`;
 
       const logData = {
         priority,
@@ -164,13 +165,16 @@ export class LoggerService {
         responseType: 'text',
         headers: { 'Content-Type': 'application/json' }
       }).subscribe(
-        () => {}, // Success - do nothing
-        (_error) => {
-          // Fail silently - bridge service may not be available
+        (response) => {
+          // Success - log sent to bridge
+        },
+        (error) => {
+          // Log error to original console to avoid infinite loop
+          this.originalLog(`[Logger Service] Failed to send to bridge (${bridgeUrl}):`, error.status, error.statusText);
         }
       );
     } catch (e) {
-      // Silently ignore errors
+      this.originalLog('[Logger Service] Exception sending log:', e);
     }
   }
 

@@ -12,7 +12,7 @@
  *     "priority": 134,
  *     "timestamp": "14:32:45.123",
  *     "level": "LOG",
- *     "hostname": "eibesthal",
+ *     "hostname": "syslog-server",
  *     "tag": "knx-iot-frontend",
  *     "message": "[AUTH] Starting OAuth2 login...",
  *     "userAgent": "Mozilla/5.0..."
@@ -31,6 +31,8 @@ const syslogClient = dgram.createSocket('udp4');
 
 // Create HTTP server
 const server = http.createServer((req, res) => {
+  console.log(`[Syslog Bridge] ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
+
   if (req.method === 'POST' && req.url === '/syslog') {
     let body = '';
 
