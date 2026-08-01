@@ -47,29 +47,32 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Show empty UI immediately
+    this.isLoading = false;
+    this.metrics = [
+      { title: 'Datapoints', value: '...', subtitle: 'Loading' },
+      { title: 'Devices', value: '...', subtitle: 'Loading' },
+      { title: 'Locations', value: '...', subtitle: 'Loading' },
+      { title: 'Writable', value: '...', subtitle: 'Loading' }
+    ];
+    console.log('[Dashboard] ✅ Initial UI rendered with empty state');
+
+    // Load data in background
     this.loadDashboardData();
   }
 
   private loadDashboardData(): void {
-    this.isLoading = true;
-    this.errorMessage = null;
-    console.log('[Dashboard] ⏳ Starting data load...');
+    console.log('[Dashboard] ⏳ Starting background data load...');
 
     // Load all data in parallel
     console.log('[Dashboard] 📡 Requesting: Devices, Locations, then Datapoints');
 
     combineLatest([
       this.deviceService.getAll().pipe(
-        tap(data => console.log(`[Dashboard] ✓ Devices loaded: ${data.length} items`)),
-        tap(data => {
-          if (data.length === 0) console.warn('[Dashboard] ⚠️ No devices returned!');
-        })
+        tap(data => console.log(`[Dashboard] ✓ Devices loaded: ${data.length} items`))
       ),
       this.locationService.getAll().pipe(
-        tap(data => console.log(`[Dashboard] ✓ Locations loaded: ${data.length} items`)),
-        tap(data => {
-          if (data.length === 0) console.warn('[Dashboard] ⚠️ No locations returned!');
-        })
+        tap(data => console.log(`[Dashboard] ✓ Locations loaded: ${data.length} items`))
       )
     ])
       .pipe(
@@ -84,9 +87,6 @@ export class DashboardComponent implements OnInit {
             locations.map(l => ({ id: l.id, title: l.title }))
           ).pipe(
             tap(datapoints => console.log(`[Dashboard] ✓ Datapoints loaded: ${datapoints.length} items`)),
-            tap(datapoints => {
-              if (datapoints.length === 0) console.warn('[Dashboard] ⚠️ No datapoints returned!');
-            }),
             map(datapoints => ({ datapoints, devices, locations }))
           );
         }),
@@ -97,12 +97,7 @@ export class DashboardComponent implements OnInit {
       )
       .subscribe(
         () => {
-          console.log('[Dashboard] ✅ Dashboard data loaded successfully');
-          this.ngZone.run(() => {
-            this.isLoading = false;
-            this.cdr.markForCheck();
-            console.log('[Dashboard] 🎯 View updated: isLoading=', this.isLoading);
-          });
+          console.log('[Dashboard] ✅ Background data loaded successfully - UI updated');
         },
         (error) => {
           console.error('[Dashboard] ❌ ERROR loading dashboard data!', {
@@ -113,7 +108,6 @@ export class DashboardComponent implements OnInit {
           });
           this.ngZone.run(() => {
             this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.statusText || error?.message || 'Connection failed'}`;
-            this.isLoading = false;
             this.cdr.markForCheck();
           });
         }
@@ -125,34 +119,18 @@ export class DashboardComponent implements OnInit {
     devices: Device[],
     locations: Location[]
   ): void {
-    console.log('[Dashboard] handleDataLoaded called with:', {
-      datapoints: datapoints.length,
-      devices: devices.length,
-      locations: locations.length
-    });
-
     // Create location lookup map - Datapoints have locationId, use that for display
     const locationMap = new Map(locations.map(l => [l.id, l]));
 
-    // DEBUG: Check actual locationIds in datapoints
-    console.log('[Dashboard] 🔍 DEBUG - Location ID mapping:');
-    console.log('[Dashboard]   Location IDs available:', Array.from(locationMap.keys()).slice(0, 5));
-    console.log('[Dashboard]   First 5 datapoint locationIds:', datapoints.slice(0, 5).map(d => d.locationId));
-
-    // Enrich datapoints with location information (more reliable than device relationship)
-    // The API spec shows datapoints have locationId, not deviceId
+    // Enrich datapoints with location information
     const enrichedDatapoints = datapoints.map(dp => {
       const location = locationMap.get(dp.locationId || '');
-      if (!location && dp.locationId) {
-        console.warn(`[Dashboard] ⚠️ Datapoint "${dp.title}" has locationId="${dp.locationId}" but NOT in locations map!`);
-      }
       return {
         ...dp,
         deviceTitle: location?.title || 'Unknown Location'
       };
     });
 
-    console.log('[Dashboard] Datapoints enriched with location info. Sample:', enrichedDatapoints.slice(0, 5).map(d => ({ title: d.title, location: d.deviceTitle, locationId: d.locationId })));
 
     // Compute metrics
     this.metrics = [
@@ -178,7 +156,6 @@ export class DashboardComponent implements OnInit {
       }
     ];
 
-    console.log('[Dashboard] Metrics computed:', this.metrics);
 
     // Get top 10 most recently updated datapoints
     this.topDatapoints = enrichedDatapoints
@@ -189,7 +166,6 @@ export class DashboardComponent implements OnInit {
       })
       .slice(0, 10);
 
-    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, location: d.deviceTitle })));
 
     // Build activity feed
     this.recentActivity = this.topDatapoints.map(dp => ({
@@ -201,11 +177,8 @@ export class DashboardComponent implements OnInit {
       device: dp.deviceTitle || 'Unknown'
     }));
 
-    console.log('[Dashboard] Recent activity:', this.recentActivity.length, 'sample:', this.recentActivity.slice(0, 2).map(a => ({ title: a.title, location: a.device })));
-
     // Mark for check to ensure Angular detects changes
     this.cdr.markForCheck();
-    console.log('[Dashboard] 🔄 Change detection marked');
   }
 
   /**
