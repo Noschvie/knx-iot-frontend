@@ -14,6 +14,11 @@ export class JsonApiInterceptor implements HttpInterceptor {
   constructor(private injector: Injector) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    // Don't intercept syslog requests - these are internal logging requests
+    if (req.url.includes('/syslog')) {
+      return next.handle(req);
+    }
+
     // Don't intercept OAuth or asset requests
     if (req.url.includes('/oauth/') || req.url.includes('/assets/')) {
       return next.handle(req);

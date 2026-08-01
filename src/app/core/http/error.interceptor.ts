@@ -16,6 +16,11 @@ export class ErrorInterceptor implements HttpInterceptor {
     constructor(private injector: Injector) {}
 
     intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+        // Don't intercept syslog requests - these are internal logging requests and cause infinite loops
+        if (req.url.includes('/syslog')) {
+            return next.handle(req);
+        }
+
         // Don't intercept OAuth requests - errors should reach the login component
         if (req.url.includes('/oauth/')) {
             console.log(`[HTTP Interceptor] OAuth request: ${req.method} ${req.url}`);
