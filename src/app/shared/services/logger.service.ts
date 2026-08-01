@@ -32,12 +32,25 @@ export class LoggerService {
     console.warn = this.createLogFunction('WARN', this.originalWarn);
 
     // Log service initialization
-    this.originalLog('[Logger Service] Initialized at', new Date().toISOString());
+    this.originalLog('[Logger Service] Initialized at', this.formatLocalTimestamp());
+  }
+
+  /**
+   * Format timestamp in the local timezone with format: HH:mm:ss.SSS
+   */
+  private formatLocalTimestamp(): string {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+    return `${hours}:${minutes}:${seconds}.${milliseconds}`;
   }
 
   private createLogFunction(level: string, originalFn: any) {
     return (...args: any[]) => {
-      const timestamp = new Date().toISOString();
+      const timestamp = this.formatLocalTimestamp();
       const formattedMessage = `[${timestamp}] [${level}]`;
 
       // Call original function with enhanced message
