@@ -167,7 +167,7 @@ export class LoginComponent {
         this.loading = false;
         console.error('[Login Component] ✗ Login error:', {
           status: err.status,
-          statusText: err.statusText,
+          statusText: err.message,
           errorDescription: err.error?.error_description || err.message
         });
 
@@ -179,7 +179,7 @@ export class LoginComponent {
         } else if (err.status === 0 || err.status === undefined) {
             this.errorMessage = 'Connection error. Please check if the API server is running and accessible.';
         } else {
-            this.errorMessage = `Login failed: ${err.statusText || 'Unknown error'}. Please check your connection.`;
+            this.errorMessage = `Login failed: ${err.message || 'Unknown error'}. Please check your connection.`;
         }
         console.error('[Login Component] Displayed error to user:', this.errorMessage);
       }

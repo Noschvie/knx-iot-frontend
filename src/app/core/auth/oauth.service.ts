@@ -55,7 +55,7 @@ export class OAuthService extends AuthService {
             catchError((error: HttpErrorResponse) => {
                 console.error(`[AUTH] ✗ Login failed!`, {
                     status: error.status,
-                    statusText: error.statusText,
+                    message: error.message,
                     errorDescription: error.error?.error_description || error.message,
                     url: `${this.config.getApiBase()}${environment.tokenEndpoint}`
                 });
@@ -87,7 +87,7 @@ export class OAuthService extends AuthService {
             catchError((error: HttpErrorResponse) => {
                 console.error(`[AUTH] ✗ Failed to get ${scope} token:`, {
                     status: error.status,
-                    statusText: error.statusText,
+                    message: error.message,
                     url: url
                 });
                 return throwError(() => error);

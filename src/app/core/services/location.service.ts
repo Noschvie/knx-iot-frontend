@@ -47,7 +47,6 @@ export class LocationService {
       catchError(err => {
         console.error('[Location Service] ✗ Error fetching locations:', {
           status: err.status,
-          statusText: err.statusText,
           message: err.message,
           url: url
         });

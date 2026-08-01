@@ -30,7 +30,7 @@ export class ErrorInterceptor implements HttpInterceptor {
                         url: req.url,
                         method: req.method,
                         status: error.status,
-                        statusText: error.statusText
+                        message: error.message
                     });
                     return throwError(() => error);
                 })
@@ -49,7 +49,6 @@ export class ErrorInterceptor implements HttpInterceptor {
                     queryParams: queryParams,
                     fullUrl: req.url,
                     status: error.status,
-                    statusText: error.statusText,
                     message: error.message,
                     errorDetail: error.error
                 });

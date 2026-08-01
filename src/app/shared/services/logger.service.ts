@@ -178,7 +178,7 @@ export class LoggerService {
         },
         (error) => {
           // Log error to original console to avoid infinite loop
-          this.originalLog(`[Logger Service] Failed to send to bridge:`, error.status, error.statusText);
+          this.originalLog(`[Logger Service] Failed to send to bridge:`, error.status, error.message);
         }
       );
     } catch (e) {

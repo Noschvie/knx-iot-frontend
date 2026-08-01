@@ -47,7 +47,6 @@ export class DeviceService {
       catchError(err => {
         console.error('[Device Service] ✗ Error fetching devices:', {
           status: err.status,
-          statusText: err.statusText,
           message: err.message,
           url: url
         });

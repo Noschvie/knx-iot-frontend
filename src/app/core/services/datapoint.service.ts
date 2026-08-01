@@ -108,7 +108,6 @@ export class DatapointService {
       catchError(err => {
         console.error('[Datapoint Service] ✗ Error fetching latest values:', {
           status: err.status,
-          statusText: err.statusText,
           message: err.message,
           url: url
         });

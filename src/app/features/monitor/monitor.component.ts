@@ -112,7 +112,8 @@ export class MonitorComponent implements OnInit, OnDestroy {
       isLoading: this.isLoading,
       datapointsCount: this.datapoints.length,
       devicesCount: this.devices.length,
-      locationsCount: this.locations.length
+      locationsCount: this.locations.length,
+      dataSourceCount: this.dataSource.data.length
     });
 
     this.loadInitialData();
@@ -169,6 +170,11 @@ export class MonitorComponent implements OnInit, OnDestroy {
           this.isLoading = false;
 
           console.log('[Monitor] ✅ Initial data ready for display');
+          console.log('[Monitor] DOM Ready?', {
+            dataSourceData: this.dataSource.data.length,
+            datapointsArray: this.datapoints.length,
+            isLoadingFalse: !this.isLoading
+          });
         },
         error: (err) => {
           console.error('[Monitor] ❌ Error loading initial data:', err);

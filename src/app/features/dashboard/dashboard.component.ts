@@ -102,12 +102,12 @@ export class DashboardComponent implements OnInit {
         (error) => {
           console.error('[Dashboard] ERROR loading dashboard data!', {
             status: error?.status || 'unknown',
-            statusText: error?.statusText || 'unknown',
+            statusText: error?.message || 'unknown',
             message: error?.message || error?.toString(),
             url: error?.url || 'unknown'
           });
           this.ngZone.run(() => {
-            this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.statusText || error?.message || 'Connection failed'}`;
+            this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.message || 'Connection failed'}`;
             this.cdr.markForCheck();
           });
         }
