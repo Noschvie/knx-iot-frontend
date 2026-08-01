@@ -24,10 +24,10 @@ export class LogsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   readonly logLevels = [
-    { value: 'ALL', label: 'Alle' },
+    { value: 'ALL', label: 'All' },
     { value: 'LOG', label: 'Info' },
-    { value: 'WARN', label: 'Warnung' },
-    { value: 'ERROR', label: 'Fehler' }
+    { value: 'WARN', label: 'Warning' },
+    { value: 'ERROR', label: 'Error' }
   ];
 
   constructor(private loggerService: LoggerService) {}
@@ -64,7 +64,7 @@ export class LogsComponent implements OnInit, OnDestroy {
   }
 
   clearLogs(): void {
-    if (confirm('Alle Logs wirklich löschen?')) {
+    if (confirm('Are you sure you want to clear all logs?')) {
       this.loggerService.clearLogs();
       this.logs = [];
       this.filteredLogs = [];

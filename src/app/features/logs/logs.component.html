@@ -3,16 +3,18 @@
     <h2>System Logs</h2>
     <div class="logs-controls">
       <div class="filter-group">
-        <label for="levelFilter">Filter nach Level:</label>
+        <label for="levelFilter">Filter by level:</label>
         <select
           id="levelFilter"
           [(ngModel)]="selectedLevel"
           (change)="onFilterChange()"
           class="filter-select"
         >
-          <option *ngFor="let level of logLevels" [value]="level.value">
-            {{ level.label }}
-          </option>
+          @for (level of logLevels; track level.value) {
+            <option [value]="level.value">
+              {{ level.label }}
+            </option>
+          }
         </select>
       </div>
       <div class="action-buttons">
@@ -20,7 +22,7 @@
           📥 CSV Export
         </button>
         <button (click)="clearLogs()" class="btn btn-danger" [disabled]="logs.length === 0">
-          🗑️ Löschen
+          🗑️ Clear
         </button>
       </div>
     </div>
@@ -29,15 +31,15 @@
   <!-- Stats -->
   <div class="logs-stats">
     <div class="stat-item">
-      <span class="stat-label">Gesamt Logs:</span>
+      <span class="stat-label">Total logs:</span>
       <span class="stat-value">{{ logs.length }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">Fehler:</span>
+      <span class="stat-label">Errors:</span>
       <span class="stat-value error-count">{{ logs.filter(l => l.level === 'ERROR').length }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">Warnungen:</span>
+      <span class="stat-label">Warnings:</span>
       <span class="stat-value warn-count">{{ logs.filter(l => l.level === 'WARN').length }}</span>
     </div>
     <div class="stat-item">
@@ -47,35 +49,41 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="filteredLogs.length === 0" class="empty-state">
-    <p>Keine Logs verfügbar</p>
-  </div>
+  @if (filteredLogs.length === 0) {
+    <div class="empty-state">
+      <p>No logs available</p>
+    </div>
+  }
 
   <!-- Logs Table -->
-  <div *ngIf="filteredLogs.length > 0" class="table-wrapper">
-    <table class="logs-table">
-      <thead>
-        <tr>
-          <th class="col-timestamp">Zeitstempel</th>
-          <th class="col-level">Level</th>
-          <th class="col-message">Nachricht</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let log of filteredLogs; let i = index" [ngClass]="'log-row ' + getLevelClass(log.level)">
-          <td class="col-timestamp">
-            <code class="timestamp">{{ log.timestamp }}</code>
-          </td>
-          <td class="col-level">
-            <span class="level-badge" [attr.data-level]="log.level">
-              {{ log.level }}
-            </span>
-          </td>
-          <td class="col-message">
-            <code class="message">{{ log.message }}</code>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  @if (filteredLogs.length > 0) {
+    <div class="table-wrapper">
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th class="col-timestamp">Timestamp</th>
+            <th class="col-level">Level</th>
+            <th class="col-message">Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of filteredLogs; track log.timestamp) {
+            <tr [ngClass]="'log-row ' + getLevelClass(log.level)">
+              <td class="col-timestamp">
+                <code class="timestamp">{{ log.timestamp }}</code>
+              </td>
+              <td class="col-level">
+                <span class="level-badge" [attr.data-level]="log.level">
+                  {{ log.level }}
+                </span>
+              </td>
+              <td class="col-message">
+                <code class="message">{{ log.message }}</code>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>

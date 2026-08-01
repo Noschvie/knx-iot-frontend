@@ -1,66 +1,83 @@
 <div class="devices-container">
   <div class="devices-header">
-    <h2>Geräte</h2>
+    <h2>Devices</h2>
     <div class="devices-count">
-      {{ devices.length }} Geräte
+      {{ devices.length }} devices
     </div>
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="loading" class="loading">
-    <p>Laden...</p>
-  </div>
+  @if (loading) {
+    <div class="loading">
+      <p>Loading...</p>
+    </div>
+  }
 
   <!-- Error State -->
-  <div *ngIf="error" class="error">
-    <p>{{ error }}</p>
-  </div>
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
 
   <!-- Empty State -->
-  <div *ngIf="!loading && !error && devices.length === 0" class="empty">
-    <p>Keine Geräte verfügbar</p>
-  </div>
+  @if (!loading && !error && devices.length === 0) {
+    <div class="empty">
+      <p>No devices available</p>
+    </div>
+  }
 
   <!-- Devices Table -->
-  <div *ngIf="!loading && !error && devices.length > 0" class="table-wrapper">
-    <table class="devices-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Hersteller</th>
-          <th>Adresse</th>
-          <th>Zuletzt gesehen</th>
-          <th>Datenpunkte</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let device of devices; let i = index" class="device-row">
-          <td class="device-name">
-            <div class="name-primary">{{ device.title }}</div>
-            <div class="name-secondary" *ngIf="device.description">{{ device.description }}</div>
-          </td>
-          <td class="device-status">
-            <span class="status-badge" [ngClass]="getStatusBadgeClass(device.status)">
-              {{ getStatusLabel(device.status) }}
-            </span>
-          </td>
-          <td class="device-manufacturer">
-            <div class="manufacturer">{{ device.manufacturer || '-' }}</div>
-            <div class="product" *ngIf="device.product">{{ device.product }}</div>
-          </td>
-          <td class="device-address">
-            <div class="knx-address" *ngIf="device.physicalAddress">{{ device.physicalAddress }}</div>
-            <div class="no-address" *ngIf="!device.physicalAddress">-</div>
-          </td>
-          <td class="device-lastseen">
-            {{ formatLastSeen(device.lastSeen) }}
-          </td>
-          <td class="device-datapoints">
-            <span class="datapoint-count">{{ device.datapointCount || device.datapointIds?.length || 0 }}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  @if (!loading && !error && devices.length > 0) {
+    <div class="table-wrapper">
+      <table class="devices-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Manufacturer</th>
+            <th>Address</th>
+            <th>Last Seen</th>
+            <th>Datapoints</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (device of devices; track device.id) {
+            <tr class="device-row">
+              <td class="device-name">
+                <div class="name-primary">{{ device.title }}</div>
+                @if (device.description) {
+                  <div class="name-secondary">{{ device.description }}</div>
+                }
+              </td>
+              <td class="device-status">
+                <span class="status-badge" [ngClass]="getStatusBadgeClass(device.status)">
+                  {{ getStatusLabel(device.status) }}
+                </span>
+              </td>
+              <td class="device-manufacturer">
+                <div class="manufacturer">{{ device.manufacturer || '-' }}</div>
+                @if (device.product) {
+                  <div class="product">{{ device.product }}</div>
+                }
+              </td>
+              <td class="device-address">
+                @if (device.physicalAddress) {
+                  <div class="knx-address">{{ device.physicalAddress }}</div>
+                } @else {
+                  <div class="no-address">-</div>
+                }
+              </td>
+              <td class="device-lastseen">
+                {{ formatLastSeen(device.lastSeen) }}
+              </td>
+              <td class="device-datapoints">
+                <span class="datapoint-count">{{ device.datapointCount || device.datapointIds?.length || 0 }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>

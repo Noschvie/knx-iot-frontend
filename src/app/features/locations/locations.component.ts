@@ -49,7 +49,7 @@ export class LocationsComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[Locations Component] ✗ Error loading locations:', err);
-          this.error = 'Fehler beim Laden der Standorte';
+          this.error = 'Error loading locations';
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -58,11 +58,11 @@ export class LocationsComponent implements OnInit, OnDestroy {
 
   getLocationTypeLabel(type: string | undefined): string {
     const types: { [key: string]: string } = {
-      'BUILDING': 'Gebäude',
-      'FLOOR': 'Etage',
-      'ROOM': 'Raum',
+      'BUILDING': 'Building',
+      'FLOOR': 'Floor',
+      'ROOM': 'Room',
       'ZONE': 'Zone'
     };
-    return types[type || ''] || type || 'Unbekannt';
+    return types[type || ''] || type || 'Unknown';
   }
 }

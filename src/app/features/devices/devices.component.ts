@@ -49,7 +49,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[Devices Component] ✗ Error loading devices:', err);
-          this.error = 'Fehler beim Laden der Geräte';
+          this.error = 'Error loading devices';
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -65,7 +65,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   }
 
   getStatusLabel(status: string | undefined): string {
-    if (!status) return 'Unbekannt';
+    if (!status) return 'Unknown';
     const statusLower = status.toLowerCase();
     if (statusLower.includes('online') || statusLower.includes('active')) return 'Online';
     if (statusLower.includes('offline') || statusLower.includes('inactive')) return 'Offline';
@@ -73,7 +73,7 @@ export class DevicesComponent implements OnInit, OnDestroy {
   }
 
   formatLastSeen(lastSeen: Date | undefined): string {
-    if (!lastSeen) return 'Nie';
+    if (!lastSeen) return 'Never';
     const now = new Date();
     const diff = now.getTime() - new Date(lastSeen).getTime();
 
@@ -82,9 +82,9 @@ export class DevicesComponent implements OnInit, OnDestroy {
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (seconds < 60) return 'Gerade eben';
-    if (minutes < 60) return `vor ${minutes}m`;
-    if (hours < 24) return `vor ${hours}h`;
-    return `vor ${days}d`;
+    if (seconds < 60) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
   }
 }
