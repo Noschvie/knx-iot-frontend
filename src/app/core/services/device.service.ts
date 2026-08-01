@@ -104,14 +104,15 @@ export class DeviceService {
   private transformDevice(resource: DeviceResource): Device {
     const datapointsData = resource.relationships?.datapoints?.data;
 
-    const physicalAddress = resource.attributes.physicalAddress;
     // Manufacturer kann in zwei Orten sein: direkt in attributes ODER in meta
     const manufacturer = (resource.attributes as any).manufacturer ||
-                        (resource.attributes.meta?.['knx:manufacturer']);
+        (resource.attributes.meta?.['knx:manufacturer']);
     const product = (resource.attributes as any).product ||
-                   (resource.attributes.meta?.['knx:product']);
+        (resource.attributes.meta?.['knx:product']);
     const serialNumber = (resource.attributes as any).serialNumber ||
-                        resource.attributes.meta?.['knx:serialNumber'];
+        resource.attributes.meta?.['knx:serialNumber'];
+    const physicalAddress = (resource.attributes as any).physicalAddress ||
+        resource.attributes.meta?.['knx:physicalAddress'];
 
     return {
       id: resource.id,
