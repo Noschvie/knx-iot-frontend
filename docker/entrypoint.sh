@@ -20,6 +20,8 @@ echo "=== KNX IoT Frontend Container Started ==="
 echo "API_BASE: ${API_BASE:-http://localhost:3000}"
 echo "WS_BASE: ${WS_BASE:-ws://localhost:3000}"
 echo "TZ (Timezone): ${TZ:-UTC}"
+echo "SYSLOG_HOST: ${SYSLOG_HOST}"
+echo "SYSLOG_PORT: ${SYSLOG_PORT}"
 echo "Nginx is starting in foreground mode..."
 echo "============================================"
 

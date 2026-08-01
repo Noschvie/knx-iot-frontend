@@ -9,6 +9,9 @@ services:
       # Use host timezone for logging consistency (e.g., Europe/Berlin, America/New_York, UTC)
       # Default to UTC if not specified - override in .env file or command line
       - TZ=${TZ:-Europe/Vienna}
+      # Syslog server configuration for centralized logging
+      - SYSLOG_HOST=${SYSLOG_HOST}
+      - SYSLOG_PORT=${SYSLOG_PORT}
     ports:
       - "8080:80"
     restart: unless-stopped
