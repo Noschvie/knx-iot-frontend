@@ -102,6 +102,8 @@ export class DeviceService {
   // ========== PRIVATE HELPERS ==========
 
   private transformDevice(resource: DeviceResource): Device {
+    const datapointsData = resource.relationships?.datapoints?.data;
+
     return {
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
@@ -118,11 +120,20 @@ export class DeviceService {
       datapointCount: resource.attributes.datapointCount || 0,
 
       locationId: (resource.relationships?.location?.data as any)?.id,
-      datapointIds: (resource.relationships?.datapoints?.data as any)?.map((d: any) => d.id)
+      datapointIds: Array.isArray(datapointsData)
+        ? datapointsData.map((d: any) => d.id)
+        : datapointsData ? [(datapointsData as any).id] : []
     };
   }
 
   private transformDevices(resources: DeviceResource[]): Device[] {
-    return (resources || []).map(r => this.transformDevice(r));
+    console.log('[Device Service] Transforming resources:', resources?.length || 0);
+    const result = (resources || []).map(r => {
+      const transformed = this.transformDevice(r);
+      console.log('[Device Service] Transformed device:', transformed.title, 'status:', transformed.status);
+      return transformed;
+    });
+    console.log('[Device Service] Transformation complete. Total:', result.length);
+    return result;
   }
 }
