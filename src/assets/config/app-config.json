@@ -1,4 +1,4 @@
 {
-  "apiBase": "https://api.knx-iot.example.com",
-  "wsBase": "wss://api.knx-iot.example.com"
+  "apiBase": "http://localhost:8080",
+  "wsBase": "ws://localhost:8080"
 }
