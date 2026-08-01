@@ -112,7 +112,7 @@
 
   <!-- Data Table -->
   <div *ngIf="!isLoading" class="table-container">
-    <table mat-table [dataSource]="datapoints" class="data-table">
+    <table mat-table [dataSource]="dataSource" class="data-table">
       <!-- Timestamp Column -->
       <ng-container matColumnDef="timestamp">
         <th mat-header-cell *matHeaderCellDef>Timestamp</th>

@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -55,6 +55,7 @@ import { Device, Location } from '@shared/models';
 export class MonitorComponent implements OnInit, OnDestroy {
   // Display data
   datapoints: Datapoint[] = [];
+  dataSource = new MatTableDataSource<Datapoint>([]);
   devices: Device[] = [];
   locations: Location[] = [];
 
@@ -106,6 +107,14 @@ export class MonitorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    console.log('[Monitor] 🚀 Component initialized');
+    console.log('[Monitor] Current state:', {
+      isLoading: this.isLoading,
+      datapointsCount: this.datapoints.length,
+      devicesCount: this.devices.length,
+      locationsCount: this.locations.length
+    });
+
     this.loadInitialData();
     this.setupFilterListener();
     this.connectWebSocket();
@@ -123,6 +132,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
    */
   private loadInitialData(): void {
     this.isLoading = true;
+    console.log('[Monitor] ⏳ Loading initial data...');
 
     combineLatest([
       this.deviceService.getAll(),
@@ -132,6 +142,12 @@ export class MonitorComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ([devices, locations, datapoints]) => {
+          console.log('[Monitor] ✓ Data loaded:', {
+            devices: devices.length,
+            locations: locations.length,
+            datapoints: datapoints.length
+          });
+
           this.devices = devices;
           this.locations = locations;
           this.datapoints = datapoints;
@@ -151,9 +167,11 @@ export class MonitorComponent implements OnInit, OnDestroy {
           this.liveBuffer.initialize(datapoints);
           this.updateDisplayedDatapoints();
           this.isLoading = false;
+
+          console.log('[Monitor] ✅ Initial data ready for display');
         },
         error: (err) => {
-          console.error('Error loading initial data:', err);
+          console.error('[Monitor] ❌ Error loading initial data:', err);
           this.isLoading = false;
         }
       });
@@ -288,6 +306,8 @@ export class MonitorComponent implements OnInit, OnDestroy {
     };
 
     this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
+    this.dataSource.data = this.datapoints;
+    console.log('[Monitor] 📊 Table updated with', this.datapoints.length, 'rows');
   }
 
   /**
