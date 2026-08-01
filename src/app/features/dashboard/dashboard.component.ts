@@ -1,5 +1,5 @@
 ﻿import { Component, OnInit } from '@angular/core';
-import { Observable, combineLatest } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { map, tap, mergeMap } from 'rxjs/operators';
 import { DatapointService } from '@core/services/datapoint.service';
 import { DeviceService } from '@core/services/device.service';
@@ -66,7 +66,7 @@ export class DashboardComponent implements OnInit {
     ])
       .pipe(
         // First, get devices and locations
-        tap(([devices, locations]) => {
+        tap(() => {
           console.log('[Dashboard] Devices and Locations loaded, now fetching datapoints...');
         }),
         // Then fetch datapoints with device/location enrichment
