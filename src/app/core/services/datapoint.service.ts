@@ -5,13 +5,11 @@ import { ConfigService } from '../config/config.service';
 import {
   DatapointResource,
   Datapoint,
-  DatapointFilterCriteria,
   JsonApiResponse,
   QueryOptions,
   HistoryQueryParams,
   TimeSeriesQueryParams,
   TimeSeriesPoint,
-  DatapointStats,
   buildQueryString
 } from '@shared/models';
 
