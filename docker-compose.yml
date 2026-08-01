@@ -1,5 +1,6 @@
 services:
-  knx-iot-frontend:
+  frontend:
+    container_name: knx-iot-frontend
     build:
       context: .
       dockerfile: docker/Dockerfile
