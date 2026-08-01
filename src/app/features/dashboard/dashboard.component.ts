@@ -100,6 +100,9 @@ export class DashboardComponent implements OnInit {
     devices: Device[],
     locations: Location[]
   ): void {
+    // Set isLoading to false immediately
+    this.isLoading = false;
+
     console.log('[Dashboard] handleDataLoaded called with:', {
       datapoints: datapoints.length,
       devices: devices.length,
