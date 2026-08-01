@@ -173,17 +173,13 @@
 }
 
 .device-address {
-  min-width: 150px;
+  min-width: 100px;
   font-family: 'Courier New', monospace;
-  font-size: 12px;
+  font-size: 13px;
 
   .knx-address {
     color: #333;
-    margin-bottom: 4px;
-  }
-
-  .ip-address {
-    color: #1976d2;
+    font-weight: 500;
   }
 
   .no-address {

@@ -13,17 +13,22 @@ export interface DeviceAttributes {
   title: string;
   description?: string;
 
-  // Hardware Info
+  // Hardware Info - can be in meta (knx:) or direct attributes
+  manufacturer?: string;      // Can be direct or in meta['knx:manufacturer']
+  product?: string;           // Can be direct or in meta['knx:product']
+  serialNumber?: string;      // Can be direct or in meta['knx:serialNumber']
   meta?: DeviceMeta;
 
-  // Network Info
-  physicalAddress?: string;  // "1.2.3" for KNX
-  ipAddress?: string;
+  // Physical address
+  physicalAddress?: string;   // "1.2.3" for KNX
 
   // Status
-  status?: 'online' | 'offline' | 'unknown';
-  lastSeen?: string;         // ISO-8601
+  status?: 'online' | 'offline' | 'unknown' | string;
+  lastSeen?: string;          // ISO-8601
   datapointCount?: number;
+
+  // Other attributes that may come from API
+  [key: string]: any;
 }
 
 export interface DeviceRelationship {
@@ -55,7 +60,6 @@ export interface Device {
   product?: string;
   serialNumber?: string;
   physicalAddress?: string;
-  ipAddress?: string;
 
   // Status
   status: 'online' | 'offline' | 'unknown';

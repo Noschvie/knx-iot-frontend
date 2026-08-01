@@ -74,8 +74,8 @@ export class DeviceService {
 
   /**
    * Get devices for a specific location
-   * GET /api/v1/locations/{locationId}/children/{deviceId}
-   * or filter via: GET /api/v1/devices?filter[location]={locationId}
+   * GET /locations/{locationId}/children/{deviceId}
+   * or filter via: GET /devices?filter[location]={locationId}
    */
   getByLocation(locationId: string): Observable<Device[]> {
     const query = buildQueryString({
@@ -104,18 +104,26 @@ export class DeviceService {
   private transformDevice(resource: DeviceResource): Device {
     const datapointsData = resource.relationships?.datapoints?.data;
 
+    const physicalAddress = resource.attributes.physicalAddress;
+    // Manufacturer kann in zwei Orten sein: direkt in attributes ODER in meta
+    const manufacturer = (resource.attributes as any).manufacturer ||
+                        (resource.attributes.meta?.['knx:manufacturer']);
+    const product = (resource.attributes as any).product ||
+                   (resource.attributes.meta?.['knx:product']);
+    const serialNumber = (resource.attributes as any).serialNumber ||
+                        resource.attributes.meta?.['knx:serialNumber'];
+
     return {
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
       description: resource.attributes.description,
 
-      manufacturer: resource.attributes.meta?.['knx:manufacturer'],
-      product: resource.attributes.meta?.['knx:product'],
-      serialNumber: resource.attributes.meta?.['knx:serialNumber'],
-      physicalAddress: resource.attributes.physicalAddress,
-      ipAddress: resource.attributes.ipAddress,
+      manufacturer: manufacturer,
+      product: product,
+      serialNumber: serialNumber,
+      physicalAddress: physicalAddress,
 
-      status: (resource.attributes.status as any) || 'unknown',
+      status: (resource.attributes as any).status || 'unknown',
       lastSeen: resource.attributes.lastSeen ? new Date(resource.attributes.lastSeen) : undefined,
       datapointCount: resource.attributes.datapointCount || 0,
 
@@ -130,7 +138,12 @@ export class DeviceService {
     console.log('[Device Service] Transforming resources:', resources?.length || 0);
     const result = (resources || []).map(r => {
       const transformed = this.transformDevice(r);
-      console.log('[Device Service] Transformed device:', transformed.title, 'status:', transformed.status);
+      console.log('[Device Service] Transformed device:', {
+        title: transformed.title,
+        manufacturer: transformed.manufacturer,
+        address: transformed.physicalAddress,
+        status: transformed.status
+      });
       return transformed;
     });
     console.log('[Device Service] Transformation complete. Total:', result.length);

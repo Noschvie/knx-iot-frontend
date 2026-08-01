@@ -51,8 +51,7 @@
           </td>
           <td class="device-address">
             <div class="knx-address" *ngIf="device.physicalAddress">{{ device.physicalAddress }}</div>
-            <div class="ip-address" *ngIf="device.ipAddress">{{ device.ipAddress }}</div>
-            <div class="no-address" *ngIf="!device.physicalAddress && !device.ipAddress">-</div>
+            <div class="no-address" *ngIf="!device.physicalAddress">-</div>
           </td>
           <td class="device-lastseen">
             {{ formatLastSeen(device.lastSeen) }}
