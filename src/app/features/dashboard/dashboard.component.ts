@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
 import { combineLatest } from 'rxjs';
 import { map, tap, mergeMap } from 'rxjs/operators';
 import { DatapointService } from '@core/services/datapoint.service';
@@ -41,7 +41,9 @@ export class DashboardComponent implements OnInit {
   constructor(
     private datapointService: DatapointService,
     private deviceService: DeviceService,
-    private locationService: LocationService
+    private locationService: LocationService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -96,7 +98,11 @@ export class DashboardComponent implements OnInit {
       .subscribe(
         () => {
           console.log('[Dashboard] ✅ Dashboard data loaded successfully');
-          this.isLoading = false;
+          this.ngZone.run(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+            console.log('[Dashboard] 🎯 View updated: isLoading=', this.isLoading);
+          });
         },
         (error) => {
           console.error('[Dashboard] ❌ ERROR loading dashboard data!', {
@@ -105,8 +111,11 @@ export class DashboardComponent implements OnInit {
             message: error?.message || error?.toString(),
             url: error?.url || 'unknown'
           });
-          this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.statusText || error?.message || 'Connection failed'}`;
-          this.isLoading = false;
+          this.ngZone.run(() => {
+            this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.statusText || error?.message || 'Connection failed'}`;
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          });
         }
       );
   }
@@ -193,6 +202,10 @@ export class DashboardComponent implements OnInit {
     }));
 
     console.log('[Dashboard] Recent activity:', this.recentActivity.length, 'sample:', this.recentActivity.slice(0, 2).map(a => ({ title: a.title, location: a.device })));
+
+    // Mark for check to ensure Angular detects changes
+    this.cdr.markForCheck();
+    console.log('[Dashboard] 🔄 Change detection marked');
   }
 
   /**
