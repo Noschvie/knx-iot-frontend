@@ -34,6 +34,7 @@ const server = http.createServer((req, res) => {
   console.log(`[Syslog Bridge] ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
 
   if (req.method === 'POST' && req.url === '/syslog') {
+    console.log(`[Syslog Bridge] ✓ Received POST /syslog from ${req.socket.remoteAddress}`);
     let body = '';
 
     req.on('data', (chunk) => {
@@ -47,6 +48,8 @@ const server = http.createServer((req, res) => {
         // Format RFC 5424 syslog message
         const { priority, timestamp, hostname, tag, level, message } = logData;
         const syslogMessage = `<${priority}>${timestamp} ${hostname} ${tag}[${level}]: ${message}`;
+
+        console.log(`[Syslog Bridge] Parsed message: ${message.substring(0, 60)}`);
 
         // Send to Syslog server via UDP
         syslogClient.send(syslogMessage, 0, syslogMessage.length, SYSLOG_PORT, SYSLOG_HOST, (err) => {

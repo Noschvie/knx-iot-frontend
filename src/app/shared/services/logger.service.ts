@@ -52,7 +52,9 @@ export class LoggerService {
     console.warn = this.createLogFunction('WARN', this.originalWarn);
 
     // Log service initialization
-    this.originalLog('[Logger Service] Initialized at', this.formatLocalTimestamp());
+    this.originalLog('[Logger Service] ✓ INITIALIZED - console methods overridden');
+    this.originalLog('[Logger Service] timestamp:', this.formatLocalTimestamp());
+    this.originalLog('[Logger Service] All console.log/error/warn calls will now be timestamped and sent to Syslog');
   }
 
   /**
@@ -159,6 +161,12 @@ export class LoggerService {
         message,
         userAgent: navigator.userAgent
       };
+
+      // Debug: Log first few messages
+      const logMsg = this.formatLogMessage([message]);
+      if (logMsg.length < 100) {
+        this.originalLog(`[Logger Service] POST ${bridgeUrl} - ${logMsg.substring(0, 80)}`);
+      }
 
       // Send it without waiting for response to not block UI
       this.http.post(bridgeUrl, logData, {
