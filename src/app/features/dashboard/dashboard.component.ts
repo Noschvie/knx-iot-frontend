@@ -51,52 +51,61 @@ export class DashboardComponent implements OnInit {
   private loadDashboardData(): void {
     this.isLoading = true;
     this.errorMessage = null;
-    console.log('[Dashboard] Starting data load...');
+    console.log('[Dashboard] ⏳ Starting data load...');
 
     // Load all data in parallel
-    console.log('[Dashboard] Requesting: Devices, Locations, then Datapoints');
+    console.log('[Dashboard] 📡 Requesting: Devices, Locations, then Datapoints');
 
     combineLatest([
       this.deviceService.getAll().pipe(
-        tap(data => console.log(`[Dashboard] Devices loaded: ${data.length} items`))
+        tap(data => console.log(`[Dashboard] ✓ Devices loaded: ${data.length} items`)),
+        tap(data => {
+          if (data.length === 0) console.warn('[Dashboard] ⚠️ No devices returned!');
+        })
       ),
       this.locationService.getAll().pipe(
-        tap(data => console.log(`[Dashboard] Locations loaded: ${data.length} items`))
+        tap(data => console.log(`[Dashboard] ✓ Locations loaded: ${data.length} items`)),
+        tap(data => {
+          if (data.length === 0) console.warn('[Dashboard] ⚠️ No locations returned!');
+        })
       )
     ])
       .pipe(
-        // First, get devices and locations
         tap(() => {
-          console.log('[Dashboard] Devices and Locations loaded, now fetching datapoints...');
+          console.log('[Dashboard] ✓ Devices and Locations ready, now fetching datapoints...');
         }),
         // Then fetch datapoints with device/location enrichment
         mergeMap(([devices, locations]) => {
+          console.log('[Dashboard] 📍 About to fetch datapoints with enrichment data...');
           return this.datapointService.getLatestValues(100,
             devices.map(d => ({ id: d.id, title: d.title })),
             locations.map(l => ({ id: l.id, title: l.title }))
           ).pipe(
-            tap(datapoints => console.log(`[Dashboard] Datapoints loaded: ${datapoints.length} items`)),
+            tap(datapoints => console.log(`[Dashboard] ✓ Datapoints loaded: ${datapoints.length} items`)),
+            tap(datapoints => {
+              if (datapoints.length === 0) console.warn('[Dashboard] ⚠️ No datapoints returned!');
+            }),
             map(datapoints => ({ datapoints, devices, locations }))
           );
         }),
         tap(({ datapoints, devices, locations }) => {
-          console.log('[Dashboard] All data received, processing...');
+          console.log('[Dashboard] ✓ All data received, processing...');
           this.handleDataLoaded(datapoints, devices, locations);
         })
       )
       .subscribe(
         () => {
-          console.log('[Dashboard] ✓ Dashboard data loaded successfully');
+          console.log('[Dashboard] ✅ Dashboard data loaded successfully');
           this.isLoading = false;
         },
         (error) => {
-          console.error('[Dashboard] ✗ Error loading dashboard data:', {
-            status: error.status,
-            statusText: error.statusText,
-            message: error.message,
-            url: error.url
+          console.error('[Dashboard] ❌ ERROR loading dashboard data!', {
+            status: error?.status || 'unknown',
+            statusText: error?.statusText || 'unknown',
+            message: error?.message || error?.toString(),
+            url: error?.url || 'unknown'
           });
-          this.errorMessage = `Error loading dashboard: ${error.status} ${error.statusText}`;
+          this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.statusText || error?.message || 'Connection failed'}`;
           this.isLoading = false;
         }
       );
