@@ -116,9 +116,18 @@ export class MonitorComponent implements OnInit, OnDestroy {
       dataSourceCount: this.dataSource.data.length
     });
 
+    // 1. Load initial data FIRST (blocking)
     this.loadInitialData();
+
+    // 2. Setup filter listener
     this.setupFilterListener();
-    this.connectWebSocket();
+
+    // 3. Connect WebSocket in background (non-blocking)
+    // Use setTimeout to allow UI to render first
+    setTimeout(() => {
+      console.log('[Monitor] ⏱️ Attempting WebSocket connection in background...');
+      this.connectWebSocket();
+    }, 100);
   }
 
   ngOnDestroy(): void {
@@ -187,29 +196,33 @@ export class MonitorComponent implements OnInit, OnDestroy {
    * Connect to WebSocket and listen for datapoint updates
    */
   private connectWebSocket(): void {
+    console.log('[Monitor] 🔌 WebSocket.connect() starting...');
+
     this.webSocketService
       .connect()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (message) => {
+          console.log('[Monitor] 📨 WebSocket message received:', message.type);
+
           if (message.type === 'connected') {
             this.isConnected = true;
             this.liveBuffer.setConnected(true);
-            console.log('[Monitor] ✓ WebSocket connected');
+            console.log('[Monitor] ✅ WebSocket connected - Real-time updates active');
           } else if (message.type === 'connection_error') {
             // WebSocket connection error
-            console.warn('[Monitor] WebSocket connection error (code:', message.code, '):', message.error);
+            console.warn('[Monitor] ⚠️ WebSocket connection error (code:', message.code, ')');
             this.isConnected = false;
             this.liveBuffer.setConnected(false);
           } else if (message.type === 'connection_closed') {
             // WebSocket connection closed
-            console.warn('[Monitor] WebSocket connection closed (code:', message.code, 'reason:', message.reason, ')');
+            console.warn('[Monitor] ❌ WebSocket connection closed (code:', message.code, 'reason:', message.reason, ')');
             this.isConnected = false;
             this.liveBuffer.setConnected(false);
 
             // Attempt to reconnect after delay
             setTimeout(() => {
-              console.log('[Monitor] Attempting to reconnect WebSocket...');
+              console.log('[Monitor] 🔄 Attempting to reconnect WebSocket...');
               this.connectWebSocket();
             }, 5000); // Wait 5 seconds before attempting reconnect
           } else if (message.type === 'datapoint_updated') {
@@ -222,24 +235,24 @@ export class MonitorComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          console.error('[Monitor] WebSocket subscription error:', err);
+          console.error('[Monitor] ❌ WebSocket subscription error:', err);
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
 
           // Attempt to reconnect after delay
           setTimeout(() => {
-            console.log('[Monitor] Attempting to reconnect WebSocket after error...');
+            console.log('[Monitor] 🔄 Attempting to reconnect WebSocket after error...');
             this.connectWebSocket();
           }, 5000); // Wait 5 seconds before attempting reconnect
         },
         complete: () => {
-          console.log('[Monitor] WebSocket subscription completed');
+          console.log('[Monitor] ℹ️ WebSocket subscription completed');
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
 
           // Attempt to reconnect after delay
           setTimeout(() => {
-            console.log('[Monitor] Attempting to reconnect WebSocket after completion...');
+            console.log('[Monitor] 🔄 Attempting to reconnect WebSocket after completion...');
             this.connectWebSocket();
           }, 5000); // Wait 5 seconds before attempting reconnect
         }
