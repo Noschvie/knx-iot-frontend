@@ -326,7 +326,13 @@ export class MonitorComponent implements OnInit, OnDestroy {
 
     this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
     this.dataSource.data = this.datapoints;
-    console.log('[Monitor] 📊 Table updated with', this.datapoints.length, 'rows');
+    console.log('[Monitor] 📊 Table updated', {
+      totalRows: this.datapoints.length,
+      isLoading: this.isLoading,
+      dataSourceLength: this.dataSource.data.length,
+      containerVisible: document.querySelector('.monitor-container') !== null,
+      tableVisible: document.querySelector('.data-table') !== null
+    });
   }
 
   /**

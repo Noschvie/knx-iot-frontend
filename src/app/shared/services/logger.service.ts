@@ -172,15 +172,15 @@ export class LoggerService {
       this.http.post(bridgeUrl, logData, {
         responseType: 'text',
         headers: { 'Content-Type': 'application/json' }
-      }).subscribe(
-        (response) => {
+      }).subscribe({
+        next: (response) => {
           // Success - log sent to bridge
         },
-        (error) => {
+        error: (error) => {
           // Log error to original console to avoid infinite loop
           this.originalLog(`[Logger Service] Failed to send to bridge:`, error.status, error.message);
         }
-      );
+      });
     } catch (e) {
       this.originalLog('[Logger Service] Exception sending log:', e);
     }
