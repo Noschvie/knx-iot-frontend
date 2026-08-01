@@ -53,10 +53,10 @@
 - [x] `GET /api/v2/locations/:id/devices` — Devices at location
 
 ### Functions (v1) — NEW (Semantic Layer)
-- [x] `GET /api/v1/functions` — List functions
-- [x] `GET /api/v1/functions/:id` — Function details
-- [x] `GET /api/v1/functions/:id/datapoints` — Function datapoints
-- [x] `GET /api/v1/functions/:id/location` — Function location
+- [x] `GET /api/v2/functions` — List functions
+- [x] `GET /api/v2/functions/:id` — Function details
+- [x] `GET /api/v2/functions/:id/datapoints` — Function datapoints
+- [x] `GET /api/v2/functions/:id/location` — Function location
 
 ### Subscriptions (v2) — NEW (WebSocket)
 - [x] `GET /api/v2/subscriptions` — List subscriptions
@@ -68,10 +68,10 @@
 - [x] WebSocket protocol at `ws://gateway/messaging/ws`
 
 ### Other Endpoints
-- [x] `GET /api/v1/node` — Node/gateway info
-- [x] `GET /api/v1/sites` — Root sites
-- [x] `GET /api/v1/installations` — Installations
-- [x] `GET /api/v1/events` — System events
+- [x] `GET /api/v2/node` — Node/gateway info
+- [x] `GET /api/v2/sites` — Root sites
+- [x] `GET /api/v2/installations` — Installations
+- [x] `GET /api/v2/events` — System events
 - [x] `GET /api/v2/stats` — Statistics
 
 ---
