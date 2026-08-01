@@ -125,17 +125,25 @@ export class DashboardComponent implements OnInit {
     // Create location lookup map - Datapoints have locationId, use that for display
     const locationMap = new Map(locations.map(l => [l.id, l]));
 
+    // DEBUG: Check actual locationIds in datapoints
+    console.log('[Dashboard] 🔍 DEBUG - Location ID mapping:');
+    console.log('[Dashboard]   Location IDs available:', Array.from(locationMap.keys()).slice(0, 5));
+    console.log('[Dashboard]   First 5 datapoint locationIds:', datapoints.slice(0, 5).map(d => d.locationId));
+
     // Enrich datapoints with location information (more reliable than device relationship)
     // The API spec shows datapoints have locationId, not deviceId
     const enrichedDatapoints = datapoints.map(dp => {
       const location = locationMap.get(dp.locationId || '');
+      if (!location && dp.locationId) {
+        console.warn(`[Dashboard] ⚠️ Datapoint "${dp.title}" has locationId="${dp.locationId}" but NOT in locations map!`);
+      }
       return {
         ...dp,
         deviceTitle: location?.title || 'Unknown Location'
       };
     });
 
-    console.log('[Dashboard] Datapoints enriched with location info. Sample:', enrichedDatapoints.slice(0, 5).map(d => ({ title: d.title, location: d.deviceTitle })));
+    console.log('[Dashboard] Datapoints enriched with location info. Sample:', enrichedDatapoints.slice(0, 5).map(d => ({ title: d.title, location: d.deviceTitle, locationId: d.locationId })));
 
     // Compute metrics
     this.metrics = [
