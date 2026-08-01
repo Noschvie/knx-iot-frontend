@@ -26,9 +26,18 @@ export class JsonApiInterceptor implements HttpInterceptor {
     if (auth instanceof OAuthService) {
       const isReadOperation = req.method === 'GET' || req.method === 'HEAD';
       token = isReadOperation ? auth.getReadToken() : auth.getWriteToken();
+
+      if (!token) {
+        console.warn(`[JSON API Interceptor] No ${isReadOperation ? 'read' : 'write'} token available for ${req.method} ${req.url}`);
+      } else {
+        console.log(`[JSON API Interceptor] Added ${isReadOperation ? 'read' : 'write'} token to ${req.method} ${req.url}`);
+      }
     } else {
       // Fallback for non-OAuth auth services
       token = auth.getToken();
+      if (!token) {
+        console.warn(`[JSON API Interceptor] No token available for ${req.method} ${req.url}`);
+      }
     }
 
     let headers = req.headers.set('Accept', 'application/vnd.api+json');

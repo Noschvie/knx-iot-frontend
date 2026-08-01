@@ -142,6 +142,7 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.form.invalid) {
+      console.log('[Login Component] Form validation failed');
       this.form.markAllAsTouched();
       return;
     }
@@ -153,24 +154,34 @@ export class LoginComponent {
     // The backend uses Client Credentials Grant (app credentials only).
     const { username, password } = this.form.value;
 
+    console.log(`[Login Component] Submitting login form for client: ${username}`);
+
     this.auth.login(username, password).subscribe({
       next: () => {
         this.loading = false;
-        console.log(`[Login Success] ✓ Successfully authenticated as client: ${username}`);
-        console.log(`[Login Success] Navigating to dashboard...`);
+        console.log(`[Login Component] ✓ Successfully authenticated as client: ${username}`);
+        console.log(`[Login Component] Navigating to dashboard...`);
         this.router.navigate(['/dashboard']);
       },
       error: err => {
         this.loading = false;
+        console.error('[Login Component] ✗ Login error:', {
+          status: err.status,
+          statusText: err.statusText,
+          errorDescription: err.error?.error_description || err.message
+        });
+
         // Show backend error message if available, otherwise show generic message
         if (err.error?.error_description) {
             this.errorMessage = err.error.error_description;
         } else if (err.status === 401 || err.status === 400) {
             this.errorMessage = 'Invalid client credentials. Please verify your Client ID and Secret.';
+        } else if (err.status === 0 || err.status === undefined) {
+            this.errorMessage = 'Connection error. Please check if the API server is running and accessible.';
         } else {
             this.errorMessage = `Login failed: ${err.statusText || 'Unknown error'}. Please check your connection.`;
         }
-        console.error('[Login] Error details:', err);
+        console.error('[Login Component] Displayed error to user:', this.errorMessage);
       }
     });
   }

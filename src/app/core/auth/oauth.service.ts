@@ -30,15 +30,18 @@ export class OAuthService extends AuthService {
     login(username: string, password: string): Observable<void> {
         // Client Credentials Grant: use username as client_id, password as client_secret
         // Request both read and write tokens in parallel
-        console.log(`[OAuth] Starting login for client: ${username}`);
+        console.log(`[AUTH] Starting OAuth2 login for client: ${username}`);
+        console.log(`[AUTH] Using token endpoint: ${this.config.getApiBase()}${environment.tokenEndpoint}`);
+
         const readTokenReq = this.fetchToken(username, password, 'read');
         const writeTokenReq = this.fetchToken(username, password, 'write');
 
         return forkJoin([readTokenReq, writeTokenReq]).pipe(
             tap(([readToken, writeToken]) => {
-                console.log(`[OAuth] ✓ Login successful! Both tokens received:`);
-                console.log(`[OAuth]   - Read token (expires in ${readToken.expires_in}s)`);
-                console.log(`[OAuth]   - Write token (expires in ${writeToken.expires_in}s)`);
+                console.log(`[AUTH] ✓ Login successful! Both tokens received`);
+                console.log(`[AUTH]   - Read token received (expires in ${readToken.expires_in}s)`);
+                console.log(`[AUTH]   - Write token received (expires in ${writeToken.expires_in}s)`);
+                console.log(`[AUTH] Storing tokens in localStorage...`);
                 localStorage.setItem('access_token_read', readToken.access_token);
                 localStorage.setItem('access_token_write', writeToken.access_token);
                 localStorage.setItem('token_expires_at_read', String(Date.now() + readToken.expires_in * 1000));
@@ -47,12 +50,14 @@ export class OAuthService extends AuthService {
                     read: readToken.access_token,
                     write: writeToken.access_token
                 });
+                console.log(`[AUTH] ✓ Tokens stored successfully`);
             }),
             catchError((error: HttpErrorResponse) => {
-                console.error('[OAuth] ✗ Login failed:', {
+                console.error(`[AUTH] ✗ Login failed!`, {
                     status: error.status,
                     statusText: error.statusText,
-                    message: error.error?.error_description || error.message
+                    errorDescription: error.error?.error_description || error.message,
+                    url: `${this.config.getApiBase()}${environment.tokenEndpoint}`
                 });
                 return throwError(() => error);
             }),
@@ -73,9 +78,21 @@ export class OAuthService extends AuthService {
         };
 
         const url = `${this.config.getApiBase()}${environment.tokenEndpoint}`;
-        console.debug(`[OAuth] Requesting ${scope} token...`);
+        console.log(`[AUTH] Requesting ${scope} token from: ${url}`);
 
-        return this.http.post<OAuthToken>(url, body.toString(), { headers });
+        return this.http.post<OAuthToken>(url, body.toString(), { headers }).pipe(
+            tap((token) => {
+                console.log(`[AUTH] ✓ ${scope.toUpperCase()} token received successfully (expires in ${token.expires_in}s)`);
+            }),
+            catchError((error: HttpErrorResponse) => {
+                console.error(`[AUTH] ✗ Failed to get ${scope} token:`, {
+                    status: error.status,
+                    statusText: error.statusText,
+                    url: url
+                });
+                return throwError(() => error);
+            })
+        );
     }
 
     getToken(): string | null {
@@ -102,22 +119,33 @@ export class OAuthService extends AuthService {
     }
 
     isAuthenticated(): boolean {
-        return this.getReadToken() !== null && this.getWriteToken() !== null;
+        const readToken = this.getReadToken();
+        const writeToken = this.getWriteToken();
+        const isAuth = readToken !== null && writeToken !== null;
+        if (!isAuth) {
+            console.log(`[AUTH] isAuthenticated() = false (read: ${readToken ? 'valid' : 'invalid'}, write: ${writeToken ? 'valid' : 'invalid'})`);
+        }
+        return isAuth;
     }
 
     logout(): void {
+        console.log(`[AUTH] Logging out...`);
         localStorage.removeItem('access_token_read');
         localStorage.removeItem('access_token_write');
         localStorage.removeItem('token_expires_at_read');
         localStorage.removeItem('token_expires_at_write');
         this.tokens$.next({ read: null, write: null });
+        console.log(`[AUTH] ✓ Logout complete`);
     }
 
     private loadTokens(): void {
         const readToken = localStorage.getItem('access_token_read');
         const writeToken = localStorage.getItem('access_token_write');
         if (readToken || writeToken) {
+            console.log(`[AUTH] Loaded tokens from localStorage (read: ${readToken ? 'yes' : 'no'}, write: ${writeToken ? 'yes' : 'no'})`);
             this.tokens$.next({ read: readToken, write: writeToken });
+        } else {
+            console.log(`[AUTH] No tokens found in localStorage`);
         }
     }
 }

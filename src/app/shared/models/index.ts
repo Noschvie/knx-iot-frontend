@@ -1,5 +1,5 @@
 /**
- * Models & DTOs für KNX IoT Spezifikation
+ * Models & DTOs for KNX IoT Specification
  * JSON:API compliant resources
  */
 
@@ -11,4 +11,3 @@ export * from './value.model';
 export * from './subscription.model';
 export * from './api-response.model';
 export * from './query-params.model';
-

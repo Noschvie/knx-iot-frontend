@@ -15,4 +15,11 @@ EOF
 echo "$CONFIG_JSON" > /usr/share/nginx/html/assets/config/app-config.json
 echo "$CONFIG_JSON" > /usr/share/nginx/html/assets/config/app-config.local.json
 
+# Log startup information for debugging
+echo "=== KNX IoT Frontend Container Started ==="
+echo "API_BASE: ${API_BASE:-http://localhost:3000}"
+echo "WS_BASE: ${WS_BASE:-ws://localhost:3000}"
+echo "Nginx is starting in foreground mode..."
+echo "============================================"
+
 exec nginx -g "daemon off;"

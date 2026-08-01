@@ -74,7 +74,7 @@ export class DashboardComponent implements OnInit {
         },
         (error) => {
           console.error('Error loading dashboard data:', error);
-          this.errorMessage = 'Fehler beim Laden der Dashboard-Daten';
+          this.errorMessage = 'Error loading dashboard data';
           this.isLoading = false;
         }
       );
@@ -106,22 +106,22 @@ export class DashboardComponent implements OnInit {
       {
         title: 'Datapoints',
         value: datapoints.length,
-        subtitle: 'Insgesamt konfiguriert'
+        subtitle: 'Total configured'
       },
       {
-        title: 'Geräte',
+        title: 'Devices',
         value: devices.length,
         subtitle: 'Online: ' + devices.filter(d => d.status === 'online').length
       },
       {
-        title: 'Standorte',
+        title: 'Locations',
         value: locations.length,
-        subtitle: 'Hierarchie-Ebenen'
+        subtitle: 'Hierarchy levels'
       },
       {
-        title: 'Schreibbar',
+        title: 'Writable',
         value: datapoints.filter(d => d.writable).length,
-        subtitle: 'Lese-/Schreib-Datapoints'
+        subtitle: 'Read/Write Datapoints'
       }
     ];
 

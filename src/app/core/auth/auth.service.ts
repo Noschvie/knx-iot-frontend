@@ -2,26 +2,26 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 /**
- * Abstrakte Basis für alle Auth-Implementierungen.
- * Komponenten, Guards und Interceptors nutzen NUR dieses Interface –
- * niemals direkt OAuthService oder KeycloakAuthService.
+ * Abstract base for all auth implementations.
+ * Components, guards, and interceptors use ONLY this interface –
+ * never directly OAuthService or KeycloakAuthService.
  *
- * Späterer Wechsel zu Keycloak: Nur den Provider in core.module.ts tauschen.
+ * Later switch to Keycloak: Only swap the provider in core.module.ts.
  */
 @Injectable()
 export abstract class AuthService {
     /**
-     * Meldet den Nutzer an. Bei Redirect-Flows (z. B. Keycloak)
-     * kann username/password ignoriert werden.
+     * Logs in the user. For redirect flows (e.g., Keycloak)
+     * username/password can be ignored.
      */
     abstract login(username: string, password: string): Observable<void>;
 
-    /** Meldet den Nutzer ab und bereinigt den lokalen State. */
+    /** Logs out the user and cleans up the local state. */
     abstract logout(): void;
 
-    /** Gibt den aktuellen Bearer-Token zurück, oder null wenn nicht angemeldet. */
+    /** Returns the current Bearer token, or null if not authenticated. */
     abstract getToken(): string | null;
 
-    /** Gibt zurück ob der Nutzer aktuell authentifiziert ist. */
+    /** Returns whether the user is currently authenticated. */
     abstract isAuthenticated(): boolean;
 }
