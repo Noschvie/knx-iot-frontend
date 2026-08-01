@@ -145,9 +145,9 @@ export class LoggerService {
       const hostname = window.location.hostname || 'knx-frontend';
       const tag = 'knx-iot-frontend';
 
-      // Send to local UDP-bridge service running in the same Docker container
-      // Use window.location.hostname to connect to the bridge on the correct host
-      const bridgeUrl = `http://${window.location.hostname}:9514/syslog`;
+      // Send to bridge service via Nginx proxy on /syslog endpoint
+      // Nginx proxies /syslog to localhost:9514 (bridge service)
+      const bridgeUrl = `/syslog`;
 
       const logData = {
         priority,
@@ -170,7 +170,7 @@ export class LoggerService {
         },
         (error) => {
           // Log error to original console to avoid infinite loop
-          this.originalLog(`[Logger Service] Failed to send to bridge (${bridgeUrl}):`, error.status, error.statusText);
+          this.originalLog(`[Logger Service] Failed to send to bridge:`, error.status, error.statusText);
         }
       );
     } catch (e) {
