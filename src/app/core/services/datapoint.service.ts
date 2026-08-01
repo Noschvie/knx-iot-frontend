@@ -247,6 +247,12 @@ export class DatapointService {
     const deviceId = (resource.relationships?.device?.data as any)?.id;
     const locationId = (resource.relationships?.location?.data as any)?.id;
 
+    // Debug: log device lookup
+    const deviceTitle = devices?.find(d => d.id === deviceId)?.title;
+    if (!deviceTitle && deviceId) {
+      console.log(`[Datapoint Service] ⚠ Device ID found (${deviceId}) but not in devices list. Available devices:`, devices?.map(d => d.id));
+    }
+
     return {
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
@@ -260,7 +266,7 @@ export class DatapointService {
       unit: (resource.attributes as any).unit || resource.attributes.meta?.['@unit'],
 
       deviceId: deviceId,
-      deviceTitle: devices?.find(d => d.id === deviceId)?.title,
+      deviceTitle: deviceTitle,
       locationId: locationId,
       locationTitle: locations?.find(l => l.id === locationId)?.title,
       functionId: (resource.relationships?.function?.data as any)?.id,
@@ -280,8 +286,17 @@ export class DatapointService {
     locations?: { id: string; title: string }[]
   ): Datapoint[] {
     console.log('[Datapoint Service] Transforming resources:', resources?.length || 0);
+    console.log('[Datapoint Service] Available devices for enrichment:', devices?.length || 0, 'devices:', devices?.map(d => `${d.id}:${d.title}`).slice(0, 5));
+
+    // Sample first datapoint to see device relationship
+    if (resources && resources.length > 0) {
+      const first = resources[0];
+      const firstDeviceId = (first.relationships?.device?.data as any)?.id;
+      console.log('[Datapoint Service] First datapoint device relationship:', firstDeviceId);
+    }
+
     const result = (resources || []).map(r => this.transformDatapoint(r, devices, locations));
-    console.log('[Datapoint Service] Transformation complete. Total:', result.length);
+    console.log('[Datapoint Service] Transformation complete. Total:', result.length, 'Sample with deviceTitle:', result.slice(0, 2).map(d => ({ title: d.title, deviceTitle: d.deviceTitle, deviceId: d.deviceId })));
     return result;
   }
 }

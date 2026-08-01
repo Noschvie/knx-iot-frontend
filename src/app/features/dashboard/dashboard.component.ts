@@ -113,11 +113,33 @@ export class DashboardComponent implements OnInit {
       locations: locations.length
     });
 
+    // Enrich datapoints with device information
+    // Create a map of datapointId -> deviceId from the Device.datapointIds relationships
+    const datapointToDeviceMap = new Map<string, string>();
+    devices.forEach(device => {
+      (device.datapointIds || []).forEach(datapointId => {
+        datapointToDeviceMap.set(datapointId, device.id);
+      });
+    });
+
+    // Apply device title to datapoints based on the device relationship
+    const enrichedDatapoints = datapoints.map(dp => {
+      const deviceId = datapointToDeviceMap.get(dp.id) || dp.deviceId;
+      const device = devices.find(d => d.id === deviceId);
+      return {
+        ...dp,
+        deviceId: deviceId,
+        deviceTitle: device?.title
+      };
+    });
+
+    console.log('[Dashboard] Datapoints enriched with device info. Sample:', enrichedDatapoints.slice(0, 3).map(d => ({ title: d.title, deviceTitle: d.deviceTitle })));
+
     // Compute metrics
     this.metrics = [
       {
         title: 'Datapoints',
-        value: datapoints.length,
+        value: enrichedDatapoints.length,
         subtitle: 'Total configured'
       },
       {
@@ -132,7 +154,7 @@ export class DashboardComponent implements OnInit {
       },
       {
         title: 'Writable',
-        value: datapoints.filter(d => d.writable).length,
+        value: enrichedDatapoints.filter(d => d.writable).length,
         subtitle: 'Read/Write Datapoints'
       }
     ];
@@ -140,7 +162,7 @@ export class DashboardComponent implements OnInit {
     console.log('[Dashboard] Metrics computed:', this.metrics);
 
     // Get top 10 most recently updated datapoints (show all, regardless of value)
-    this.topDatapoints = datapoints
+    this.topDatapoints = enrichedDatapoints
       .sort((a, b) => {
         const timeA = a.lastUpdated?.getTime() || 0;
         const timeB = b.lastUpdated?.getTime() || 0;
