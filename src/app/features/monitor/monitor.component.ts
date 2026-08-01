@@ -73,6 +73,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
   // Cleanup
   private destroy$ = new Subject<void>();
 
+
   // Column configuration
   displayedColumns: string[] = [
     'timestamp',
@@ -170,7 +171,12 @@ export class MonitorComponent implements OnInit, OnDestroy {
           if (message.type === 'connected') {
             this.isConnected = true;
             this.liveBuffer.setConnected(true);
-            console.log('[Monitor] WebSocket connected');
+            console.log('[Monitor] ✓ WebSocket connected');
+          } else if (message.type === 'connection_error') {
+            // WebSocket connection error - log for debugging
+            console.warn('[Monitor] WebSocket connection error:', message.error);
+            this.isConnected = false;
+            this.liveBuffer.setConnected(false);
           } else if (message.type === 'datapoint_updated') {
             this.handleDatapointUpdate(message);
           } else if (message.type === 'batch') {
@@ -181,11 +187,12 @@ export class MonitorComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          console.error('[Monitor] WebSocket error:', err);
+          console.error('[Monitor] WebSocket subscription error:', err);
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
         },
         complete: () => {
+          console.log('[Monitor] WebSocket connection closed');
           this.isConnected = false;
           this.liveBuffer.setConnected(false);
         }
