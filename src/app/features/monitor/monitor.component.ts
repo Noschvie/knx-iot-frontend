@@ -65,6 +65,8 @@ export class MonitorComponent implements OnInit, OnDestroy {
   isAutoScroll = true;
   isConnected = false;
   messageCount = 0;
+  hasError = false;
+  errorMessage = '';
 
   // Filter form
   filterForm: FormGroup;
@@ -106,29 +108,22 @@ export class MonitorComponent implements OnInit, OnDestroy {
     this.dptTypes$ = of([]);
   }
 
-  ngOnInit(): void {
-    console.log('[Monitor] 🚀 Component initialized');
-    console.log('[Monitor] Current state:', {
-      isLoading: this.isLoading,
-      datapointsCount: this.datapoints.length,
-      devicesCount: this.devices.length,
-      locationsCount: this.locations.length,
-      dataSourceCount: this.dataSource.data.length
-    });
+   ngOnInit(): void {
+     console.log('[Monitor] 🚀 Component initialized');
 
-    // 1. Load initial data FIRST (blocking)
-    this.loadInitialData();
+     // 1. Load initial data FIRST (blocking)
+     this.loadInitialData();
 
-    // 2. Setup filter listener
-    this.setupFilterListener();
+     // 2. Setup filter listener
+     this.setupFilterListener();
 
-    // 3. Connect WebSocket in background (non-blocking)
-    // Use setTimeout to allow UI to render first
-    setTimeout(() => {
-      console.log('[Monitor] ⏱️ Attempting WebSocket connection in background...');
-      this.connectWebSocket();
-    }, 100);
-  }
+     // 3. Connect WebSocket in background (non-blocking)
+     // Use setTimeout to allow UI to render first
+     setTimeout(() => {
+       console.log('[Monitor] ⏱️ Attempting WebSocket connection in background...');
+       this.connectWebSocket();
+     }, 500);
+   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -137,60 +132,68 @@ export class MonitorComponent implements OnInit, OnDestroy {
     this.liveBuffer.clear();
   }
 
-  /**
-   * Load initial data: devices, locations, and latest datapoints
-   */
-  private loadInitialData(): void {
-    this.isLoading = true;
-    console.log('[Monitor] ⏳ Loading initial data...');
+   /**
+    * Load initial data: devices, locations, and latest datapoints
+    */
+   private loadInitialData(): void {
+     this.isLoading = true;
+     this.hasError = false;
+     this.errorMessage = '';
+     console.log('[Monitor] ⏳ Loading initial data...');
 
-    combineLatest([
-      this.deviceService.getAll(),
-      this.locationService.getAll(),
-      this.datapointService.getLatestValues(100)
-    ])
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: ([devices, locations, datapoints]) => {
-          console.log('[Monitor] ✓ Data loaded:', {
-            devices: devices.length,
-            locations: locations.length,
-            datapoints: datapoints.length
-          });
+     combineLatest([
+       this.deviceService.getAll(),
+       this.locationService.getAll(),
+       this.datapointService.getLatestValues(100)
+     ])
+       .pipe(takeUntil(this.destroy$))
+       .subscribe({
+         next: ([devices, locations, datapoints]) => {
+           console.log('[Monitor] ✓ Data loaded:', {
+             devices: devices.length,
+             locations: locations.length,
+             datapoints: datapoints.length
+           });
 
-          this.devices = devices;
-          this.locations = locations;
-          this.datapoints = datapoints;
+           this.devices = devices;
+           this.locations = locations;
 
-          // Collect unique DPT types for filter dropdown
-          datapoints.forEach(dp => {
-            if (dp.dptType) {
-              this.dptTypesSet.add(dp.dptType);
-            }
-          });
+           // Always update datapoints, even if empty
+           this.datapoints = datapoints || [];
 
-          // Convert Set to array for Observable
-          const typeArray = Array.from(this.dptTypesSet).sort();
-          this.dptTypes$ = of(typeArray);
+           // Collect unique DPT types for filter dropdown
+           (datapoints || []).forEach(dp => {
+             if (dp.dptType) {
+               this.dptTypesSet.add(dp.dptType);
+             }
+           });
 
-          // Initialize buffer
-          this.liveBuffer.initialize(datapoints);
-          this.updateDisplayedDatapoints();
-          this.isLoading = false;
+           // Convert Set to array for Observable
+           const typeArray = Array.from(this.dptTypesSet).sort();
+           this.dptTypes$ = of(typeArray);
 
-          console.log('[Monitor] ✅ Initial data ready for display');
-          console.log('[Monitor] DOM Ready?', {
-            dataSourceData: this.dataSource.data.length,
-            datapointsArray: this.datapoints.length,
-            isLoadingFalse: !this.isLoading
-          });
-        },
-        error: (err) => {
-          console.error('[Monitor] ❌ Error loading initial data:', err);
-          this.isLoading = false;
-        }
-      });
-  }
+           // Initialize buffer
+           this.liveBuffer.initialize(datapoints || []);
+           this.updateDisplayedDatapoints();
+           this.isLoading = false;
+
+           console.log('[Monitor] ✅ Initial data ready for display', {
+             dataSourceData: this.dataSource.data.length,
+             datapointsArray: this.datapoints.length
+           });
+         },
+         error: (err) => {
+           console.error('[Monitor] ❌ Error loading initial data:', err);
+           this.isLoading = false;
+           this.hasError = true;
+           this.errorMessage = `Failed to load data: ${err?.message || 'Unknown error'}`;
+
+           // Show at least empty message
+           this.datapoints = [];
+           this.dataSource.data = [];
+         }
+       });
+   }
 
   /**
    * Connect to WebSocket and listen for datapoint updates
@@ -312,28 +315,35 @@ export class MonitorComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Update displayed datapoints based on filters
-   */
-  private updateDisplayedDatapoints(): void {
-    const filterCriteria: LiveFilterCriteria = {
-      searchTerm: this.filterForm.get('searchTerm')?.value,
-      devices: this.filterForm.get('devices')?.value || [],
-      locations: this.filterForm.get('locations')?.value || [],
-      dptTypes: this.filterForm.get('dptTypes')?.value || [],
-      qualityValid: this.filterForm.get('qualityValid')?.value
-    };
+   /**
+    * Update displayed datapoints based on filters
+    */
+   private updateDisplayedDatapoints(): void {
+     const filterCriteria: LiveFilterCriteria = {
+       searchTerm: this.filterForm.get('searchTerm')?.value,
+       devices: this.filterForm.get('devices')?.value || [],
+       locations: this.filterForm.get('locations')?.value || [],
+       dptTypes: this.filterForm.get('dptTypes')?.value || [],
+       qualityValid: this.filterForm.get('qualityValid')?.value
+     };
 
-    this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
-    this.dataSource.data = this.datapoints;
-    console.log('[Monitor] 📊 Table updated', {
-      totalRows: this.datapoints.length,
-      isLoading: this.isLoading,
-      dataSourceLength: this.dataSource.data.length,
-      containerVisible: document.querySelector('.monitor-container') !== null,
-      tableVisible: document.querySelector('.data-table') !== null
-    });
-  }
+     this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
+     this.dataSource.data = this.datapoints;
+
+     console.log('[Monitor] 📊 Table updated:', {
+       totalBuffered: this.liveBuffer.getSize(),
+       filteredRows: this.datapoints.length,
+       isLoading: this.isLoading,
+       isConnected: this.isConnected,
+       hasError: this.hasError,
+       filterCriteria: {
+         searchTerm: filterCriteria.searchTerm || 'none',
+         devices: filterCriteria.devices.length || 0,
+         locations: filterCriteria.locations.length || 0,
+         dptTypes: filterCriteria.dptTypes.length || 0
+       }
+     });
+   }
 
   /**
    * Toggle pause/resume
@@ -349,14 +359,23 @@ export class MonitorComponent implements OnInit, OnDestroy {
     this.isAutoScroll = !this.isAutoScroll;
   }
 
-  /**
-   * Clear buffer and reset
-   */
-  clearBuffer(): void {
-    this.liveBuffer.clear();
-    this.messageCount = 0;
-    this.datapoints = [];
-  }
+   /**
+    * Clear buffer and reset
+    */
+   clearBuffer(): void {
+     this.liveBuffer.clear();
+     this.messageCount = 0;
+     this.datapoints = [];
+     this.dataSource.data = [];
+   }
+
+   /**
+    * Refresh data manually
+    */
+   refreshData(): void {
+     console.log('[Monitor] 🔄 Manual refresh triggered');
+     this.loadInitialData();
+   }
 
   /**
    * Export current data as CSV

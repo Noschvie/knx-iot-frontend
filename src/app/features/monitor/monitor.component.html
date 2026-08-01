@@ -45,12 +45,19 @@
       <mat-icon>{{ isAutoScroll ? 'vertical_align_top' : 'vertical_align_center' }}</mat-icon>
     </button>
 
-    <button
-      mat-icon-button
-      (click)="clearBuffer()"
-      matTooltip="Clear buffer and reset">
-      <mat-icon>delete_sweep</mat-icon>
-    </button>
+     <button
+       mat-icon-button
+       (click)="refreshData()"
+       matTooltip="Refresh data">
+       <mat-icon>refresh</mat-icon>
+     </button>
+
+     <button
+       mat-icon-button
+       (click)="clearBuffer()"
+       matTooltip="Clear buffer and reset">
+       <mat-icon>delete_sweep</mat-icon>
+     </button>
 
     <button
       mat-icon-button
@@ -76,9 +83,11 @@
       <mat-form-field class="filter-field">
         <mat-label>Devices</mat-label>
         <mat-select formControlName="devices" multiple>
-          <mat-option *ngFor="let device of devices" [value]="device.id">
-            {{ device.title }}
-          </mat-option>
+          @for (device of devices; track device.id) {
+            <mat-option [value]="device.id">
+              {{ device.title }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
@@ -86,9 +95,11 @@
       <mat-form-field class="filter-field">
         <mat-label>Locations</mat-label>
         <mat-select formControlName="locations" multiple>
-          <mat-option *ngFor="let location of locations" [value]="location.id">
-            {{ location.title }}
-          </mat-option>
+          @for (location of locations; track location.id) {
+            <mat-option [value]="location.id">
+              {{ location.title }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
@@ -96,22 +107,38 @@
       <mat-form-field class="filter-field">
         <mat-label>DPT Type</mat-label>
         <mat-select formControlName="dptTypes" multiple>
-          <mat-option *ngFor="let type of dptTypes$ | async" [value]="type">
-            {{ type }}
-          </mat-option>
+          @for (type of (dptTypes$ | async); track type) {
+            <mat-option [value]="type">
+              {{ type }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
     </div>
   </div>
 
   <!-- Loading Indicator -->
-  <div *ngIf="isLoading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading datapoints...</p>
-  </div>
+  @if (isLoading) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading datapoints...</p>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (hasError && !isLoading) {
+    <div class="error-container">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <p class="error-message">{{ errorMessage }}</p>
+      <button mat-raised-button color="primary" (click)="ngOnInit()">
+        <mat-icon>refresh</mat-icon> Retry
+      </button>
+    </div>
+  }
 
   <!-- Data Table -->
-  <div *ngIf="!isLoading" class="table-container">
+  @if (!isLoading && !hasError) {
+    <div class="table-container">
     <table mat-table [dataSource]="dataSource" class="data-table">
       <!-- Timestamp Column -->
       <ng-container matColumnDef="timestamp">
@@ -183,15 +210,25 @@
       <!-- noinspection AngularInvalidExpressionResultType -->
       <tr mat-row *matRowDef="let _row; columns: displayedColumns;"></tr>
 
-      <!-- No Data Message -->
-      <tr class="no-data-row" *ngIf="datapoints.length === 0">
-        <td [attr.colspan]="displayedColumns.length" class="no-data-cell">
-          <p *ngIf="!isPaused">No datapoints matching the current filters</p>
-          <p *ngIf="isPaused">Paused - click resume to continue receiving updates</p>
-        </td>
-      </tr>
+       <!-- No Data Message -->
+       @if (datapoints.length === 0) {
+         <tr class="no-data-row">
+           <td [attr.colspan]="displayedColumns.length" class="no-data-cell">
+             <mat-icon class="no-data-icon">inbox</mat-icon>
+             @if (!isPaused) {
+               <p>No datapoints available or matching current filters</p>
+             }
+             @if (isPaused) {
+               <p>Paused - click resume to continue receiving updates</p>
+             }
+             <button mat-stroked-button (click)="refreshData()" class="retry-btn">
+               <mat-icon>refresh</mat-icon> Load Data
+             </button>
+           </td>
+         </tr>
+       }
     </table>
-  </div>
+  }
 
   <!-- Virtual Scrolling Alternative (for very large datasets) -->
   <!-- Note: Using standard table for now, can switch to virtual scroll with cdk-virtual-scroll-viewport if needed -->
