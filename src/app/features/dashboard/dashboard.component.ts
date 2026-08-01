@@ -113,27 +113,20 @@ export class DashboardComponent implements OnInit {
       locations: locations.length
     });
 
-    // Enrich datapoints with device information
-    // Create a map of datapointId -> deviceId from the Device.datapointIds relationships
-    const datapointToDeviceMap = new Map<string, string>();
-    devices.forEach(device => {
-      (device.datapointIds || []).forEach(datapointId => {
-        datapointToDeviceMap.set(datapointId, device.id);
-      });
-    });
+    // Create location lookup map - Datapoints have locationId, use that for display
+    const locationMap = new Map(locations.map(l => [l.id, l]));
 
-    // Apply device title to datapoints based on the device relationship
+    // Enrich datapoints with location information (more reliable than device relationship)
+    // The API spec shows datapoints have locationId, not deviceId
     const enrichedDatapoints = datapoints.map(dp => {
-      const deviceId = datapointToDeviceMap.get(dp.id) || dp.deviceId;
-      const device = devices.find(d => d.id === deviceId);
+      const location = locationMap.get(dp.locationId || '');
       return {
         ...dp,
-        deviceId: deviceId,
-        deviceTitle: device?.title
+        deviceTitle: location?.title || 'Unknown Location'
       };
     });
 
-    console.log('[Dashboard] Datapoints enriched with device info. Sample:', enrichedDatapoints.slice(0, 3).map(d => ({ title: d.title, deviceTitle: d.deviceTitle })));
+    console.log('[Dashboard] Datapoints enriched with location info. Sample:', enrichedDatapoints.slice(0, 5).map(d => ({ title: d.title, location: d.deviceTitle })));
 
     // Compute metrics
     this.metrics = [
@@ -161,7 +154,7 @@ export class DashboardComponent implements OnInit {
 
     console.log('[Dashboard] Metrics computed:', this.metrics);
 
-    // Get top 10 most recently updated datapoints (show all, regardless of value)
+    // Get top 10 most recently updated datapoints
     this.topDatapoints = enrichedDatapoints
       .sort((a, b) => {
         const timeA = a.lastUpdated?.getTime() || 0;
@@ -170,19 +163,19 @@ export class DashboardComponent implements OnInit {
       })
       .slice(0, 10);
 
-    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample values:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, value: d.value, lastUpdated: d.lastUpdated, deviceTitle: d.deviceTitle })));
+    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, location: d.deviceTitle })));
 
-    // Build activity feed (recent updates) - now with deviceTitle properly set
+    // Build activity feed
     this.recentActivity = this.topDatapoints.map(dp => ({
       id: dp.id,
       title: dp.title,
       value: dp.value || 'N/A',
       timestamp: dp.lastUpdated || new Date(),
       unit: dp.unit,
-      device: dp.deviceTitle || 'Unknown Device'
+      device: dp.deviceTitle || 'Unknown'
     }));
 
-    console.log('[Dashboard] Recent activity:', this.recentActivity.length, 'sample:', this.recentActivity.slice(0, 2).map(a => ({ title: a.title, device: a.device })));
+    console.log('[Dashboard] Recent activity:', this.recentActivity.length, 'sample:', this.recentActivity.slice(0, 2).map(a => ({ title: a.title, location: a.device })));
   }
 
   /**
