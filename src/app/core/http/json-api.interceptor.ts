@@ -45,21 +45,21 @@ export class JsonApiInterceptor implements HttpInterceptor {
       }
     }
 
-    let headers = req.headers.set('Accept', 'application/vnd.api+json');
+    // Set the Accept header for JSON:API compliance
+    let headers = req.headers
+      .set('Accept', 'application/vnd.api+json')
+      .set('Content-Type', 'application/vnd.api+json');
 
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
 
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'DELETE') {
-      const isJsonFallback =
-          req.url.includes('/datapoints/values') ||
-          req.url.includes('/subscriptions');
-      headers = headers.set(
-          'Content-Type',
-          isJsonFallback ? 'application/json' : 'application/vnd.api+json'
-      );
-    }
+    // Log final headers
+    console.log(`[JSON API Interceptor] Final headers for ${req.method} ${req.url}:`, {
+      accept: headers.get('Accept'),
+      contentType: headers.get('Content-Type'),
+      authorization: headers.has('Authorization') ? '***token***' : 'none'
+    });
 
     return next.handle(req.clone({ headers }));
   }
