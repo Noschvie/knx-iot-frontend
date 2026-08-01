@@ -56,6 +56,21 @@ export class DatapointsComponent implements OnInit, OnDestroy {
       });
   }
 
+  formatLastUpdated(date: Date | undefined): string {
+    if (!date) return '-';
+    // Angular date pipe will use browser locale (e.g., de-AT for Austria)
+    // Format: dd.MM.yyyy, HH:mm:ss (for de-AT locale)
+    return new Intl.DateTimeFormat(navigator.language, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: undefined // Uses browser's local timezone
+    }).format(date);
+  }
+
   formatValue(datapoint: Datapoint): string {
     if (!datapoint.value) return '-';
     const value = datapoint.value;
