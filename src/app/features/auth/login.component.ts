@@ -32,41 +32,44 @@ import { AuthService } from '@core/auth/auth.service';
         </mat-card-header>
 
         <mat-card-content>
-          <h2>Sign In</h2>
+           <h2>Sign In</h2>
+           <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 8px; margin-bottom: 16px; border-radius: 4px; font-size: 0.85rem;">
+             <strong>TEST MODE:</strong> Any username/password will be accepted. Backend uses hardcoded credentials.
+           </div>
 
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Client ID</mat-label>
-              <input matInput formControlName="username" autocomplete="username" placeholder="OAuth Client ID" />
-              @if (form.get('username')?.hasError('required')) {
-                <mat-error>
-                  Client ID is required
-                </mat-error>
-              }
-            </mat-form-field>
+           <form [formGroup]="form" (ngSubmit)="onSubmit()">
+             <mat-form-field appearance="outline" class="full-width">
+               <mat-label>Username</mat-label>
+               <input matInput formControlName="username" autocomplete="username" placeholder="Any username (test mode)" />
+               @if (form.get('username')?.hasError('required')) {
+                 <mat-error>
+                   Username is required
+                 </mat-error>
+               }
+             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Client Secret</mat-label>
-              <input
-                matInput
-                [type]="hidePassword ? 'password' : 'text'"
-                formControlName="password"
-                autocomplete="current-password"
-                placeholder="OAuth Client Secret"
-              />
-              <button
-                mat-icon-button matSuffix type="button"
-                (click)="hidePassword = !hidePassword"
-                [attr.aria-label]="hidePassword ? 'Show secret' : 'Hide secret'"
-              >
-                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              @if (form.get('password')?.hasError('required')) {
-                <mat-error>
-                  Client Secret is required
-                </mat-error>
-              }
-            </mat-form-field>
+             <mat-form-field appearance="outline" class="full-width">
+               <mat-label>Password</mat-label>
+               <input
+                 matInput
+                 [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password"
+                 autocomplete="current-password"
+                 placeholder="Any password (test mode)"
+               />
+               <button
+                 mat-icon-button matSuffix type="button"
+                 (click)="hidePassword = !hidePassword"
+                 [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+               >
+                 <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+               </button>
+               @if (form.get('password')?.hasError('required')) {
+                 <mat-error>
+                   Password is required
+                 </mat-error>
+               }
+             </mat-form-field>
 
             @if (errorMessage) {
               <div class="error-message">
@@ -150,49 +153,50 @@ export class LoginComponent {
     });
   }
 
-  onSubmit(): void {
-    if (this.form.invalid) {
-      console.log('[Login Component] Form validation failed');
-      this.form.markAllAsTouched();
-      return;
-    }
+   onSubmit(): void {
+     if (this.form.invalid) {
+       console.log('[Login Component] Form validation failed');
+       this.form.markAllAsTouched();
+       return;
+     }
 
-    this.loading = true;
-    this.errorMessage = '';
+     this.loading = true;
+     this.errorMessage = '';
 
-    // Note: Username/password are used for UI flow compatibility but ignored by backend.
-    // The backend uses Client Credentials Grant (app credentials only).
-    const { username, password } = this.form.value;
+     // TEST MODE: Accept any username/password from UI
+     // Backend auth uses hardcoded credentials
+     const { username, password } = this.form.value;
 
-    console.log(`[Login Component] Submitting login form for client: ${username}`);
+     console.log(`[Login Component] TEST MODE: Accepting any credentials. User entered: ${username}`);
 
-    this.auth.login(username, password).subscribe({
-      next: () => {
-        this.loading = false;
-        console.log(`[Login Component] ✓ Successfully authenticated as client: ${username}`);
-        console.log(`[Login Component] Navigating to dashboard...`);
-        this.router.navigate(['/dashboard']);
-      },
-      error: err => {
-        this.loading = false;
-        console.error('[Login Component] ✗ Login error:', {
-          status: err.status,
-          statusText: err.message,
-          errorDescription: err.error?.error_description || err.message
-        });
+     // In test mode, any credentials are accepted
+     this.auth.login(username, password).subscribe({
+       next: () => {
+         this.loading = false;
+         console.log(`[Login Component] ✓ Successfully authenticated (TEST MODE)`);
+         console.log(`[Login Component] Navigating to dashboard...`);
+         this.router.navigate(['/dashboard']);
+       },
+       error: err => {
+         this.loading = false;
+         console.error('[Login Component] ✗ Login error:', {
+           status: err.status,
+           statusText: err.message,
+           errorDescription: err.error?.error_description || err.message
+         });
 
-        // Show backend error message if available, otherwise show generic message
-        if (err.error?.error_description) {
-            this.errorMessage = err.error.error_description;
-        } else if (err.status === 401 || err.status === 400) {
-            this.errorMessage = 'Invalid client credentials. Please verify your Client ID and Secret.';
-        } else if (err.status === 0 || err.status === undefined) {
-            this.errorMessage = 'Connection error. Please check if the API server is running and accessible.';
-        } else {
-            this.errorMessage = `Login failed: ${err.message || 'Unknown error'}. Please check your connection.`;
-        }
-        console.error('[Login Component] Displayed error to user:', this.errorMessage);
-      }
-    });
-  }
+         // Show backend error message if available, otherwise show generic message
+         if (err.error?.error_description) {
+             this.errorMessage = err.error.error_description;
+         } else if (err.status === 401 || err.status === 400) {
+             this.errorMessage = 'Backend authentication failed. Check hardcoded credentials.';
+         } else if (err.status === 0 || err.status === undefined) {
+             this.errorMessage = 'Connection error. Please check if the API server is running and accessible.';
+         } else {
+             this.errorMessage = `Login failed: ${err.message || 'Unknown error'}. Please check your connection.`;
+         }
+         console.error('[Login Component] Displayed error to user:', this.errorMessage);
+       }
+     });
+   }
 }
