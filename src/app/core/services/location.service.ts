@@ -33,12 +33,24 @@ export class LocationService {
   getAll(options?: QueryOptions): Observable<Location[]> {
     const query = options ? buildQueryString(options) : 'page[limit]=100';
     const url = `${this.apiEndpoint}/locations?${query}`;
+    console.log('[Location Service] Fetching locations:', url);
 
     return this.http.get<JsonApiResponse<LocationResource[]>>(url).pipe(
-      map(response => this.transformLocations(response.data as LocationResource[])),
-      tap(locations => this.locationsCache$.next(locations)),
+      map(response => {
+        console.log('[Location Service] Response received, transforming data...');
+        return this.transformLocations(response.data as LocationResource[]);
+      }),
+      tap(locations => {
+        console.log(`[Location Service] ✓ Locations retrieved: ${locations.length} locations`);
+        this.locationsCache$.next(locations);
+      }),
       catchError(err => {
-        console.error('Error fetching locations:', err);
+        console.error('[Location Service] ✗ Error fetching locations:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          url: url
+        });
         return of([]);
       })
     );

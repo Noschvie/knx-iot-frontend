@@ -33,12 +33,24 @@ export class DeviceService {
   getAll(options?: QueryOptions): Observable<Device[]> {
     const query = options ? buildQueryString(options) : 'page[limit]=100';
     const url = `${this.apiEndpoint}/devices?${query}`;
+    console.log('[Device Service] Fetching devices:', url);
 
     return this.http.get<JsonApiResponse<DeviceResource[]>>(url).pipe(
-      map(response => this.transformDevices(response.data as DeviceResource[])),
-      tap(devices => this.devicesCache$.next(devices)),
+      map(response => {
+        console.log('[Device Service] Response received, transforming data...');
+        return this.transformDevices(response.data as DeviceResource[]);
+      }),
+      tap(devices => {
+        console.log(`[Device Service] ✓ Devices retrieved: ${devices.length} devices`);
+        this.devicesCache$.next(devices);
+      }),
       catchError(err => {
-        console.error('Error fetching devices:', err);
+        console.error('[Device Service] ✗ Error fetching devices:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          url: url
+        });
         return of([]);
       })
     );
@@ -81,7 +93,7 @@ export class DeviceService {
   }
 
   /**
-   * Get devices cache observable
+   * Get device cache observable
    */
   getDevicesList$(): Observable<Device[]> {
     return this.devicesCache$.asObservable();

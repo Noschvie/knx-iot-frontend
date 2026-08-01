@@ -91,10 +91,15 @@ export class DatapointService {
       sort: '-lastUpdated'
     });
     const url = `${this.apiEndpoint}/datapoints/values?${query}`;
+    console.log('[Datapoint Service] Fetching latest values:', url);
 
     return this.http.get<JsonApiResponse<DatapointResource[]>>(url).pipe(
-      map(response => this.transformDatapoints(response.data as DatapointResource[])),
+      map(response => {
+        console.log('[Datapoint Service] Response received, transforming data...');
+        return this.transformDatapoints(response.data as DatapointResource[]);
+      }),
       tap(datapoints => {
+        console.log(`[Datapoint Service] ✓ Latest values retrieved: ${datapoints.length} datapoints`);
         // Update cache for latest values
         const current = this.datapointsCache$.value;
         const idMap = new Map(current.map(d => [d.id, d]));
@@ -102,7 +107,12 @@ export class DatapointService {
         this.datapointsCache$.next(Array.from(idMap.values()));
       }),
       catchError(err => {
-        console.error('Error fetching latest values:', err);
+        console.error('[Datapoint Service] ✗ Error fetching latest values:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          url: url
+        });
         return of([]);
       })
     );

@@ -56,25 +56,40 @@ export class DashboardComponent implements OnInit {
   private loadDashboardData(): void {
     this.isLoading = true;
     this.errorMessage = null;
+    console.log('[Dashboard] Starting data load...');
 
     // Load all data in parallel
+    console.log('[Dashboard] Requesting: Datapoints, Devices, Locations');
     combineLatest([
-      this.datapointService.getLatestValues(100),
-      this.deviceService.getAll(),
-      this.locationService.getAll()
+      this.datapointService.getLatestValues(100).pipe(
+        tap(data => console.log(`[Dashboard] Datapoints loaded: ${data.length} items`))
+      ),
+      this.deviceService.getAll().pipe(
+        tap(data => console.log(`[Dashboard] Devices loaded: ${data.length} items`))
+      ),
+      this.locationService.getAll().pipe(
+        tap(data => console.log(`[Dashboard] Locations loaded: ${data.length} items`))
+      )
     ])
       .pipe(
         tap(([datapoints, devices, locations]) => {
+          console.log('[Dashboard] All data received, processing...');
           this.handleDataLoaded(datapoints, devices, locations);
         })
       )
       .subscribe(
         () => {
+          console.log('[Dashboard] ✓ Dashboard data loaded successfully');
           this.isLoading = false;
         },
         (error) => {
-          console.error('Error loading dashboard data:', error);
-          this.errorMessage = 'Error loading dashboard data';
+          console.error('[Dashboard] ✗ Error loading dashboard data:', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url
+          });
+          this.errorMessage = `Error loading dashboard: ${error.status} ${error.statusText}`;
           this.isLoading = false;
         }
       );
@@ -147,16 +162,16 @@ export class DashboardComponent implements OnInit {
   }
 
   /**
-   * Format timestamp as relative time (e.g., "vor 5 Minuten")
+   * Format timestamp as relative time (e.g., "Just now", "5 minutes ago")
    */
   formatRelativeTime(date: Date): string {
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (seconds < 60) return 'Eben eben';
-    if (seconds < 3600) return `vor ${Math.floor(seconds / 60)} Min.`;
-    if (seconds < 86400) return `vor ${Math.floor(seconds / 3600)} Std.`;
-    return `vor ${Math.floor(seconds / 86400)} Tg.`;
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hrs ago`;
+    return `${Math.floor(seconds / 86400)} days ago`;
   }
 
   /**
