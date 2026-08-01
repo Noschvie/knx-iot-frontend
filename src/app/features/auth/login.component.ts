@@ -38,9 +38,11 @@ import { AuthService } from '@core/auth/auth.service';
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Client ID</mat-label>
               <input matInput formControlName="username" autocomplete="username" placeholder="OAuth Client ID" />
-              <mat-error *ngIf="form.get('username')?.hasError('required')">
-                Client ID is required
-              </mat-error>
+              @if (form.get('username')?.hasError('required')) {
+                <mat-error>
+                  Client ID is required
+                </mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full-width">
@@ -59,15 +61,19 @@ import { AuthService } from '@core/auth/auth.service';
               >
                 <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
-              <mat-error *ngIf="form.get('password')?.hasError('required')">
-                Client Secret is required
-              </mat-error>
+              @if (form.get('password')?.hasError('required')) {
+                <mat-error>
+                  Client Secret is required
+                </mat-error>
+              }
             </mat-form-field>
 
-            <div *ngIf="errorMessage" class="error-message">
-              <mat-icon>warning</mat-icon>
-              <span>{{ errorMessage }}</span>
-            </div>
+            @if (errorMessage) {
+              <div class="error-message">
+                <mat-icon>warning</mat-icon>
+                <span>{{ errorMessage }}</span>
+              </div>
+            }
 
             <button
               mat-raised-button color="primary"
@@ -75,8 +81,12 @@ import { AuthService } from '@core/auth/auth.service';
               class="full-width submit-btn"
               [disabled]="loading"
             >
-              <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
-              <span *ngIf="!loading">Sign In</span>
+              @if (loading) {
+                <mat-spinner diameter="20"></mat-spinner>
+              }
+              @if (!loading) {
+                <span>Sign In</span>
+              }
             </button>
           </form>
         </mat-card-content>
