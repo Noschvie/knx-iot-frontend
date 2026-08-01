@@ -11,14 +11,15 @@ RUN npm run build
 # Production image
 FROM nginx:alpine
 
-# Install timezone data for Alpine Linux to support TZ environment variable
-RUN apk add --no-cache tzdata
+# Install timezone data and Node.js (for Syslog bridge service)
+RUN apk add --no-cache tzdata nodejs
 
 COPY --from=build /build/dist/knx-iot-frontend/browser /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY docker/syslog-bridge.js /syslog-bridge.js
+RUN chmod +x /entrypoint.sh /syslog-bridge.js
 
-EXPOSE 80
+EXPOSE 80 9514
 
 CMD ["/entrypoint.sh"]

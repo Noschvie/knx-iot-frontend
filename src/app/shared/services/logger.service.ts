@@ -6,9 +6,9 @@ import { ConfigService } from '@core/config/config.service';
  * Logger Service for frontend logging
  *
  * This service hijacks console.log and console.error to ensure that all log messages
- * are visible both in the browser console and in the container output (docker logs).
+ * are visible in the browser console with timestamps in local timezone.
  *
- * Logs are sent to a Syslog server for centralized logging.
+ * Logs are sent directly to Syslog server via UDP-bridge service.
  * Especially useful for auth debugging.
  */
 @Injectable({
@@ -18,31 +18,12 @@ export class LoggerService {
   private originalLog: any;
   private originalError: any;
   private originalWarn: any;
+  private logs: Array<{ timestamp: string; level: string; message: string; priority: number; severity: number }> = [];
   private http: HttpClient | null = null;
   private configService: ConfigService | null = null;
-  private logs: Array<{ timestamp: string; level: string; message: string }> = [];
-  private syslogHost: string = 'localhost';
-  private syslogPort: number = 514;
 
   constructor(private injector: Injector) {
     this.setupLogging();
-    this.initializeSyslogConfig();
-  }
-
-  /**
-   * Initialize syslog configuration from environment
-   */
-  private initializeSyslogConfig(): void {
-    // Try to get syslog config from window object (set by index.html or config service)
-    try {
-      const config = (window as any).__APP_CONFIG__;
-      if (config) {
-        this.syslogHost = config.syslogHost || 'localhost';
-        this.syslogPort = config.syslogPort || 514;
-      }
-    } catch (e) {
-      // Use defaults
-    }
   }
 
   /**
@@ -95,10 +76,14 @@ export class LoggerService {
       // Call original function with enhanced message
       originalFn(formattedMessage, ...args);
 
-      // Store and send log
+      // Store log with syslog metadata
       const message = this.formatLogMessage(args);
-      this.storeLog(timestamp, level, message);
-      this.sendLogToSyslog(timestamp, level, message);
+      const severity = this.mapLevelToSeverity(level);
+      const priority = (16 * 8) + severity; // Facility 16 (local0)
+      this.storeLog(timestamp, level, message, priority, severity);
+
+      // Send it to Syslog via UDP-bridge service
+      this.sendToSyslogServer(timestamp, level, message, priority, severity);
     };
   }
 
@@ -122,10 +107,22 @@ export class LoggerService {
   }
 
   /**
-   * Store log message in memory (limited to 500 entries)
+   * Map log level to syslog severity (0-7)
    */
-  private storeLog(timestamp: string, level: string, message: string): void {
-    this.logs.push({ timestamp, level, message });
+  private mapLevelToSeverity(level: string): number {
+    const severityMap: { [key: string]: number } = {
+      'LOG': 6,      // Informational
+      'WARN': 4,     // Warning
+      'ERROR': 3     // Error
+    };
+    return severityMap[level] || 6;
+  }
+
+  /**
+   * Store log message in memory with syslog metadata (limited to 500 entries)
+   */
+  private storeLog(timestamp: string, level: string, message: string, priority: number, severity: number): void {
+    this.logs.push({ timestamp, level, message, priority, severity });
     // Keep only last 500 logs in memory
     if (this.logs.length > 500) {
       this.logs.shift();
@@ -133,10 +130,10 @@ export class LoggerService {
   }
 
   /**
-   * Send log to syslog server (UDP port 514)
-   * Using standard syslog format (RFC 5424)
+   * Send log to Syslog server via UDP-bridge service
+   * The bridge service (running on localhost:9514) forwards logs to Syslog server via UDP
    */
-  private sendLogToSyslog(timestamp: string, level: string, message: string): void {
+  private sendToSyslogServer(timestamp: string, level: string, message: string, priority: number, severity: number): void {
     this.ensureServices();
 
     if (!this.http) {
@@ -144,25 +141,12 @@ export class LoggerService {
     }
 
     try {
-      // Map log level to syslog severity (0-7)
-      const severityMap: { [key: string]: number } = {
-        'LOG': 6,      // Informational
-        'WARN': 4,     // Warning
-        'ERROR': 3     // Error
-      };
-      const severity = severityMap[level] || 6;
-
-      // Syslog facility 16 (local0) and severity
-      const priority = (16 * 8) + severity;
-
-      // Format: PRI VERSION TIMESTAMP HOSTNAME TAG[PID]: MSG
       const hostname = window.location.hostname || 'knx-frontend';
       const tag = 'knx-iot-frontend';
 
-      // Send it to syslog server via HTTP bridge on backend
-      // Note: Browsers can't directly send UDP, so we use HTTP endpoint on backend
-      const apiBase = this.configService?.getApiBase() || '';
-      const url = `${apiBase}/api/v2/syslog`;
+      // Send it to local UDP-bridge service (running in Docker on port 9514)
+      // The bridge will forward to Syslog server via UDP
+      const bridgeUrl = `http://localhost:9514/syslog`;
 
       const logData = {
         priority,
@@ -176,13 +160,13 @@ export class LoggerService {
       };
 
       // Send it without waiting for response to not block UI
-      this.http.post(url, logData, {
+      this.http.post(bridgeUrl, logData, {
         responseType: 'text',
         headers: { 'Content-Type': 'application/json' }
       }).subscribe(
         () => {}, // Success - do nothing
-        (error) => {
-          // Fail silently - backend endpoint may not exist
+        (_error) => {
+          // Fail silently - bridge service may not be available
         }
       );
     } catch (e) {
@@ -193,7 +177,7 @@ export class LoggerService {
   /**
    * Get all stored logs (for debug panel)
    */
-  getLogs(): Array<{ timestamp: string; level: string; message: string }> {
+  getLogs(): Array<{ timestamp: string; level: string; message: string; priority: number; severity: number }> {
     return [...this.logs];
   }
 

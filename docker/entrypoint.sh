@@ -21,8 +21,19 @@ echo "API_BASE: ${API_BASE:-http://localhost:3000}"
 echo "WS_BASE: ${WS_BASE:-ws://localhost:3000}"
 echo "TZ (Timezone): ${TZ:-UTC}"
 echo "SYSLOG_HOST: ${SYSLOG_HOST}"
-echo "SYSLOG_PORT: ${SYSLOG_PORT}"
-echo "Nginx is starting in foreground mode..."
+echo "SYSLOG_PORT: ${SYSLOG_PORT:-514}"
+echo "LOG_BRIDGE_PORT: ${LOG_BRIDGE_PORT:-9514}"
 echo "============================================"
 
+# Start Syslog UDP bridge service in background
+echo "[Starting Syslog Bridge Service]"
+node /syslog-bridge.js &
+BRIDGE_PID=$!
+echo "Syslog Bridge running with PID: $BRIDGE_PID"
+
+# Wait for bridge to start
+sleep 1
+
+# Start nginx in foreground
+echo "[Starting Nginx]"
 exec nginx -g "daemon off;"

@@ -6,12 +6,14 @@ services:
     environment:
       - API_BASE=${API_BASE}
       - WS_BASE=${WS_BASE}
-      # Use host timezone for logging consistency (e.g., Europe/Berlin, America/New_York, UTC)
-      # Default to UTC if not specified - override in .env file or command line
+      # Use host timezone for logging consistency
       - TZ=${TZ:-Europe/Vienna}
-      # Syslog server configuration for centralized logging
+      # Syslog server configuration (for UDP forwarding via bridge)
       - SYSLOG_HOST=${SYSLOG_HOST}
       - SYSLOG_PORT=${SYSLOG_PORT}
+      # Log bridge service port
+      - LOG_BRIDGE_PORT=9514
     ports:
       - "8080:80"
+      - "9514:9514"
     restart: unless-stopped
