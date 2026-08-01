@@ -17,7 +17,9 @@ $knx-light-theme: mat.define-theme((
 
 html {
   @include mat.core();
-  @include mat.all-component-themes($knx-light-theme);
+  @include mat.all-component-colors($knx-light-theme);
+  @include mat.all-component-typographies($knx-light-theme);
+  @include mat.all-component-densities($knx-light-theme);
 }
 
 html, body {
@@ -31,4 +33,13 @@ html, body {
 // Login-Seite: Card soll heller sein als der Hintergrund
 .login-card {
   background-color: white !important;
+}
+
+// Ensure form fields are visible with outline appearance
+mat-form-field.mat-mdc-form-field {
+  .mdc-notched-outline .mdc-notched-outline__leading,
+  .mdc-notched-outline .mdc-notched-outline__notch,
+  .mdc-notched-outline .mdc-notched-outline__trailing {
+    border-color: #999 !important;
+  }
 }
