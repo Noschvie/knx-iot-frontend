@@ -181,7 +181,7 @@
       <!-- Table Header and Rows -->
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <!-- noinspection AngularInvalidExpressionResultType -->
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr mat-row *matRowDef="let _row; columns: displayedColumns;"></tr>
 
       <!-- No Data Message -->
       <tr class="no-data-row" *ngIf="datapoints.length === 0">
