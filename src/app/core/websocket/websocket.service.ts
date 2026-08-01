@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, ReplaySubject, Subject, timer } from 'rxjs';
-import { switchMap, tap, takeUntil } from 'rxjs/operators';
+import { Observable, ReplaySubject, Subject } from 'rxjs';
 import { OAuthService } from '../auth/oauth.service';
 import { ConfigService } from '../config/config.service';
 
@@ -13,7 +12,6 @@ export class WebSocketService {
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private reconnectDelay = 3000; // Start with 3 seconds
-    private destroy$ = new Subject<void>();
 
     constructor(
         private auth: OAuthService,
@@ -151,7 +149,6 @@ export class WebSocketService {
             this.ws = null;
         }
         this.isConnecting = false;
-        this.destroy$.next();
     }
 
     isConnected(): boolean {
