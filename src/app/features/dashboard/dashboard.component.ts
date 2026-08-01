@@ -148,9 +148,8 @@ export class DashboardComponent implements OnInit {
 
     console.log('[Dashboard] Metrics computed:', this.metrics);
 
-    // Get top 10 most recently updated datapoints
+    // Get top 10 most recently updated datapoints (show all, regardless of value)
     this.topDatapoints = datapoints
-      .filter(d => d.value !== undefined && d.value !== null)
       .sort((a, b) => {
         const timeA = a.lastUpdated?.getTime() || 0;
         const timeB = b.lastUpdated?.getTime() || 0;
@@ -158,7 +157,7 @@ export class DashboardComponent implements OnInit {
       })
       .slice(0, 10);
 
-    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length);
+    console.log('[Dashboard] Top datapoints:', this.topDatapoints.length, 'sample values:', this.topDatapoints.slice(0, 3).map(d => ({ title: d.title, value: d.value, lastUpdated: d.lastUpdated })));
 
     // Build activity feed (recent updates)
     this.recentActivity = this.topDatapoints.map(dp => ({
