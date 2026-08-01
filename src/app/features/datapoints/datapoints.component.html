@@ -1,0 +1,89 @@
+<div class="datapoints-container">
+  <div class="datapoints-header">
+    <h2>Datapoints</h2>
+    <div class="datapoints-count">
+      {{ datapoints.length }} datapoints
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading">
+      <p>Loading...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading && !error && datapoints.length === 0) {
+    <div class="empty">
+      <p>No datapoints available</p>
+    </div>
+  }
+
+  <!-- Datapoints Table -->
+  @if (!loading && !error && datapoints.length > 0) {
+    <div class="table-wrapper">
+      <table class="datapoints-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Quality</th>
+            <th>Readable</th>
+            <th>Writable</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (datapoint of datapoints; track datapoint.id) {
+            <tr class="datapoint-row">
+              <td class="datapoint-name">
+                <div class="name-primary">{{ datapoint.title }}</div>
+                @if (datapoint.description) {
+                  <div class="name-secondary">{{ datapoint.description }}</div>
+                }
+              </td>
+              <td class="datapoint-value">
+                <code>{{ formatValue(datapoint) }}</code>
+              </td>
+              <td class="datapoint-unit">
+                {{ datapoint.unit || '-' }}
+              </td>
+              <td class="datapoint-quality">
+                <span class="quality-badge" [ngClass]="getQualityBadgeClass(datapoint.qualityValid)">
+                  {{ getQualityLabel(datapoint.qualityValid) }}
+                </span>
+              </td>
+              <td class="datapoint-readable">
+                @if (datapoint.readable) {
+                  <span class="badge-yes">✓</span>
+                } @else {
+                  <span class="badge-no">✗</span>
+                }
+              </td>
+              <td class="datapoint-writable">
+                @if (datapoint.writable) {
+                  <span class="badge-yes">✓</span>
+                } @else {
+                  <span class="badge-no">✗</span>
+                }
+              </td>
+              <td class="datapoint-lastupdated">
+                {{ datapoint.lastUpdated ? (datapoint.lastUpdated | date: 'short') : '-' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
