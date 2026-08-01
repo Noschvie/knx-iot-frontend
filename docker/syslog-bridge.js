@@ -82,7 +82,6 @@ server.listen(LISTEN_PORT, '0.0.0.0', () => {
   console.log('=== Syslog UDP Bridge Started ===');
   console.log(`Listening on: 0.0.0.0:${LISTEN_PORT}`);
   console.log(`Syslog Server: ${SYSLOG_HOST}:${SYSLOG_PORT}`);
-  console.log('Endpoint: POST /syslog');
   console.log('Health Check: GET /health');
   console.log('==================================');
 });
