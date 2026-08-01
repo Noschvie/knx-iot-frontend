@@ -16,8 +16,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
 
-import { Subject, Observable, combineLatest, of, BehaviorSubject } from 'rxjs';
-import { takeUntil, debounceTime, startWith, map } from 'rxjs/operators';
+import { Subject, Observable, combineLatest, of } from 'rxjs';
+import { takeUntil, debounceTime, startWith } from 'rxjs/operators';
 
 import { Datapoint } from '@shared/models';
 import { DatapointService } from '@core/services/datapoint.service';
@@ -257,8 +257,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
       qualityValid: this.filterForm.get('qualityValid')?.value
     };
 
-    const filtered = this.liveBuffer.getFiltered(filterCriteria);
-    this.datapoints = filtered;
+    this.datapoints = this.liveBuffer.getFiltered(filterCriteria);
   }
 
   /**
