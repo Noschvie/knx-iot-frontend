@@ -1,6 +1,11 @@
 <div class="locations-container">
   <h2>Standorte</h2>
 
+  <!-- Debug Info -->
+  <div class="debug-info">
+    <span>Status: loading={{loading}}, error={{error}}, locations={{locations.length}}</span>
+  </div>
+
   <!-- Loading State -->
   <div *ngIf="loading" class="loading">
     <p>Laden...</p>
@@ -29,7 +34,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let location of locations" class="location-row">
+        <tr *ngFor="let location of locations; let i = index" class="location-row">
           <td class="location-name">{{ location.title }}</td>
           <td class="location-type">
             <span class="type-badge" [attr.data-type]="location.locationType">

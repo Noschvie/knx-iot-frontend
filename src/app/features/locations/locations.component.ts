@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { LocationService } from '@core/services/location.service';
 import { Location } from '@shared/models';
 import { Subject } from 'rxjs';
@@ -8,7 +8,8 @@ import { takeUntil } from 'rxjs/operators';
   standalone: false,
   selector: 'app-locations',
   templateUrl: './locations.component.html',
-  styleUrls: ['./locations.component.scss']
+  styleUrls: ['./locations.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LocationsComponent implements OnInit, OnDestroy {
   locations: Location[] = [];
@@ -16,7 +17,10 @@ export class LocationsComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private destroy$ = new Subject<void>();
 
-  constructor(private locationService: LocationService) {}
+  constructor(
+    private locationService: LocationService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadLocations();
@@ -30,20 +34,24 @@ export class LocationsComponent implements OnInit, OnDestroy {
   private loadLocations(): void {
     this.loading = true;
     this.error = null;
+    this.cdr.markForCheck();
 
     this.locationService
       .getAll()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (locations) => {
-          this.locations = locations;
+          console.log(`[Locations Component] Data received: ${locations?.length || 0} locations`);
+          this.locations = locations || [];
           this.loading = false;
-          console.log(`[Locations Component] ✓ ${locations.length} locations loaded`);
+          this.cdr.markForCheck();
+          console.log(`[Locations Component] ✓ ${locations.length} locations loaded, rendered=${this.locations.length}`);
         },
         error: (err) => {
           console.error('[Locations Component] ✗ Error loading locations:', err);
           this.error = 'Fehler beim Laden der Standorte';
           this.loading = false;
+          this.cdr.markForCheck();
         }
       });
   }
@@ -58,4 +66,3 @@ export class LocationsComponent implements OnInit, OnDestroy {
     return types[type || ''] || type || 'Unbekannt';
   }
 }
-

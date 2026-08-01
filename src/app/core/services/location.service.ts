@@ -111,6 +111,10 @@ export class LocationService {
   // ========== PRIVATE HELPERS ==========
 
   private transformLocation(resource: LocationResource): Location {
+    const childLocationsData = resource.relationships?.childLocations?.data;
+    const devicesData = resource.relationships?.devices?.data;
+    const datapointsData = resource.relationships?.datapoints?.data;
+
     return {
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
@@ -118,13 +122,26 @@ export class LocationService {
       locationType: resource.attributes.type,
 
       parentLocationId: (resource.relationships?.parentLocation?.data as any)?.id,
-      childLocationIds: (resource.relationships?.childLocations?.data as any)?.map((l: any) => l.id),
-      deviceIds: (resource.relationships?.devices?.data as any)?.map((d: any) => d.id),
-      datapointIds: (resource.relationships?.datapoints?.data as any)?.map((d: any) => d.id)
+      childLocationIds: Array.isArray(childLocationsData)
+        ? childLocationsData.map((l: any) => l.id)
+        : childLocationsData ? [(childLocationsData as any).id] : [],
+      deviceIds: Array.isArray(devicesData)
+        ? devicesData.map((d: any) => d.id)
+        : devicesData ? [(devicesData as any).id] : [],
+      datapointIds: Array.isArray(datapointsData)
+        ? datapointsData.map((d: any) => d.id)
+        : datapointsData ? [(datapointsData as any).id] : []
     };
   }
 
   private transformLocations(resources: LocationResource[]): Location[] {
-    return (resources || []).map(r => this.transformLocation(r));
+    console.log('[Location Service] Transforming resources:', resources?.length || 0);
+    const result = (resources || []).map(r => {
+      const transformed = this.transformLocation(r);
+      console.log('[Location Service] Transformed location:', transformed.title, 'type:', transformed.locationType);
+      return transformed;
+    });
+    console.log('[Location Service] Transformation complete. Total:', result.length);
+    return result;
   }
 }
