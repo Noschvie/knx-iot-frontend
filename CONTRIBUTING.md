@@ -4,6 +4,22 @@ First of all, thank you for considering contributing to the KNX IoT Frontend!
 
 Contributions of all kinds are welcome, including bug reports, feature requests, documentation improvements, code contributions, and discussions about the project architecture.
 
+## Project Philosophy
+
+The goal of this project is to provide a clean, maintainable, and standards-oriented implementation of a KNX IoT frontend.
+
+**Standards compliance, clean architecture, and long-term maintainability are preferred over quick feature implementation.**
+
+When contributing, please aim for solutions that are:
+
+- Easy to understand
+- Well documented
+- Consistent with the existing architecture
+- Modular and reusable
+- Easy to maintain and extend
+
+Whenever possible, discuss larger architectural changes in an issue before starting implementation.
+
 ## Getting Started
 
 1. Fork the repository.
