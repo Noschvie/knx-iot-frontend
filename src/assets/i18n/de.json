@@ -1,0 +1,30 @@
+{
+  "common": {
+    "appName": "KNX IoT",
+    "appTitle": "KNX IoT Monitor",
+    "actions": {
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "delete": "Löschen",
+      "edit": "Bearbeiten",
+      "confirm": "Bestätigen",
+      "back": "Zurück"
+    },
+    "loading": "Lädt…"
+  },
+  "navigation": {
+    "toggle": "Navigation umschalten",
+    "logout": "Abmelden",
+    "dashboard": "Dashboard",
+    "monitor": "Live-Monitor",
+    "datapoints": "Datenpunkte",
+    "devices": "Geräte",
+    "locations": "Standorte",
+    "functions": "Funktionen",
+    "charts": "Diagramme",
+    "history": "Verlauf",
+    "logs": "Protokolle",
+    "settings": "Einstellungen"
+  }
+}
