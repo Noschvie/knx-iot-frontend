@@ -51,5 +51,13 @@
       "warning": "Warnung",
       "error": "Fehler"
     }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": {
+      "label": "Sprache",
+      "en": "Englisch",
+      "de": "Deutsch"
+    }
   }
 }
