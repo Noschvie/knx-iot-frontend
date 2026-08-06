@@ -5,6 +5,7 @@ import { DatapointService } from '@core/services/datapoint.service';
 import { DeviceService } from '@core/services/device.service';
 import { LocationService } from '@core/services/location.service';
 import { Datapoint, Device, Location } from '@shared/models';
+import { TranslateService } from '@ngx-translate/core';
 
 interface MetricCard {
   title: string;
@@ -43,7 +44,8 @@ export class DashboardComponent implements OnInit {
     private deviceService: DeviceService,
     private locationService: LocationService,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -107,7 +109,10 @@ export class DashboardComponent implements OnInit {
             url: error?.url || 'unknown'
           });
           this.ngZone.run(() => {
-            this.errorMessage = `Error loading dashboard: ${error?.status || 'Unknown'} ${error?.message || 'Connection failed'}`;
+            this.errorMessage = this.translate.instant('errors.dashboardLoadFailed', {
+              status: error?.status ?? 'Unknown',
+              message: error?.message ?? 'Connection failed'
+            });
             this.cdr.markForCheck();
           });
         }

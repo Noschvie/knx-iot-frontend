@@ -15,6 +15,7 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 
 import { Subject, Observable, combineLatest } from 'rxjs';
 import { takeUntil, debounceTime, startWith } from 'rxjs/operators';
@@ -47,7 +48,8 @@ import { Device, Location } from '@shared/models';
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
-    MatBadgeModule
+    MatBadgeModule,
+    TranslatePipe
   ],
   templateUrl: './monitor.component.html',
   styleUrls: ['./monitor.component.scss']
@@ -94,7 +96,8 @@ export class MonitorComponent implements OnInit, OnDestroy {
     private locationService: LocationService,
     private webSocketService: WebSocketService,
     private liveBuffer: LiveBufferService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private translate: TranslateService
   ) {
     this.filterForm = this.fb.group({
       searchTerm: [''],
@@ -182,7 +185,9 @@ export class MonitorComponent implements OnInit, OnDestroy {
            console.error('[Monitor] ❌ Error loading initial data:', err);
            this.isLoading = false;
            this.hasError = true;
-           this.errorMessage = `Failed to load data: ${err?.message || 'Unknown error'}`;
+           this.errorMessage = this.translate.instant('errors.monitorLoadFailed', {
+             message: err?.message || 'Unknown error'
+           });
 
            // Show at least empty message
            this.datapoints = [];

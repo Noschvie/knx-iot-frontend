@@ -59,5 +59,15 @@
       "en": "English",
       "de": "German"
     }
+  },
+  "errors": {
+    "connection": "Connection error. Please check if the API server is running and accessible.",
+    "testModeAuthFailed": "Backend authentication failed. Check hardcoded credentials.",
+    "loginFailed": "Login failed: {{message}}. Please check your connection.",
+    "usernameRequired": "Username is required",
+    "passwordRequired": "Password is required",
+    "dashboardLoadFailed": "Error loading dashboard: {{status}} {{message}}",
+    "monitorLoadFailed": "Failed to load data: {{message}}",
+    "retry": "Retry"
   }
 }

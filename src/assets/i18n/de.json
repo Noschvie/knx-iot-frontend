@@ -59,5 +59,15 @@
       "en": "Englisch",
       "de": "Deutsch"
     }
+  },
+  "errors": {
+    "connection": "Verbindungsfehler. Bitte prüfen, ob der API-Server läuft und erreichbar ist.",
+    "testModeAuthFailed": "Backend-Authentifizierung fehlgeschlagen. Hartcodierte Zugangsdaten prüfen.",
+    "loginFailed": "Anmeldung fehlgeschlagen: {{message}}. Bitte Verbindung prüfen.",
+    "usernameRequired": "Benutzername ist erforderlich",
+    "passwordRequired": "Passwort ist erforderlich",
+    "dashboardLoadFailed": "Fehler beim Laden des Dashboards: {{status}} {{message}}",
+    "monitorLoadFailed": "Daten konnten nicht geladen werden: {{message}}",
+    "retry": "Wiederholen"
   }
 }
