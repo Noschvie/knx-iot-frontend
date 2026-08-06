@@ -26,5 +26,30 @@
     "history": "Verlauf",
     "logs": "Protokolle",
     "settings": "Einstellungen"
+  },
+  "logs": {
+    "title": "Systemprotokolle",
+    "filterLabel": "Nach Level filtern:",
+    "export": "CSV-Export",
+    "clear": "Löschen",
+    "clearConfirm": "Möchten Sie wirklich alle Protokolle löschen?",
+    "empty": "Keine Protokolle vorhanden",
+    "stats": {
+      "total": "Gesamt:",
+      "errors": "Fehler:",
+      "warnings": "Warnungen:",
+      "info": "Info:"
+    },
+    "table": {
+      "timestamp": "Zeitstempel",
+      "level": "Level",
+      "message": "Nachricht"
+    },
+    "filter": {
+      "all": "Alle",
+      "info": "Info",
+      "warning": "Warnung",
+      "error": "Fehler"
+    }
   }
 }

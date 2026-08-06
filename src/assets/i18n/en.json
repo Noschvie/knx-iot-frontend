@@ -26,5 +26,30 @@
     "history": "History",
     "logs": "Logs",
     "settings": "Settings"
+  },
+  "logs": {
+    "title": "System Logs",
+    "filterLabel": "Filter by level:",
+    "export": "CSV Export",
+    "clear": "Clear",
+    "clearConfirm": "Are you sure you want to clear all logs?",
+    "empty": "No logs available",
+    "stats": {
+      "total": "Total logs:",
+      "errors": "Errors:",
+      "warnings": "Warnings:",
+      "info": "Info:"
+    },
+    "table": {
+      "timestamp": "Timestamp",
+      "level": "Level",
+      "message": "Message"
+    },
+    "filter": {
+      "all": "All",
+      "info": "Info",
+      "warning": "Warning",
+      "error": "Error"
+    }
   }
 }
