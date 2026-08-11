@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   icon: string;
   route: string;
 }
@@ -18,7 +18,7 @@ interface NavItem {
       <mat-sidenav #sidenav mode="side" opened class="sidebar">
         <div class="sidebar-header">
           <mat-icon class="logo-icon">hub</mat-icon>
-          <span class="logo-text">KNX IoT</span>
+          <span class="logo-text">{{ 'common.appName' | translate }}</span>
         </div>
 
         <mat-nav-list>
@@ -28,7 +28,7 @@ interface NavItem {
              routerLinkActive="active-link"
              [routerLinkActiveOptions]="{ exact: false }">
             <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-            <span matListItemTitle>{{ item.label }}</span>
+            <span matListItemTitle>{{ item.labelKey | translate }}</span>
           </a>
         </mat-nav-list>
       </mat-sidenav>
@@ -38,12 +38,12 @@ interface NavItem {
 
         <!-- Top Bar -->
         <mat-toolbar color="primary" class="top-bar">
-          <button mat-icon-button (click)="sidenav.toggle()" aria-label="Toggle navigation">
+          <button mat-icon-button (click)="sidenav.toggle()" [attr.aria-label]="'navigation.toggle' | translate">
             <mat-icon>menu</mat-icon>
           </button>
-          <span class="toolbar-title">KNX IoT Monitor</span>
+          <span class="toolbar-title">{{ 'common.appTitle' | translate }}</span>
           <span class="spacer"></span>
-          <button mat-icon-button aria-label="Logout" (click)="logout()">
+          <button mat-icon-button [attr.aria-label]="'navigation.logout' | translate" (click)="logout()">
             <mat-icon>logout</mat-icon>
           </button>
         </mat-toolbar>
@@ -130,16 +130,16 @@ interface NavItem {
 })
 export class MainLayoutComponent {
   navItems: NavItem[] = [
-    { label: 'Dashboard',   icon: 'dashboard',      route: '/dashboard'   },
-    { label: 'Live Monitor', icon: 'monitor_heart', route: '/monitor'     },
-    { label: 'Datapoints',  icon: 'sensors',        route: '/datapoints'  },
-    { label: 'Devices',     icon: 'device_hub',     route: '/devices'     },
-    { label: 'Locations',   icon: 'location_on',    route: '/locations'   },
-    { label: 'Functions',   icon: 'functions',      route: '/functions'   },
-    { label: 'Charts',      icon: 'show_chart',     route: '/charts'      },
-    { label: 'History',     icon: 'history',        route: '/history'     },
-    { label: 'Logs',        icon: 'list_alt',       route: '/logs'        },
-    { label: 'Settings',    icon: 'settings',       route: '/settings'    },
+    { labelKey: 'navigation.dashboard', icon: 'dashboard',      route: '/dashboard'   },
+    { labelKey: 'navigation.monitor',   icon: 'monitor_heart',  route: '/monitor'     },
+    { labelKey: 'navigation.datapoints',icon: 'sensors',        route: '/datapoints'  },
+    { labelKey: 'navigation.devices',   icon: 'device_hub',     route: '/devices'     },
+    { labelKey: 'navigation.locations', icon: 'location_on',    route: '/locations'   },
+    { labelKey: 'navigation.functions', icon: 'functions',      route: '/functions'   },
+    { labelKey: 'navigation.charts',    icon: 'show_chart',     route: '/charts'      },
+    { labelKey: 'navigation.history',   icon: 'history',        route: '/history'     },
+    { labelKey: 'navigation.logs',      icon: 'list_alt',       route: '/logs'        },
+    { labelKey: 'navigation.settings',  icon: 'settings',       route: '/settings'    },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}

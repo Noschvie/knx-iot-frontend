@@ -6,6 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MainLayoutComponent } from './main-layout.component';
 
@@ -19,6 +20,7 @@ import { MainLayoutComponent } from './main-layout.component';
     MatListModule,
     MatIconModule,
     MatButtonModule,
+    TranslatePipe,
   ],
   exports: [MainLayoutComponent]
 })

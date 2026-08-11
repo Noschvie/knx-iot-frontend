@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '@core/auth/auth.service';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,8 @@ import { AuthService } from '@core/auth/auth.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TranslatePipe
   ],
   template: `
     <div class="login-page">
@@ -43,7 +45,7 @@ import { AuthService } from '@core/auth/auth.service';
                <input matInput formControlName="username" autocomplete="username" placeholder="Any username (test mode)" />
                @if (form.get('username')?.hasError('required')) {
                  <mat-error>
-                   Username is required
+                   {{ 'errors.usernameRequired' | translate }}
                  </mat-error>
                }
              </mat-form-field>
@@ -66,7 +68,7 @@ import { AuthService } from '@core/auth/auth.service';
                </button>
                @if (form.get('password')?.hasError('required')) {
                  <mat-error>
-                   Password is required
+                   {{ 'errors.passwordRequired' | translate }}
                  </mat-error>
                }
              </mat-form-field>
@@ -145,7 +147,8 @@ export class LoginComponent {
   constructor(
       private fb: FormBuilder,
       private auth: AuthService,
-      private router: Router
+      private router: Router,
+      private translate: TranslateService
   ) {
     this.form = this.fb.group({
       username: ['', Validators.required],
@@ -187,13 +190,16 @@ export class LoginComponent {
 
          // Show backend error message if available, otherwise show generic message
          if (err.error?.error_description) {
+             // Backend-provided text passes through as-is: the backend currently
+             // returns human-readable English, not an error code we could map to
+             // a translation key. See commit message for details.
              this.errorMessage = err.error.error_description;
          } else if (err.status === 401 || err.status === 400) {
-             this.errorMessage = 'Backend authentication failed. Check hardcoded credentials.';
+             this.errorMessage = this.translate.instant('errors.testModeAuthFailed');
          } else if (err.status === 0 || err.status === undefined) {
-             this.errorMessage = 'Connection error. Please check if the API server is running and accessible.';
+             this.errorMessage = this.translate.instant('errors.connection');
          } else {
-             this.errorMessage = `Login failed: ${err.message || 'Unknown error'}. Please check your connection.`;
+             this.errorMessage = this.translate.instant('errors.loginFailed', { message: err.message || 'Unknown error' });
          }
          console.error('[Login Component] Displayed error to user:', this.errorMessage);
        }

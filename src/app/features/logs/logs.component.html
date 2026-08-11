@@ -1,9 +1,9 @@
 <div class="logs-container">
   <div class="logs-header">
-    <h2>System Logs</h2>
+    <h2>{{ 'logs.title' | translate }}</h2>
     <div class="logs-controls">
       <div class="filter-group">
-        <label for="levelFilter">Filter by level:</label>
+        <label for="levelFilter">{{ 'logs.filterLabel' | translate }}</label>
         <select
           id="levelFilter"
           [(ngModel)]="selectedLevel"
@@ -12,17 +12,17 @@
         >
           @for (level of logLevels; track level.value) {
             <option [value]="level.value">
-              {{ level.label }}
+              {{ level.labelKey | translate }}
             </option>
           }
         </select>
       </div>
       <div class="action-buttons">
         <button (click)="exportLogs()" class="btn btn-export" [disabled]="filteredLogs.length === 0">
-          📥 CSV Export
+          📥 {{ 'logs.export' | translate }}
         </button>
         <button (click)="clearLogs()" class="btn btn-danger" [disabled]="logs.length === 0">
-          🗑️ Clear
+          🗑️ {{ 'logs.clear' | translate }}
         </button>
       </div>
     </div>
@@ -31,19 +31,19 @@
   <!-- Stats -->
   <div class="logs-stats">
     <div class="stat-item">
-      <span class="stat-label">Total logs:</span>
+      <span class="stat-label">{{ 'logs.stats.total' | translate }}</span>
       <span class="stat-value">{{ logs.length }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">Errors:</span>
+      <span class="stat-label">{{ 'logs.stats.errors' | translate }}</span>
       <span class="stat-value error-count">{{ logs.filter(l => l.level === 'ERROR').length }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">Warnings:</span>
+      <span class="stat-label">{{ 'logs.stats.warnings' | translate }}</span>
       <span class="stat-value warn-count">{{ logs.filter(l => l.level === 'WARN').length }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">Info:</span>
+      <span class="stat-label">{{ 'logs.stats.info' | translate }}</span>
       <span class="stat-value">{{ logs.filter(l => l.level === 'LOG').length }}</span>
     </div>
   </div>
@@ -51,7 +51,7 @@
   <!-- Empty State -->
   @if (filteredLogs.length === 0) {
     <div class="empty-state">
-      <p>No logs available</p>
+      <p>{{ 'logs.empty' | translate }}</p>
     </div>
   }
 
@@ -61,9 +61,9 @@
       <table class="logs-table">
         <thead>
           <tr>
-            <th class="col-timestamp">Timestamp</th>
-            <th class="col-level">Level</th>
-            <th class="col-message">Message</th>
+            <th class="col-timestamp">{{ 'logs.table.timestamp' | translate }}</th>
+            <th class="col-level">{{ 'logs.table.level' | translate }}</th>
+            <th class="col-message">{{ 'logs.table.message' | translate }}</th>
           </tr>
         </thead>
         <tbody>

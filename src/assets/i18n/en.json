@@ -1,0 +1,73 @@
+{
+  "common": {
+    "appName": "KNX IoT",
+    "appTitle": "KNX IoT Monitor",
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "delete": "Delete",
+      "edit": "Edit",
+      "confirm": "Confirm",
+      "back": "Back"
+    },
+    "loading": "Loading…"
+  },
+  "navigation": {
+    "toggle": "Toggle navigation",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "monitor": "Live Monitor",
+    "datapoints": "Datapoints",
+    "devices": "Devices",
+    "locations": "Locations",
+    "functions": "Functions",
+    "charts": "Charts",
+    "history": "History",
+    "logs": "Logs",
+    "settings": "Settings"
+  },
+  "logs": {
+    "title": "System Logs",
+    "filterLabel": "Filter by level:",
+    "export": "CSV Export",
+    "clear": "Clear",
+    "clearConfirm": "Are you sure you want to clear all logs?",
+    "empty": "No logs available",
+    "stats": {
+      "total": "Total logs:",
+      "errors": "Errors:",
+      "warnings": "Warnings:",
+      "info": "Info:"
+    },
+    "table": {
+      "timestamp": "Timestamp",
+      "level": "Level",
+      "message": "Message"
+    },
+    "filter": {
+      "all": "All",
+      "info": "Info",
+      "warning": "Warning",
+      "error": "Error"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": {
+      "label": "Language",
+      "en": "English",
+      "de": "German"
+    }
+  },
+  "errors": {
+    "connection": "Connection error. Please check if the API server is running and accessible.",
+    "testModeAuthFailed": "Backend authentication failed. Check hardcoded credentials.",
+    "loginFailed": "Login failed: {{message}}. Please check your connection.",
+    "usernameRequired": "Username is required",
+    "passwordRequired": "Password is required",
+    "dashboardLoadFailed": "Error loading dashboard: {{status}} {{message}}",
+    "monitorLoadFailed": "Failed to load data: {{message}}",
+    "retry": "Retry"
+  }
+}

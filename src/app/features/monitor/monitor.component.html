@@ -131,7 +131,7 @@
       <mat-icon class="error-icon">error_outline</mat-icon>
       <p class="error-message">{{ errorMessage }}</p>
       <button mat-raised-button color="primary" (click)="ngOnInit()">
-        <mat-icon>refresh</mat-icon> Retry
+        <mat-icon>refresh</mat-icon> {{ 'errors.retry' | translate }}
       </button>
     </div>
   }

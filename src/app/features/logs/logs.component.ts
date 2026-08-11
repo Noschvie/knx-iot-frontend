@@ -1,5 +1,6 @@
 ﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { LoggerService } from '@shared/services/logger.service';
+import { TranslateService } from '@ngx-translate/core';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -24,13 +25,13 @@ export class LogsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   readonly logLevels = [
-    { value: 'ALL', label: 'All' },
-    { value: 'LOG', label: 'Info' },
-    { value: 'WARN', label: 'Warning' },
-    { value: 'ERROR', label: 'Error' }
+    { value: 'ALL', labelKey: 'logs.filter.all' },
+    { value: 'LOG', labelKey: 'logs.filter.info' },
+    { value: 'WARN', labelKey: 'logs.filter.warning' },
+    { value: 'ERROR', labelKey: 'logs.filter.error' }
   ];
 
-  constructor(private loggerService: LoggerService) {}
+  constructor(private loggerService: LoggerService, private translate: TranslateService) {}
 
   ngOnInit(): void {
     this.loadLogs();
@@ -64,7 +65,7 @@ export class LogsComponent implements OnInit, OnDestroy {
   }
 
   clearLogs(): void {
-    if (confirm('Are you sure you want to clear all logs?')) {
+    if (confirm(this.translate.instant('logs.clearConfirm'))) {
       this.loggerService.clearLogs();
       this.logs = [];
       this.filteredLogs = [];
