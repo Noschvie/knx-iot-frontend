@@ -114,10 +114,10 @@ export class MonitorComponent implements OnInit, OnDestroy {
      // 1. Load initial data FIRST (blocking)
      this.loadInitialData();
 
-     // 2. Setup filter listener
+     // 2. Set up a filter listener
      this.setupFilterListener();
 
-     // 3. Connect WebSocket in background (non-blocking)
+     // 3. Connect WebSocket in the background (non-blocking)
      // Use setTimeout to allow UI to render first
      setTimeout(() => {
        console.log('[Monitor] ⏱️ Attempting WebSocket connection in background...');
