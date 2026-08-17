@@ -17,7 +17,7 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatBadgeModule } from '@angular/material/badge';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 
-import { Subject, Observable, combineLatest } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, debounceTime, startWith } from 'rxjs/operators';
 
 import { Datapoint } from '@shared/models';
