@@ -111,8 +111,32 @@ export class RaffstoreService {
     if (!current) return;
 
     console.log(`[RaffstoreService] setPosition called: height=${heightStep}, angle=${angleStep}, current.height=${current.heightStep}`);
+
+    // Sende STOP-Befehl (DPST-1-7)
+    if (heightStep === RAFFSTORE_HEIGHT_STEP_STOP) {
+      console.log(`[RaffstoreService] Sending STOP command`);
+      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
+        () => {
+          console.log(`[RaffstoreService] STOP command succeeded`);
+          // STOP setzt isMoving sofort auf false - Raffstore stoppt
+          const current = this.raffstore$.value;
+          if (current && current.isMoving) {
+            this.raffstore$.next({ ...current, isMoving: false });
+            console.log(`[RaffstoreService] Movement stopped - UP/DOWN buttons are now enabled`);
+          }
+        },
+        error => {
+          console.error(`[RaffstoreService] STOP command failed:`, error);
+          this.handleCommandError(error, current);
+        }
+      );
+      return;
+    }
+
+    // Setze isMoving nur für UP/DOWN/Position-Befehle
     this.raffstore$.next({ ...current, isMoving: true });
 
+    // ...existing code...
     // Timeout nach 1 Sekunde - Sicherheitsnetz falls API nicht antwortet
     const timeoutHandle = setTimeout(() => {
       const current = this.raffstore$.value;
@@ -124,29 +148,8 @@ export class RaffstoreService {
 
     const resetTimeout = () => clearTimeout(timeoutHandle);
 
-    // Sende STOP-Befehl (DPST-1-7)
-    if (heightStep === RAFFSTORE_HEIGHT_STEP_STOP) {
-      console.log(`[RaffstoreService] Sending STOP command`);
-      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
-        () => {
-          console.log(`[RaffstoreService] STOP command succeeded`);
-          resetTimeout();
-          // STOP-Befehl setzt sofort isMoving: false (ändert aber nicht die Position)
-          const current = this.raffstore$.value;
-          if (current) {
-            this.raffstore$.next({ ...current, isMoving: false });
-            console.log(`[RaffstoreService] Movement stopped`);
-          }
-        },
-        error => {
-          console.error(`[RaffstoreService] STOP command failed:`, error);
-          resetTimeout();
-          this.handleCommandError(error, current);
-        }
-      );
-    }
     // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN)
-    else if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
+    if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
       console.log(`[RaffstoreService] Sending MOVE_DOWN command`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
         () => {
