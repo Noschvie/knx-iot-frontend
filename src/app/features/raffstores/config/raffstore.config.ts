@@ -12,8 +12,8 @@
  * DPT 1.008 (Boolean) Werte für Raffstore-Bewegung
  */
 export const RAFFSTORE_COMMANDS = {
-  MOVE_UP: 1,      // Bewegung nach oben (DPST-1-8)
-  MOVE_DOWN: 0,    // Bewegung nach unten (DPST-1-8)
+  MOVE_UP: 0,      // Bewegung nach oben (DPST-1-8)
+  MOVE_DOWN: 1,    // Bewegung nach unten (DPST-1-8)
   STOP: 1          // Stop-Befehl (DPST-1-7)
 } as const;
 
