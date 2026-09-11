@@ -131,7 +131,12 @@ export class RaffstoreService {
         () => {
           console.log(`[RaffstoreService] STOP command succeeded`);
           resetTimeout();
-          this.updatePosition(heightStep, angleStep);
+          // STOP-Befehl setzt sofort isMoving: false (ändert aber nicht die Position)
+          const current = this.raffstore$.value;
+          if (current) {
+            this.raffstore$.next({ ...current, isMoving: false });
+            console.log(`[RaffstoreService] Movement stopped`);
+          }
         },
         error => {
           console.error(`[RaffstoreService] STOP command failed:`, error);
