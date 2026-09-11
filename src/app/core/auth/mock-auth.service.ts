@@ -13,7 +13,12 @@ const MOCK_PASSWORD = 'admin';
  */
 @Injectable()
 export class MockAuthService extends AuthService {
-    private loggedIn = false;
+    private loggedIn = true; // Auto-login for development
+
+    constructor() {
+        super();
+        console.log('[MockAuth] ✅ Auto-authenticated as "admin" for development');
+    }
 
     login(username: string, password: string): Observable<void> {
         if (username === MOCK_USERNAME && password === MOCK_PASSWORD) {

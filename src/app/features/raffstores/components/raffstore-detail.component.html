@@ -1,0 +1,110 @@
+<div class="detail-container">
+  <!-- Header -->
+  <div class="detail-header">
+    <div>
+      <h2>{{ raffstore.label }}</h2>
+      <p class="location">{{ raffstore.floor === 'EG' ? 'Erdgeschoss' : 'Obergeschoss' }}</p>
+    </div>
+    <div class="header-right">
+      <span *ngIf="raffstore.autoMode" class="badge auto-badge">
+        <mat-icon>wb_sunny</mat-icon>
+        Automatik
+      </span>
+      <button mat-icon-button (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Commands -->
+  <div class="quick-commands">
+    <button mat-raised-button (click)="moveUp()" [disabled]="raffstore.isMoving" class="cmd-btn cmd-up">
+      <mat-icon>arrow_upward</mat-icon>
+      <span>Auf</span>
+    </button>
+    <button mat-raised-button (click)="moveStop()" [disabled]="raffstore.isMoving" class="cmd-btn cmd-stop">
+      <mat-icon>stop</mat-icon>
+      <span>Stopp</span>
+    </button>
+    <button mat-raised-button (click)="moveDown()" [disabled]="raffstore.isMoving" class="cmd-btn cmd-down">
+      <mat-icon>arrow_downward</mat-icon>
+      <span>Zu</span>
+    </button>
+  </div>
+
+  <!-- Height Slider -->
+  <div class="slider-section">
+    <div class="slider-header">
+      <span class="label">Höhe</span>
+      <span class="value">{{ HEIGHT_STEPS[raffstore.heightStep] }}</span>
+    </div>
+    <div class="slider-container">
+      <div class="height-visual">
+        <div class="height-bar" [style.height.%]="getHeightPercent()"></div>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="3"
+        [value]="raffstore.heightStep"
+        (change)="onHeightChange($any($event.target).value)"
+        [disabled]="raffstore.isMoving"
+        class="slider"
+      />
+    </div>
+    <div class="position-labels">
+      <span>Zu</span>
+      <span>2/3</span>
+      <span>1/3</span>
+      <span>Auf</span>
+    </div>
+  </div>
+
+  <!-- Angle Slider -->
+  <div class="slider-section">
+    <div class="slider-header">
+      <span class="label">Lamellenwinkel</span>
+      <span class="value">{{ ANGLE_STEPS[raffstore.angleStep] }}</span>
+    </div>
+    <div class="slider-container">
+      <input
+        type="range"
+        min="0"
+        max="2"
+        [value]="raffstore.angleStep"
+        (change)="onAngleChange($any($event.target).value)"
+        [disabled]="raffstore.isMoving"
+        class="slider"
+      />
+    </div>
+    <div class="position-labels">
+      <span>Offen</span>
+      <span>Schräg</span>
+      <span>Zu</span>
+    </div>
+  </div>
+
+  <!-- Favorites -->
+  <div class="favorites-section">
+    <h3>Favoriten</h3>
+    <div class="favorites-grid">
+      <button
+        *ngFor="let fav of favorites"
+        mat-stroked-button
+        (click)="applyFavorite(fav)"
+        [disabled]="raffstore.isMoving"
+        class="favorite-btn"
+      >
+        {{ fav.label }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Auto Mode Toggle -->
+  <div class="footer">
+    <button mat-stroked-button (click)="toggleAutoMode()" class="auto-toggle">
+      <mat-icon>{{ raffstore.autoMode ? 'wb_sunny' : 'pan_tool' }}</mat-icon>
+      {{ raffstore.autoMode ? 'Automatik AN' : 'Manuell' }}
+    </button>
+  </div>
+</div>

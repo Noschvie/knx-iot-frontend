@@ -1,0 +1,61 @@
+<mat-card class="raffstore-tile" [class.is-moving]="raffstore.isMoving" (click)="openDetail()" role="button">
+  <!-- Header with title and badges -->
+  <div class="tile-header">
+    <h3>{{ raffstore.label }}</h3>
+    <div class="badges">
+      <!-- Auto-Mode Badge -->
+      <span *ngIf="raffstore.autoMode" class="badge auto-badge" matTooltip="Automatik aktiv">
+        <mat-icon>wb_sunny</mat-icon>
+      </span>
+      <!-- Movement Indicator -->
+      <span *ngIf="raffstore.isMoving" class="badge moving-badge" matTooltip="Bewegung">
+        <mat-icon>unfold_more</mat-icon>
+      </span>
+    </div>
+  </div>
+
+  <!-- Current Status Display -->
+  <div class="tile-status">
+    <div class="status-row">
+      <span class="label">Höhe:</span>
+      <span class="value">{{ heightLabel }}</span>
+    </div>
+    <div class="status-row">
+      <span class="label">Lamellen:</span>
+      <span class="value">{{ angleLabel }}</span>
+    </div>
+  </div>
+
+  <!-- Position Grid (4x3) - Minimal, kompakt -->
+  <div class="position-grid">
+    <!-- Height (rows) -->
+    <div *ngFor="let h of [0, 1, 2, 3]" class="grid-row">
+      <div *ngFor="let a of [0, 1, 2]" class="grid-cell">
+        <button
+          mat-icon-button
+          (click)="setPosition(h, a); $event.stopPropagation()"
+          [class.active]="raffstore.heightStep === h && raffstore.angleStep === a"
+          [class.disabled]="raffstore.isMoving"
+          [disabled]="raffstore.isMoving"
+          matTooltip="Höhe: {{ HEIGHT_STEPS[h] }}, Lamellen: {{ ANGLE_STEPS[a] }}"
+        >
+          <!-- Grid Icon -->
+          <mat-icon class="grid-icon">rectangle</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer: Auto Mode Toggle -->
+  <div class="tile-footer">
+    <button mat-stroked-button (click)="toggleAutoMode(); $event.stopPropagation()">
+      <mat-icon>{{ raffstore.autoMode ? 'wb_sunny' : 'pan_tool' }}</mat-icon>
+      {{ raffstore.autoMode ? 'Automatik AN' : 'Manuell' }}
+    </button>
+  </div>
+
+  <!-- Click hint -->
+  <div class="click-hint">
+    Tippen für Detailansicht
+  </div>
+</mat-card>

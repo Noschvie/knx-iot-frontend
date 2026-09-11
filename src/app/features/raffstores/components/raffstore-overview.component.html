@@ -1,0 +1,14 @@
+<div class="raffstore-container">
+  <div class="page-header">
+    <h1>Raffstore Steuerung</h1>
+    <p class="subtitle">EG/OG – Prototype</p>
+  </div>
+
+  <!-- Grid: 1 Spalte (Prototype) -->
+  <div class="raffstore-grid">
+    <app-raffstore-tile
+      *ngIf="raffstore"
+      [raffstore]="raffstore"
+    ></app-raffstore-tile>
+  </div>
+</div>

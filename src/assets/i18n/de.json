@@ -25,7 +25,8 @@
     "charts": "Diagramme",
     "history": "Verlauf",
     "logs": "Protokolle",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "raffstores": "Raffstore"
   },
   "logs": {
     "title": "Systemprotokolle",
@@ -58,6 +59,30 @@
       "label": "Sprache",
       "en": "Englisch",
       "de": "Deutsch"
+    }
+  },
+  "raffstore": {
+    "title": "Raffstore Steuerung",
+    "subtitle": "EG/OG – Prototype",
+    "height": "Höhe",
+    "angle": "Lamellen",
+    "auto": "Automatik",
+    "manual": "Manuell",
+    "autoOn": "Automatik AN",
+    "automationActive": "Automatik aktiv",
+    "movement": "Bewegung",
+    "positions": {
+      "height": {
+        "0": "Auf",
+        "1": "1/3",
+        "2": "2/3",
+        "3": "Zu"
+      },
+      "angle": {
+        "0": "Offen",
+        "1": "Schräg",
+        "2": "Zu"
+      }
     }
   },
   "errors": {

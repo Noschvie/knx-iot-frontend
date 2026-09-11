@@ -25,7 +25,8 @@
     "charts": "Charts",
     "history": "History",
     "logs": "Logs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "raffstores": "Raffstore"
   },
   "logs": {
     "title": "System Logs",
