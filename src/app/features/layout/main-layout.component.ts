@@ -128,18 +128,20 @@ interface NavItem {
     }
   `]
 })
+
 export class MainLayoutComponent {
   navItems: NavItem[] = [
-    { labelKey: 'navigation.dashboard', icon: 'dashboard',      route: '/dashboard'   },
-    { labelKey: 'navigation.monitor',   icon: 'monitor_heart',  route: '/monitor'     },
-    { labelKey: 'navigation.datapoints',icon: 'sensors',        route: '/datapoints'  },
-    { labelKey: 'navigation.devices',   icon: 'device_hub',     route: '/devices'     },
-    { labelKey: 'navigation.locations', icon: 'location_on',    route: '/locations'   },
-    { labelKey: 'navigation.functions', icon: 'functions',      route: '/functions'   },
-    { labelKey: 'navigation.charts',    icon: 'show_chart',     route: '/charts'      },
-    { labelKey: 'navigation.history',   icon: 'history',        route: '/history'     },
-    { labelKey: 'navigation.logs',      icon: 'list_alt',       route: '/logs'        },
-    { labelKey: 'navigation.settings',  icon: 'settings',       route: '/settings'    },
+    { labelKey: 'navigation.raffstores', icon: 'window_shade',   route: '/raffstores'  },
+    { labelKey: 'navigation.dashboard',  icon: 'dashboard',      route: '/dashboard'   },
+    { labelKey: 'navigation.monitor',    icon: 'monitor_heart',  route: '/monitor'     },
+    { labelKey: 'navigation.datapoints', icon: 'sensors',        route: '/datapoints'  },
+    { labelKey: 'navigation.devices',    icon: 'device_hub',     route: '/devices'     },
+    { labelKey: 'navigation.locations',  icon: 'location_on',    route: '/locations'   },
+    { labelKey: 'navigation.functions',  icon: 'functions',      route: '/functions'   },
+    { labelKey: 'navigation.charts',     icon: 'show_chart',     route: '/charts'      },
+    { labelKey: 'navigation.history',    icon: 'history',        route: '/history'     },
+    { labelKey: 'navigation.logs',       icon: 'list_alt',       route: '/logs'        },
+    { labelKey: 'navigation.settings',   icon: 'settings',       route: '/settings'    },
   ];
 
   constructor(private auth: AuthService, private router: Router) {}
