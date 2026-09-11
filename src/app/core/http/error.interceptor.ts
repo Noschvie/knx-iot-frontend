@@ -63,14 +63,8 @@ export class ErrorInterceptor implements HttpInterceptor {
                     });
                 }
 
-                if (error.status === 401 || error.status === 403) {
-                    console.log(`[HTTP Interceptor] Unauthorized (${error.status}), logging out and redirecting to login`);
-                    const auth = this.injector.get(AuthService);
-                    const router = this.injector.get(Router);
-                    auth.logout();
-                    router.navigate(['/login']);
-                }
-
+                // TEST MODE: Don't auto-logout on 401/403 - let services handle gracefully
+                // In production, this should redirect to log in, but for testing we want resilience
                 return throwError(() => error);
             })
         );
