@@ -118,11 +118,12 @@ export class RaffstoreService {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
         () => {
           console.log(`[RaffstoreService] STOP command succeeded`);
-          // STOP setzt isMoving sofort auf false - Raffstore stoppt
+          // STOP setzt isMoving auf false - Raffstore stoppt an aktueller Position
           const current = this.raffstore$.value;
-          if (current && current.isMoving) {
+          if (current) {
             this.raffstore$.next({ ...current, isMoving: false });
             console.log(`[RaffstoreService] Movement stopped - UP/DOWN buttons are now enabled`);
+            console.log(`[RaffstoreService] Current position: height=${current.heightStep}, angle=${current.angleStep}`);
           }
         },
         error => {
@@ -150,7 +151,7 @@ export class RaffstoreService {
 
     // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN)
     if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
-      console.log(`[RaffstoreService] Sending MOVE_DOWN command`);
+      console.log(`[RaffstoreService] Sending MOVE_DOWN command - current position: ${current.heightStep}, target: ${RAFFSTORE_HEIGHT_STEP_DOWN}`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
         () => {
           console.log(`[RaffstoreService] MOVE_DOWN command succeeded`);
@@ -164,9 +165,13 @@ export class RaffstoreService {
         }
       );
     }
+    // DOWN-Befehl ignoriert - bereits unten!
+    else if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep <= RAFFSTORE_HEIGHT_STEP_DOWN) {
+      console.warn(`[RaffstoreService] ⚠️ DOWN command ignored - already at bottom position (${current.heightStep})`);
+    }
     // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP)
     else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep < RAFFSTORE_HEIGHT_STEP_UP) {
-      console.log(`[RaffstoreService] Sending MOVE_UP command`);
+      console.log(`[RaffstoreService] Sending MOVE_UP command - current position: ${current.heightStep}, target: ${RAFFSTORE_HEIGHT_STEP_UP}`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
         () => {
           console.log(`[RaffstoreService] MOVE_UP command succeeded`);
@@ -179,6 +184,10 @@ export class RaffstoreService {
           this.handleCommandError(error, current);
         }
       );
+    }
+    // UP-Befehl ignoriert - bereits oben!
+    else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep >= RAFFSTORE_HEIGHT_STEP_UP) {
+      console.warn(`[RaffstoreService] ⚠️ UP command ignored - already at top position (${current.heightStep})`);
     }
     // Sende direkte Position
     else {
