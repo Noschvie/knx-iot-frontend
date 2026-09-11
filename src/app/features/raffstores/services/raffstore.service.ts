@@ -118,12 +118,16 @@ export class RaffstoreService {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
         () => {
           console.log(`[RaffstoreService] STOP command succeeded`);
-          // STOP setzt isMoving auf false - Raffstore stoppt an aktueller Position
+          // STOP setzt isMoving auf false und heightStep auf eine Mittelposition (1 = Mittelposition)
           const current = this.raffstore$.value;
           if (current) {
-            this.raffstore$.next({ ...current, isMoving: false });
-            console.log(`[RaffstoreService] Movement stopped - UP/DOWN buttons are now enabled`);
-            console.log(`[RaffstoreService] Current position: height=${current.heightStep}, angle=${current.angleStep}`);
+            this.raffstore$.next({
+              ...current,
+              isMoving: false,
+              heightStep: 1  // Mittlere Position, damit UP/DOWN wieder funktionieren
+            });
+            console.log(`[RaffstoreService] Movement stopped at intermediate position - UP/DOWN buttons are now enabled`);
+            console.log(`[RaffstoreService] New position: height=1 (intermediate), angle=${current.angleStep}`);
           }
         },
         error => {
