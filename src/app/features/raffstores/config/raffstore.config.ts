@@ -2,27 +2,27 @@
  * Raffstore Konfiguration - Maps Raffstores zu KNX Datapoint-GAs
  *
  * Basierend auf dem bash-Script-Beispiel:
- * - Bewegen (up/down): DPST-1-8
- * - Stopp: DPST-1-7
- * - Position Höhe: DPST-5-1 (0-100)
- * - Lamellenwinkel: DPST-5-1 (0-100)
+ * - Bewegen (up/down): DPST-1-8 (gaMove: 2/1/24)
+ * - Stopp: DPST-1-7 (gaStep: 2/2/24)
+ * - Position Höhe: DPST-5-1 (gaHeight: 2/3/24, 0-100)
+ * - Lamellenwinkel: DPST-5-1 (gaAngle: 2/5/24, 0-100)
  */
 
 /**
  * DPT 1.008 (Boolean) Werte für Raffstore-Bewegung
  */
 export const RAFFSTORE_COMMANDS = {
-  MOVE_UP: 1,        // Bewegung nach oben
-  MOVE_DOWN: 0,      // Bewegung nach unten
-  STOP: 'stop'       // Stop-Befehl
+  MOVE_UP: 1,      // Bewegung nach oben (DPST-1-8)
+  MOVE_DOWN: 0,    // Bewegung nach unten (DPST-1-8)
+  STOP: 1,          // Stop-Befehl (DPST-1-7)
 } as const;
 
 /**
  * Datapoint Schlüssel - sprechende Namen für Konfig-Zugriff
  */
 export const RAFFSTORE_DATAPOINT_KEYS = {
-  MOVE: 'gaMove',                   // Auf/Ab Befehl
-  STEP: 'gaStep',                   // Stopp Befehl
+  MOVE: 'gaMove',                   // Auf/Ab Befehl (DPST-1-8)
+  STEP: 'gaStep',                   // Stopp Befehl (DPST-1-7)
   HEIGHT: 'gaHeight',               // Position Höhe (Befehl)
   STATUS_HEIGHT: 'gaStatusHeight',  // Position Höhe (Status/Feedback)
   ANGLE: 'gaAngle',                 // Lamellenwinkel (Befehl)

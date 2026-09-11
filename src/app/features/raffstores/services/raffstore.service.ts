@@ -64,7 +64,9 @@ export class RaffstoreService {
       this.config.gaMove,
       this.config.gaStep,
       this.config.gaHeight,
-      this.config.gaAngle
+      this.config.gaAngle,
+      this.config.gaStatusHeight,
+      this.config.gaStatusAngle
     ];
 
     const requests = gaList.map(ga =>
@@ -105,16 +107,23 @@ export class RaffstoreService {
 
     this.raffstore$.next({ ...current, isMoving: true });
 
-    // Sende Auf-Befehl (DPT 1.008: MOVE_UP)
-    if (heightStep === 0 && current.heightStep > 0) {
-      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
+    // Sende STOP-Befehl (DPST-1-7)
+    if (heightStep === 1) {
+      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
     }
-    // Sende Zu-Befehl (DPT 1.008: MOVE_DOWN)
-    else if (heightStep === 3 && current.heightStep < 3) {
+    // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN, heightStep=0 bedeutet ganz unten)
+    else if (heightStep === 0 && current.heightStep > 0) {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
+        () => this.updatePosition(heightStep, angleStep),
+        error => this.handleCommandError(error, current)
+      );
+    }
+    // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP, heightStep=3 bedeutet ganz oben)
+    else if (heightStep === 3 && current.heightStep < 3) {
+      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
