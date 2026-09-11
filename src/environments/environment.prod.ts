@@ -12,7 +12,7 @@ export const environment = {
         logLevel: 'error'
     },
     features: {
-        enableMockData: false,
+        enableMockData: true,
         enableDevTools: false,
         enablePerformanceMonitoring: false
     }
