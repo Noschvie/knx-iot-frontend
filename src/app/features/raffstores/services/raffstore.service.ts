@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
+import { BehaviorSubject, Observable, forkJoin, of, timeout } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import {
   Raffstore,
@@ -110,38 +110,85 @@ export class RaffstoreService {
     const current = this.raffstore$.value;
     if (!current) return;
 
+    console.log(`[RaffstoreService] setPosition called: height=${heightStep}, angle=${angleStep}, current.height=${current.heightStep}`);
     this.raffstore$.next({ ...current, isMoving: true });
+
+    // Timeout nach 1 Sekunde - Sicherheitsnetz falls API nicht antwortet
+    const timeoutHandle = setTimeout(() => {
+      const current = this.raffstore$.value;
+      if (current && current.isMoving) {
+        console.warn(`[RaffstoreService] ⚠️ Movement timeout after 1s - forcing reset of isMoving`);
+        this.raffstore$.next({ ...current, isMoving: false });
+      }
+    }, 1000);
+
+    const resetTimeout = () => clearTimeout(timeoutHandle);
 
     // Sende STOP-Befehl (DPST-1-7)
     if (heightStep === RAFFSTORE_HEIGHT_STEP_STOP) {
+      console.log(`[RaffstoreService] Sending STOP command`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
-        () => this.updatePosition(heightStep, angleStep),
-        error => this.handleCommandError(error, current)
+        () => {
+          console.log(`[RaffstoreService] STOP command succeeded`);
+          resetTimeout();
+          this.updatePosition(heightStep, angleStep);
+        },
+        error => {
+          console.error(`[RaffstoreService] STOP command failed:`, error);
+          resetTimeout();
+          this.handleCommandError(error, current);
+        }
       );
     }
     // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN)
     else if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
+      console.log(`[RaffstoreService] Sending MOVE_DOWN command`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
-        () => this.updatePosition(heightStep, angleStep),
-        error => this.handleCommandError(error, current)
+        () => {
+          console.log(`[RaffstoreService] MOVE_DOWN command succeeded`);
+          resetTimeout();
+          this.updatePosition(heightStep, angleStep);
+        },
+        error => {
+          console.error(`[RaffstoreService] MOVE_DOWN command failed:`, error);
+          resetTimeout();
+          this.handleCommandError(error, current);
+        }
       );
     }
     // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP)
     else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep < RAFFSTORE_HEIGHT_STEP_UP) {
+      console.log(`[RaffstoreService] Sending MOVE_UP command`);
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
-        () => this.updatePosition(heightStep, angleStep),
-        error => this.handleCommandError(error, current)
+        () => {
+          console.log(`[RaffstoreService] MOVE_UP command succeeded`);
+          resetTimeout();
+          this.updatePosition(heightStep, angleStep);
+        },
+        error => {
+          console.error(`[RaffstoreService] MOVE_UP command failed:`, error);
+          resetTimeout();
+          this.handleCommandError(error, current);
+        }
       );
     }
     // Sende direkte Position
     else {
       const knxHeight = STEP_TO_KNX.height[heightStep as keyof typeof STEP_TO_KNX.height];
       const knxAngle = STEP_TO_KNX.angle[angleStep as keyof typeof STEP_TO_KNX.angle];
-      console.log(`[RaffstoreService] Sending position: height=${knxHeight}, angle=${knxAngle}`);
+      console.log(`[RaffstoreService] Sending direct position: height=${knxHeight}, angle=${knxAngle}`);
 
       this.sendPosition(knxHeight, knxAngle).subscribe(
-        () => this.updatePosition(heightStep, angleStep),
-        error => this.handleCommandError(error, current)
+        () => {
+          console.log(`[RaffstoreService] Direct position succeeded`);
+          resetTimeout();
+          this.updatePosition(heightStep, angleStep);
+        },
+        error => {
+          console.error(`[RaffstoreService] Direct position failed:`, error);
+          resetTimeout();
+          this.handleCommandError(error, current);
+        }
       );
     }
   }
@@ -169,10 +216,10 @@ export class RaffstoreService {
       `${this.configService.getApiEndpoint()}/datapoints/values`,
       payload
     ).pipe(
-      tap(() => console.log(`[RaffstoreService] ✅ Command sent: ${value}`)),
+      tap(response => console.log(`[RaffstoreService] ✅ Command sent: ${value}`, response)),
       catchError(err => {
         console.error(`[RaffstoreService] ✗ Command failed:`, err);
-        return of(null);
+        throw err; // Re-throw so error callback is triggered
       })
     );
   }
@@ -209,10 +256,10 @@ export class RaffstoreService {
       `${this.configService.getApiEndpoint()}/datapoints/values`,
       payload
     ).pipe(
-      tap(() => console.log(`[RaffstoreService] ✅ Position sent`)),
+      tap(response => console.log(`[RaffstoreService] ✅ Position sent`, response)),
       catchError(err => {
         console.error(`[RaffstoreService] ✗ Position failed:`, err);
-        return of(null);
+        throw err; // Re-throw so error callback is triggered
       })
     );
   }

@@ -22,7 +22,7 @@
       <mat-icon>arrow_upward</mat-icon>
       <span>Auf</span>
     </button>
-    <button mat-raised-button (click)="moveStop()" [disabled]="raffstore.isMoving" class="cmd-btn cmd-stop">
+    <button mat-raised-button (click)="moveStop()" [disabled]="!raffstore.isMoving" class="cmd-btn cmd-stop">
       <mat-icon>stop</mat-icon>
       <span>Stopp</span>
     </button>
