@@ -8,6 +8,15 @@
  * - Lamellenwinkel: DPST-5-1 (0-100)
  */
 
+/**
+ * DPT 1.008 (Boolean) Werte für Raffstore-Bewegung
+ */
+export const RAFFSTORE_COMMANDS = {
+  MOVE_UP: 1,        // Bewegung nach oben
+  MOVE_DOWN: 0,      // Bewegung nach unten
+  STOP: 'stop'       // Stop-Befehl
+} as const;
+
 export interface RaffstoreDatapoints {
   id: string;
   label: string;

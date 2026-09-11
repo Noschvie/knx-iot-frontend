@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Raffstore } from '../models/raffstore.model';
-import { RAFFSTORE_CONFIG, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
+import { RAFFSTORE_CONFIG, RAFFSTORE_COMMANDS, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
 import { ConfigService } from '@core/config/config.service';
 
 interface DatapointUUID {
@@ -105,16 +105,16 @@ export class RaffstoreService {
 
     this.raffstore$.next({ ...current, isMoving: true });
 
-    // Sende Auf-Befehl
+    // Sende Auf-Befehl (DPT 1.008: MOVE_UP)
     if (heightStep === 0 && current.heightStep > 0) {
-      this.sendCommand('gaMove', 'up').subscribe(
+      this.sendCommand('gaMove', RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
     }
-    // Sende Zu-Befehl
+    // Sende Zu-Befehl (DPT 1.008: MOVE_DOWN)
     else if (heightStep === 3 && current.heightStep < 3) {
-      this.sendCommand('gaMove', 'down').subscribe(
+      this.sendCommand('gaMove', RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
@@ -131,7 +131,7 @@ export class RaffstoreService {
     }
   }
 
-  private sendCommand(gaKey: string, value: string): Observable<any> {
+  private sendCommand(gaKey: string, value: number | string): Observable<any> {
     const ga = this.config?.[gaKey as keyof RaffstoreDatapoints] as string;
     const uuid = this.datapointUUIDs.get(ga)?.uuid;
 
@@ -144,7 +144,7 @@ export class RaffstoreService {
       data: [{
         id: uuid,
         type: 'datapoint',
-        attributes: { value }
+        attributes: { value: String(value) }
       }]
     };
 
