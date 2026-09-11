@@ -17,6 +17,13 @@ export const RAFFSTORE_COMMANDS = {
   STOP: 'stop'       // Stop-Befehl
 } as const;
 
+export const RAFFSTORE_DATAPOINT_KEYS = {
+  MOVE: 'gaMove',      // Auf/Ab Befehl
+  STEP: 'gaStep',      // Stopp Befehl
+  HEIGHT: 'gaHeight',  // Position Höhe
+  ANGLE: 'gaAngle'     // Lamellenwinkel
+} as const;
+
 export interface RaffstoreDatapoints {
   id: string;
   label: string;

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Raffstore } from '../models/raffstore.model';
-import { RAFFSTORE_CONFIG, RAFFSTORE_COMMANDS, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
+import { RAFFSTORE_CONFIG, RAFFSTORE_COMMANDS, RAFFSTORE_DATAPOINT_KEYS, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
 import { ConfigService } from '@core/config/config.service';
 
 interface DatapointUUID {
@@ -107,14 +107,14 @@ export class RaffstoreService {
 
     // Sende Auf-Befehl (DPT 1.008: MOVE_UP)
     if (heightStep === 0 && current.heightStep > 0) {
-      this.sendCommand('gaMove', RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
+      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
     }
     // Sende Zu-Befehl (DPT 1.008: MOVE_DOWN)
     else if (heightStep === 3 && current.heightStep < 3) {
-      this.sendCommand('gaMove', RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
+      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
@@ -123,6 +123,7 @@ export class RaffstoreService {
     else {
       const knxHeight = STEP_TO_KNX.height[heightStep as keyof typeof STEP_TO_KNX.height];
       const knxAngle = STEP_TO_KNX.angle[angleStep as keyof typeof STEP_TO_KNX.angle];
+      console.log(`[RaffstoreService] Sending position: height=${knxHeight}, angle=${knxAngle}`);
 
       this.sendPosition(knxHeight, knxAngle).subscribe(
         () => this.updatePosition(heightStep, angleStep),
