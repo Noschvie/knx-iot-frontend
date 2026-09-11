@@ -8,8 +8,7 @@ const MOCK_PASSWORD = 'admin';
 
 /**
  * Mock implementation for frontend development without a backend.
- * Valid credentials: admin / admin
- * Activation: swap the provider in core.module.ts.
+ * In TEST MODE: accepts ANY username/password combination.
  */
 @Injectable()
 export class MockAuthService extends AuthService {
@@ -17,22 +16,24 @@ export class MockAuthService extends AuthService {
 
     constructor() {
         super();
-        console.log('[MockAuth] ✅ Auto-authenticated as "admin" for development');
+        console.log('[MockAuth] ✅ TEST MODE: Accepting ANY credentials for development');
     }
 
     login(username: string, password: string): Observable<void> {
-        if (username === MOCK_USERNAME && password === MOCK_PASSWORD) {
-            console.log(`[MockAuth] Login successful as "${username}"`);
+        // TEST MODE: Accept ANY credentials
+        if (username && password) {
+            console.log(`[MockAuth] ✅ Login successful (TEST MODE): "${username}"`);
             this.loggedIn = true;
             return of(void 0);
         }
 
-        console.warn(`[MockAuth] Login failed for "${username}"`);
-        return throwError(() => ({ status: 401, message: 'Invalid credentials' }));
+        console.warn(`[MockAuth] ✗ Login failed: Missing username or password`);
+        return throwError(() => ({ status: 400, message: 'Username and password required' }));
     }
 
     logout(): void {
         this.loggedIn = false;
+        console.log('[MockAuth] Logged out');
     }
 
     getToken(): string | null {
