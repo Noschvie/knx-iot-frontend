@@ -17,11 +17,16 @@ export const RAFFSTORE_COMMANDS = {
   STOP: 'stop'       // Stop-Befehl
 } as const;
 
+/**
+ * Datapoint Schlüssel - sprechende Namen für Konfig-Zugriff
+ */
 export const RAFFSTORE_DATAPOINT_KEYS = {
-  MOVE: 'gaMove',      // Auf/Ab Befehl
-  STEP: 'gaStep',      // Stopp Befehl
-  HEIGHT: 'gaHeight',  // Position Höhe
-  ANGLE: 'gaAngle'     // Lamellenwinkel
+  MOVE: 'gaMove',                   // Auf/Ab Befehl
+  STEP: 'gaStep',                   // Stopp Befehl
+  HEIGHT: 'gaHeight',               // Position Höhe (Befehl)
+  STATUS_HEIGHT: 'gaStatusHeight',  // Position Höhe (Status/Feedback)
+  ANGLE: 'gaAngle',                 // Lamellenwinkel (Befehl)
+  STATUS_ANGLE: 'gaStatusAngle'     // Lamellenwinkel (Status/Feedback)
 } as const;
 
 export interface RaffstoreDatapoints {
@@ -29,13 +34,14 @@ export interface RaffstoreDatapoints {
   label: string;
   floor: 'EG' | 'OG';
   orientation?: string;
-  // Datapoint GAs (wird später zu UUIDs aufgelöst)
-  gaMove: string;             // 2/1/24 - up/down
-  gaStep: string;             // 2/2/24 - stop
-  gaHeight: string;           // 2/3/24 - Position (0-100)
-  gaStatusHeight: string;     // 2/4/24 - Status Position (0-100)
-  gaAngle: string;            // 2/5/24 - Lamellenwinkel (0-100)
-  gaStatusAngle: string;      // 2/6/24 - Statsu Lamellenwinkel (0-100)
+  // Befehls-Datapoints
+  gaMove: string;           // 2/1/24 - up/down
+  gaStep: string;           // 2/2/24 - stop
+  gaHeight: string;         // 2/3/24 - Position Höhe (Befehl)
+  gaAngle: string;          // 2/5/24 - Lamellenwinkel (Befehl)
+  // Status/Feedback-Datapoints
+  gaStatusHeight: string;   // 2/4/24 - Position Höhe (Status)
+  gaStatusAngle: string;    // 2/6/24 - Lamellenwinkel (Status)
 }
 
 export const RAFFSTORE_CONFIG: RaffstoreDatapoints[] = [
@@ -47,25 +53,25 @@ export const RAFFSTORE_CONFIG: RaffstoreDatapoints[] = [
     gaMove: '2/1/24',
     gaStep: '2/2/24',
     gaHeight: '2/3/24',
-    gaStatusHeight: '2/4/24',
     gaAngle: '2/5/24',
-    gaStatusAngle: '2/6/24',
+    gaStatusHeight: '2/4/24',
+    gaStatusAngle: '2/6/24'
   }
   // Weitere Raffstores hinzufügen...
 ];
 
 /**
  * Mapping: Discrete Stufen → KNX-Werte (0-100)
+ * Höhe: 0-3 → 0-100 (inverted: 0=oben, 100=unten)
+ * Lamellen: 0-2 → 0-100 (0=offen, 100=zu)
  */
 export const STEP_TO_KNX = {
-  // Höhe: 0-3 → 0-100 (inverted: 0=oben, 100=unten)
   height: {
     0: 0,      // Auf (oben)
     1: 33,     // 1/3
     2: 66,     // 2/3
     3: 100     // Zu (unten)
   },
-  // Lamellen: 0-2 → 0-100
   angle: {
     0: 0,      // Offen (0°)
     1: 50,     // Schräg (45°)
