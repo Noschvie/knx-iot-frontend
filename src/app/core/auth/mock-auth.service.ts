@@ -9,21 +9,29 @@ const MOCK_PASSWORD = 'admin';
 /**
  * Mock implementation for frontend development without a backend.
  * In TEST MODE: accepts ANY username/password combination.
+ * Uses localStorage to persist session across reloads.
  */
 @Injectable()
 export class MockAuthService extends AuthService {
-    private loggedIn = true; // Auto-login for development
+    private readonly STORAGE_KEY = 'mock-auth-token';
 
     constructor() {
         super();
-        console.log('[MockAuth] ✅ TEST MODE: Accepting ANY credentials for development');
+        // Check if already logged in from previous session
+        const storedToken = this.getStoredToken();
+        if (storedToken) {
+            console.log('[MockAuth] ✅ Restored session from localStorage');
+        } else {
+            console.log('[MockAuth] ✅ TEST MODE: Accepting ANY credentials for development');
+        }
     }
 
     login(username: string, password: string): Observable<void> {
         // TEST MODE: Accept ANY credentials
         if (username && password) {
             console.log(`[MockAuth] ✅ Login successful (TEST MODE): "${username}"`);
-            this.loggedIn = true;
+            // Store token in localStorage to persist across reloads
+            localStorage.setItem(this.STORAGE_KEY, 'mock-token-dev');
             return of(void 0);
         }
 
@@ -32,15 +40,24 @@ export class MockAuthService extends AuthService {
     }
 
     logout(): void {
-        this.loggedIn = false;
+        localStorage.removeItem(this.STORAGE_KEY);
         console.log('[MockAuth] Logged out');
     }
 
     getToken(): string | null {
-        return this.loggedIn ? 'mock-token-dev' : null;
+        return this.getStoredToken();
     }
 
     isAuthenticated(): boolean {
-        return this.loggedIn;
+        return !!this.getStoredToken();
+    }
+
+    private getStoredToken(): string | null {
+        try {
+            return localStorage.getItem(this.STORAGE_KEY);
+        } catch (e) {
+            console.warn('[MockAuth] localStorage not available:', e);
+            return null;
+        }
     }
 }
