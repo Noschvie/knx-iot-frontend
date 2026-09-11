@@ -79,7 +79,7 @@ export class RaffstoreService {
             return dp;
           }),
           catchError(err => {
-            console.warn(`[RaffstoreService] ⚠️ Datapoint not found for GA ${ga}`);
+            console.warn(`[RaffstoreService] ⚠️ Datapoint not found for GA ${ga}:`, err);
             return of(null);
           })
         )
