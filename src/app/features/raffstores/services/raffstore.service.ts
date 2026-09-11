@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { Raffstore } from '../models/raffstore.model';
+import {
+  Raffstore,
+  RAFFSTORE_HEIGHT_STEP_UP,
+  RAFFSTORE_HEIGHT_STEP_STOP,
+  RAFFSTORE_HEIGHT_STEP_DOWN
+} from '../models/raffstore.model';
 import { RAFFSTORE_CONFIG, RAFFSTORE_COMMANDS, RAFFSTORE_DATAPOINT_KEYS, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
 import { ConfigService } from '@core/config/config.service';
 
@@ -108,21 +113,21 @@ export class RaffstoreService {
     this.raffstore$.next({ ...current, isMoving: true });
 
     // Sende STOP-Befehl (DPST-1-7)
-    if (heightStep === 1) {
+    if (heightStep === RAFFSTORE_HEIGHT_STEP_STOP) {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
     }
-    // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN, heightStep=0 bedeutet ganz unten)
-    else if (heightStep === 0 && current.heightStep > 0) {
+    // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN)
+    else if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)
       );
     }
-    // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP, heightStep=3 bedeutet ganz oben)
-    else if (heightStep === 3 && current.heightStep < 3) {
+    // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP)
+    else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep < RAFFSTORE_HEIGHT_STEP_UP) {
       this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
         () => this.updatePosition(heightStep, angleStep),
         error => this.handleCommandError(error, current)

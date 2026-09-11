@@ -1,6 +1,13 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS } from '../models/raffstore.model';
+import {
+  Raffstore,
+  HEIGHT_STEPS,
+  ANGLE_STEPS,
+  RAFFSTORE_HEIGHT_STEP_UP,
+  RAFFSTORE_HEIGHT_STEP_STOP,
+  RAFFSTORE_HEIGHT_STEP_DOWN
+} from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 
 @Component({
@@ -17,9 +24,9 @@ export class RaffstoreDetailComponent implements OnInit {
   // Favorites (mock)
   favorites = [
     { label: 'Sonnenschutz', height: 1, angle: 1 },
-    { label: 'Ganz zu', height: 3, angle: 2 },
+    { label: 'Ganz zu', height: RAFFSTORE_HEIGHT_STEP_DOWN, angle: 2 },
     { label: 'Lüften', height: 2, angle: 1 },
-    { label: 'Ganz auf', height: 0, angle: 0 }
+    { label: 'Ganz auf', height: RAFFSTORE_HEIGHT_STEP_UP, angle: 0 }
   ];
 
   constructor(
@@ -39,16 +46,17 @@ export class RaffstoreDetailComponent implements OnInit {
 
   // Quick commands
   moveUp(): void {
-    this.raffstoreService.setPosition(0, this.raffstore.angleStep);
+    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_UP, this.raffstore.angleStep);
   }
 
   moveStop(): void {
-    // Keep current position but stop movement
+    // Send STOP command
+    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_STOP, this.raffstore.angleStep);
     console.log('[Detail] Stopped');
   }
 
   moveDown(): void {
-    this.raffstoreService.setPosition(3, this.raffstore.angleStep);
+    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_DOWN, this.raffstore.angleStep);
   }
 
   // Slider changes
@@ -71,7 +79,7 @@ export class RaffstoreDetailComponent implements OnInit {
 
   // Get percentage for visual display
   getHeightPercent(): number {
-    return ((3 - this.raffstore.heightStep) / 3) * 100;
+    return ((RAFFSTORE_HEIGHT_STEP_UP - this.raffstore.heightStep) / RAFFSTORE_HEIGHT_STEP_UP) * 100;
   }
 
   getAnglePercent(): number {

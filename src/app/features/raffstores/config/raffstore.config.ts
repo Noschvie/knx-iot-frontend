@@ -14,7 +14,7 @@
 export const RAFFSTORE_COMMANDS = {
   MOVE_UP: 1,      // Bewegung nach oben (DPST-1-8)
   MOVE_DOWN: 0,    // Bewegung nach unten (DPST-1-8)
-  STOP: 1,          // Stop-Befehl (DPST-1-7)
+  STOP: 1          // Stop-Befehl (DPST-1-7)
 } as const;
 
 /**
@@ -67,10 +67,10 @@ export const RAFFSTORE_CONFIG: RaffstoreDatapoints[] = [
  */
 export const STEP_TO_KNX = {
   height: {
-    0: 0,      // Auf (oben)
+    0: 0,      // Oben
     1: 33,     // 1/3
     2: 66,     // 2/3
-    3: 100     // Zu (unten)
+    3: 100     // Unten
   },
   angle: {
     0: 0,      // Offen (0°)
