@@ -3,6 +3,7 @@ import { Raffstore } from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 
 @Component({
+  standalone: false,
   selector: 'app-raffstore-overview',
   templateUrl: './raffstore-overview.component.html',
   styleUrls: ['./raffstore-overview.component.scss']

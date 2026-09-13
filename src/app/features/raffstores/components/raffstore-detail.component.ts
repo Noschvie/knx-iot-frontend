@@ -4,6 +4,7 @@ import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN,
 import { RaffstoreService } from '../services/raffstore.service';
 
 @Component({
+  standalone: false,
   selector: 'app-raffstore-detail',
   templateUrl: './raffstore-detail.component.html',
   styleUrls: ['./raffstore-detail.component.scss']

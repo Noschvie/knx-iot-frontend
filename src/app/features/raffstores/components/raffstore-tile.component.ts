@@ -4,6 +4,7 @@ import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS } from '../models/raffstore.model'
 import { RaffstoreDetailComponent } from './raffstore-detail.component';
 
 @Component({
+  standalone: false,
   selector: 'app-raffstore-tile',
   templateUrl: './raffstore-tile.component.html',
   styleUrls: ['./raffstore-tile.component.scss']
