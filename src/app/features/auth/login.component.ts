@@ -121,6 +121,8 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
       width: 100%;
     }
     .login-card input[matInput] {
+      box-sizing: border-box;
+      width: 100%;
       padding-left: 8px;
       padding-right: 8px;
     }
