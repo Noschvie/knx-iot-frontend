@@ -120,6 +120,10 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
     .full-width {
       width: 100%;
     }
+    .login-card .mat-mdc-text-field-wrapper {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
     .submit-btn {
       margin-top: 8px;
       height: 44px;
