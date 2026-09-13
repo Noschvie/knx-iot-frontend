@@ -1,32 +1,31 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import {
-  Raffstore,
-  HEIGHT_STEPS,
-  ANGLE_STEPS,
-  RAFFSTORE_HEIGHT_STEP_UP,
-  RAFFSTORE_HEIGHT_STEP_STOP,
-  RAFFSTORE_HEIGHT_STEP_DOWN
-} from '../models/raffstore.model';
+import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN, Favorite } from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 
 @Component({
-  standalone: false,
   selector: 'app-raffstore-detail',
   templateUrl: './raffstore-detail.component.html',
   styleUrls: ['./raffstore-detail.component.scss']
 })
 export class RaffstoreDetailComponent implements OnInit {
   raffstore!: Raffstore;
+  favorites: Favorite[] = [];
+
   HEIGHT_STEPS = HEIGHT_STEPS;
   ANGLE_STEPS = ANGLE_STEPS;
 
-  // Favorites (mock)
-  favorites = [
-    { label: 'Sonnenschutz', height: 1, angle: 1 },
-    { label: 'Ganz zu', height: RAFFSTORE_HEIGHT_STEP_DOWN, angle: 2 },
-    { label: 'Lüften', height: 2, angle: 1 },
-    { label: 'Ganz auf', height: RAFFSTORE_HEIGHT_STEP_UP, angle: 0 }
+  heightSteps = [
+    { value: 0, label: 'Auf' },
+    { value: 1, label: '1/3' },
+    { value: 2, label: '2/3' },
+    { value: 3, label: 'Zu' }
+  ];
+
+  angleSteps = [
+    { value: 0, label: 'Offen' },
+    { value: 1, label: 'Schräg' },
+    { value: 2, label: 'Zu' }
   ];
 
   constructor(
@@ -34,56 +33,49 @@ export class RaffstoreDetailComponent implements OnInit {
     private dialogRef: MatDialogRef<RaffstoreDetailComponent>,
     private raffstoreService: RaffstoreService
   ) {
-    this.raffstore = data.raffstore;
+    this.raffstore = { ...data.raffstore };
   }
 
   ngOnInit(): void {
-    // Subscribe to updates
-    this.raffstoreService.getRaffstore().subscribe(raffstore => {
-      this.raffstore = raffstore;
-    });
+    this.favorites = this.raffstoreService.getFavorites(this.raffstore.floor);
   }
 
-  // Quick commands
   moveUp(): void {
-    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_UP, this.raffstore.angleStep);
+    this.raffstoreService.moveUp(this.raffstore.id);
+    this.raffstore = { ...this.raffstore, heightStep: HEIGHT_STEP_UP };
   }
 
   moveStop(): void {
-    // Send STOP command
-    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_STOP, this.raffstore.angleStep);
-    console.log('[Detail] Stopped');
+    this.raffstoreService.moveStop(this.raffstore.id);
   }
 
   moveDown(): void {
-    this.raffstoreService.setPosition(RAFFSTORE_HEIGHT_STEP_DOWN, this.raffstore.angleStep);
+    this.raffstoreService.moveDown(this.raffstore.id);
+    this.raffstore = { ...this.raffstore, heightStep: HEIGHT_STEP_DOWN };
   }
 
-  // Slider changes
-  onHeightChange(step: number): void {
-    this.raffstoreService.setPosition(step, this.raffstore.angleStep);
+  setHeight(step: number): void {
+    this.raffstore = { ...this.raffstore, heightStep: step };
+    this.raffstoreService.setPosition(this.raffstore.id, step, this.raffstore.angleStep);
   }
 
-  onAngleChange(step: number): void {
-    this.raffstoreService.setPosition(this.raffstore.heightStep, step);
+  setAngle(step: number): void {
+    this.raffstore = { ...this.raffstore, angleStep: step };
+    this.raffstoreService.setPosition(this.raffstore.id, this.raffstore.heightStep, step);
   }
 
-  // Apply favorite
-  applyFavorite(fav: any): void {
-    this.raffstoreService.setPosition(fav.height, fav.angle);
+  applyFavorite(favorite: Favorite): void {
+    this.raffstore = {
+      ...this.raffstore,
+      heightStep: favorite.heightStep,
+      angleStep: favorite.angleStep
+    };
+    this.raffstoreService.applyFavorite(this.raffstore.id, favorite);
   }
 
   toggleAutoMode(): void {
-    this.raffstoreService.setAutoMode(!this.raffstore.autoMode);
-  }
-
-  // Get percentage for visual display
-  getHeightPercent(): number {
-    return ((RAFFSTORE_HEIGHT_STEP_UP - this.raffstore.heightStep) / RAFFSTORE_HEIGHT_STEP_UP) * 100;
-  }
-
-  getAnglePercent(): number {
-    return (this.raffstore.angleStep / 2) * 100;
+    this.raffstoreService.toggleAutoMode(this.raffstore.id);
+    this.raffstore = { ...this.raffstore, autoMode: !this.raffstore.autoMode };
   }
 
   close(): void {

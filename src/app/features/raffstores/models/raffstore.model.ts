@@ -1,34 +1,35 @@
+/**
+ * Raffstore Model – UI-focused
+ */
 export interface Raffstore {
   id: string;
-  label: string;
+  name: string;
   floor: 'EG' | 'OG';
-  orientation?: string;
+  orientation?: 'NORD' | 'OST' | 'SUED' | 'WEST';
   heightStep: number;    // 0–3 (Auf, 1/3, 2/3, Zu)
   angleStep: number;     // 0–2 (Offen, Schräg, Zu)
   isMoving?: boolean;
   autoMode?: boolean;
 }
 
-export type HeightLabel = 'Auf' | '1/3' | '2/3' | 'Zu';
-export type AngleLabel = 'Offen' | 'Schräg' | 'Zu';
-
-/**
- * Height Step Constants - Raffstore-Positionen
- * Hinweis: Inverted Scale (0=oben, 3=unten)
- */
-export const RAFFSTORE_HEIGHT_STEP_UP = 3;      // Ganz auf (oben)
-export const RAFFSTORE_HEIGHT_STEP_STOP = 1;    // Stop (Mittelposition)
-export const RAFFSTORE_HEIGHT_STEP_DOWN = 0;    // Ganz zu (unten)
-
-export const HEIGHT_STEPS: Record<number, HeightLabel> = {
+export const HEIGHT_STEPS = {
   0: 'Auf',
   1: '1/3',
   2: '2/3',
   3: 'Zu'
-};
+} as const;
 
-export const ANGLE_STEPS: Record<number, AngleLabel> = {
+export const ANGLE_STEPS = {
   0: 'Offen',
   1: 'Schräg',
   2: 'Zu'
-};
+} as const;
+
+export const HEIGHT_STEP_UP = 0;
+export const HEIGHT_STEP_DOWN = 3;
+
+export interface Favorite {
+  label: string;
+  heightStep: number;
+  angleStep: number;
+}

@@ -1,312 +1,203 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
-import {
-  Raffstore,
-  RAFFSTORE_HEIGHT_STEP_UP,
-  RAFFSTORE_HEIGHT_STEP_STOP,
-  RAFFSTORE_HEIGHT_STEP_DOWN
-} from '../models/raffstore.model';
-import { RAFFSTORE_CONFIG, RAFFSTORE_COMMANDS, RAFFSTORE_DATAPOINT_KEYS, STEP_TO_KNX, RaffstoreDatapoints } from '../config/raffstore.config';
-import { ConfigService } from '@core/config/config.service';
-
-interface DatapointUUID {
-  ga: string;
-  uuid: string;
-}
+import { BehaviorSubject, Observable } from 'rxjs';
+import { Raffstore, Favorite, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN } from '../models/raffstore.model';
 
 @Injectable({ providedIn: 'root' })
 export class RaffstoreService {
-  private raffstore$ = new BehaviorSubject<Raffstore | null>(null);
-  private datapointUUIDs = new Map<string, DatapointUUID>();
-  private config: RaffstoreDatapoints | null = null;
+  private raffstores$ = new BehaviorSubject<Raffstore[]>(this.getMockRaffstores());
+  private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
 
-  constructor(
-    private http: HttpClient,
-    private configService: ConfigService
-  ) {
-    this.initializeRaffstore();
+  // Favoriten je Stockwerk
+  private favorites: Record<'EG' | 'OG', Favorite[]> = {
+    EG: [
+      { label: 'Sonnenschutz', heightStep: 1, angleStep: 1 },
+      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: 2 },
+      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: 0 }
+    ],
+    OG: [
+      { label: 'Sonnenschutz', heightStep: 1, angleStep: 1 },
+      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: 2 },
+      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: 0 }
+    ]
+  };
+
+  constructor() {}
+
+  getRaffstores(): Observable<Raffstore[]> {
+    return this.raffstores$.asObservable();
   }
 
-  private initializeRaffstore(): void {
-    this.config = RAFFSTORE_CONFIG[0];
-
-    this.loadDatapointUUIDs().subscribe(
-      () => {
-        console.log('[RaffstoreService] ✅ Datapoint UUIDs loaded');
-        this.raffstore$.next({
-          id: this.config!.id,
-          label: this.config!.label,
-          floor: this.config!.floor,
-          orientation: this.config!.orientation,
-          heightStep: 0,
-          angleStep: 0,
-          isMoving: false,
-          autoMode: false
-        });
-      },
-      error => {
-        console.error('[RaffstoreService] ✗ Failed to load datapoint UUIDs:', error);
-        this.raffstore$.next({
-          id: this.config!.id,
-          label: this.config!.label,
-          floor: this.config!.floor,
-          orientation: this.config!.orientation,
-          heightStep: 0,
-          angleStep: 0,
-          isMoving: false,
-          autoMode: false
-        });
-      }
-    );
-  }
-
-  private loadDatapointUUIDs(): Observable<void> {
-    if (!this.config) return of(void 0);
-
-    const gaList = [
-      this.config.gaMove,
-      this.config.gaStep,
-      this.config.gaHeight,
-      this.config.gaAngle,
-      this.config.gaStatusHeight,
-      this.config.gaStatusAngle
-    ];
-
-    const requests = gaList.map(ga =>
-      this.http.get<any>(`${this.configService.getApiEndpoint()}/datapoints?filter[ga]=${ga}`)
-        .pipe(
-          map(response => {
-            const dp = response.data?.[0];
-            if (dp) {
-              this.datapointUUIDs.set(ga, { ga, uuid: dp.id });
-              console.log(`[RaffstoreService] ✅ Found datapoint for GA ${ga}: ${dp.id}`);
+  getSelectedRaffstore(): Observable<Raffstore | null> {
+    return this.selectedRaffstoreId$.pipe(
+      (obsId) => {
+        return new Observable(observer => {
+          obsId.subscribe(id => {
+            if (id) {
+              const raffstore = this.raffstores$.value.find(r => r.id === id);
+              observer.next(raffstore || null);
+            } else {
+              observer.next(null);
             }
-            return dp;
-          }),
-          catchError(err => {
-            console.warn(`[RaffstoreService] ⚠️ Datapoint not found for GA ${ga}:`, err);
-            return of(null);
-          })
-        )
-    );
-
-    return forkJoin(requests).pipe(
-      map(() => {}),
-      catchError(() => of(void 0))
-    );
-  }
-
-  getRaffstore(): Observable<Raffstore> {
-    return this.raffstore$.asObservable().pipe(
-      map(rs => rs || ({} as Raffstore))
-    );
-  }
-
-  setPosition(heightStep: number, angleStep: number): void {
-    if (!this.config) return;
-
-    const current = this.raffstore$.value;
-    if (!current) return;
-
-    console.log(`[RaffstoreService] setPosition called: height=${heightStep}, angle=${angleStep}, current.height=${current.heightStep}`);
-
-    // Sende STOP-Befehl (DPST-1-7)
-    if (heightStep === RAFFSTORE_HEIGHT_STEP_STOP) {
-      console.log(`[RaffstoreService] Sending STOP command`);
-      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.STEP, RAFFSTORE_COMMANDS.STOP).subscribe(
-        () => {
-          console.log(`[RaffstoreService] STOP command succeeded`);
-          // STOP setzt isMoving auf false und heightStep auf eine Mittelposition (1 = Mittelposition)
-          const current = this.raffstore$.value;
-          if (current) {
-            this.raffstore$.next({
-              ...current,
-              isMoving: false,
-              heightStep: 1  // Mittlere Position, damit UP/DOWN wieder funktionieren
-            });
-            console.log(`[RaffstoreService] Movement stopped at intermediate position - UP/DOWN buttons are now enabled`);
-            console.log(`[RaffstoreService] New position: height=1 (intermediate), angle=${current.angleStep}`);
-          }
-        },
-        error => {
-          console.error(`[RaffstoreService] STOP command failed:`, error);
-          this.handleCommandError(error, current);
-        }
-      );
-      return;
-    }
-
-    // Setze isMoving nur für UP/DOWN/Position-Befehle
-    this.raffstore$.next({ ...current, isMoving: true });
-
-    // ...existing code...
-    // Timeout nach 1 Sekunde - Sicherheitsnetz falls API nicht antwortet
-    const timeoutHandle = setTimeout(() => {
-      const current = this.raffstore$.value;
-      if (current && current.isMoving) {
-        console.warn(`[RaffstoreService] ⚠️ Movement timeout after 1s - forcing reset of isMoving`);
-        this.raffstore$.next({ ...current, isMoving: false });
+          });
+        });
       }
-    }, 1000);
-
-    const resetTimeout = () => clearTimeout(timeoutHandle);
-
-    // Sende Zu-Befehl / Abwärts (DPT 1.008: MOVE_DOWN)
-    if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep > RAFFSTORE_HEIGHT_STEP_DOWN) {
-      console.log(`[RaffstoreService] Sending MOVE_DOWN command - current position: ${current.heightStep}, target: ${RAFFSTORE_HEIGHT_STEP_DOWN}`);
-      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_DOWN).subscribe(
-        () => {
-          console.log(`[RaffstoreService] MOVE_DOWN command succeeded`);
-          resetTimeout();
-          this.updatePosition(heightStep, angleStep);
-        },
-        error => {
-          console.error(`[RaffstoreService] MOVE_DOWN command failed:`, error);
-          resetTimeout();
-          this.handleCommandError(error, current);
-        }
-      );
-    }
-    // DOWN-Befehl ignoriert - bereits unten!
-    else if (heightStep === RAFFSTORE_HEIGHT_STEP_DOWN && current.heightStep <= RAFFSTORE_HEIGHT_STEP_DOWN) {
-      console.warn(`[RaffstoreService] ⚠️ DOWN command ignored - already at bottom position (${current.heightStep})`);
-    }
-    // Sende Auf-Befehl / Aufwärts (DPT 1.008: MOVE_UP)
-    else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep < RAFFSTORE_HEIGHT_STEP_UP) {
-      console.log(`[RaffstoreService] Sending MOVE_UP command - current position: ${current.heightStep}, target: ${RAFFSTORE_HEIGHT_STEP_UP}`);
-      this.sendCommand(RAFFSTORE_DATAPOINT_KEYS.MOVE, RAFFSTORE_COMMANDS.MOVE_UP).subscribe(
-        () => {
-          console.log(`[RaffstoreService] MOVE_UP command succeeded`);
-          resetTimeout();
-          this.updatePosition(heightStep, angleStep);
-        },
-        error => {
-          console.error(`[RaffstoreService] MOVE_UP command failed:`, error);
-          resetTimeout();
-          this.handleCommandError(error, current);
-        }
-      );
-    }
-    // UP-Befehl ignoriert - bereits oben!
-    else if (heightStep === RAFFSTORE_HEIGHT_STEP_UP && current.heightStep >= RAFFSTORE_HEIGHT_STEP_UP) {
-      console.warn(`[RaffstoreService] ⚠️ UP command ignored - already at top position (${current.heightStep})`);
-    }
-    // Sende direkte Position
-    else {
-      const knxHeight = STEP_TO_KNX.height[heightStep as keyof typeof STEP_TO_KNX.height];
-      const knxAngle = STEP_TO_KNX.angle[angleStep as keyof typeof STEP_TO_KNX.angle];
-      console.log(`[RaffstoreService] Sending direct position: height=${knxHeight}, angle=${knxAngle}`);
-
-      this.sendPosition(knxHeight, knxAngle).subscribe(
-        () => {
-          console.log(`[RaffstoreService] Direct position succeeded`);
-          resetTimeout();
-          this.updatePosition(heightStep, angleStep);
-        },
-        error => {
-          console.error(`[RaffstoreService] Direct position failed:`, error);
-          resetTimeout();
-          this.handleCommandError(error, current);
-        }
-      );
-    }
-  }
-
-  private sendCommand(gaKey: string, value: number | string): Observable<any> {
-    const ga = this.config?.[gaKey as keyof RaffstoreDatapoints] as string;
-    const uuid = this.datapointUUIDs.get(ga)?.uuid;
-
-    if (!uuid) {
-      console.warn(`[RaffstoreService] ⚠️ Datapoint UUID not found for ${gaKey}`);
-      return of(null);
-    }
-
-    const payload = {
-      data: [{
-        id: uuid,
-        type: 'datapoint',
-        attributes: { value: String(value) }
-      }]
-    };
-
-    console.log(`[RaffstoreService] Sending command: ${value} to ${ga} (${uuid})`);
-
-    return this.http.put(
-      `${this.configService.getApiEndpoint()}/datapoints/values`,
-      payload
-    ).pipe(
-      tap(response => console.log(`[RaffstoreService] ✅ Command sent: ${value}`, response)),
-      catchError(err => {
-        console.error(`[RaffstoreService] ✗ Command failed:`, err);
-        throw err; // Re-throw so error callback is triggered
-      })
     );
   }
 
-  private sendPosition(heightValue: number, angleValue: number): Observable<any> {
-    const gaHeight = this.config?.gaHeight;
-    const gaAngle = this.config?.gaAngle;
-    const uuidHeight = gaHeight ? this.datapointUUIDs.get(gaHeight)?.uuid : null;
-    const uuidAngle = gaAngle ? this.datapointUUIDs.get(gaAngle)?.uuid : null;
-
-    if (!uuidHeight || !uuidAngle) {
-      console.warn('[RaffstoreService] ⚠️ Datapoint UUIDs not found');
-      return of(null);
-    }
-
-    const payload = {
-      data: [
-        {
-          id: uuidHeight,
-          type: 'datapoint',
-          attributes: { value: String(heightValue) }
-        },
-        {
-          id: uuidAngle,
-          type: 'datapoint',
-          attributes: { value: String(angleValue) }
-        }
-      ]
-    };
-
-    console.log(`[RaffstoreService] Sending position: height=${heightValue}, angle=${angleValue}`);
-
-    return this.http.put(
-      `${this.configService.getApiEndpoint()}/datapoints/values`,
-      payload
-    ).pipe(
-      tap(response => console.log(`[RaffstoreService] ✅ Position sent`, response)),
-      catchError(err => {
-        console.error(`[RaffstoreService] ✗ Position failed:`, err);
-        throw err; // Re-throw so error callback is triggered
-      })
-    );
+  selectRaffstore(id: string): void {
+    this.selectedRaffstoreId$.next(id);
   }
 
-  private updatePosition(heightStep: number, angleStep: number): void {
-    const current = this.raffstore$.value;
-    if (!current) return;
+  deselectRaffstore(): void {
+    this.selectedRaffstoreId$.next(null);
+  }
 
-    this.raffstore$.next({
-      ...current,
+  /**
+   * Setze Position für ein einzelnes Raffstore
+   */
+  setPosition(raffstoreId: string, heightStep: number, angleStep: number): void {
+    const raffstores = this.raffstores$.value;
+    const index = raffstores.findIndex(r => r.id === raffstoreId);
+    if (index === -1) return;
+
+    const updated = [...raffstores];
+    updated[index] = {
+      ...updated[index],
       heightStep,
       angleStep,
       isMoving: false
+    };
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Position set: ${raffstoreId} -> height=${heightStep}, angle=${angleStep}`);
+  }
+
+  /**
+   * Auf-Befehl (DPT 1.008 MOVE_UP)
+   */
+  moveUp(raffstoreId: string): void {
+    const raffstores = this.raffstores$.value;
+    const index = raffstores.findIndex(r => r.id === raffstoreId);
+    if (index === -1) return;
+
+    const updated = [...raffstores];
+    updated[index] = {
+      ...updated[index],
+      heightStep: HEIGHT_STEP_UP,
+      isMoving: false
+    };
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Move UP: ${raffstoreId}`);
+  }
+
+  /**
+   * Zu-Befehl (DPT 1.008 MOVE_DOWN)
+   */
+  moveDown(raffstoreId: string): void {
+    const raffstores = this.raffstores$.value;
+    const index = raffstores.findIndex(r => r.id === raffstoreId);
+    if (index === -1) return;
+
+    const updated = [...raffstores];
+    updated[index] = {
+      ...updated[index],
+      heightStep: HEIGHT_STEP_DOWN,
+      isMoving: false
+    };
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Move DOWN: ${raffstoreId}`);
+  }
+
+  /**
+   * Stopp-Befehl (DPT 1.007 STEP)
+   */
+  moveStop(raffstoreId: string): void {
+    const raffstores = this.raffstores$.value;
+    const index = raffstores.findIndex(r => r.id === raffstoreId);
+    if (index === -1) return;
+
+    const updated = [...raffstores];
+    updated[index] = {
+      ...updated[index],
+      isMoving: false
+    };
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Move STOP: ${raffstoreId}`);
+  }
+
+  /**
+   * Gruppbefehl: Alle Raffstores eines Stockwerks
+   */
+  groupCommand(floor: 'EG' | 'OG', command: 'up' | 'down'): void {
+    const raffstores = this.raffstores$.value;
+    const updated = raffstores.map(r => {
+      if (r.floor === floor) {
+        if (command === 'up') {
+          return { ...r, heightStep: HEIGHT_STEP_UP, isMoving: false };
+        } else {
+          return { ...r, heightStep: HEIGHT_STEP_DOWN, isMoving: false };
+        }
+      }
+      return r;
     });
-    console.log(`[RaffstoreService] Position updated: ${heightStep}/${angleStep}`);
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Group command: ${floor} ${command}`);
   }
 
-  private handleCommandError(error: any, previousState: Raffstore): void {
-    console.error('[RaffstoreService] Command error:', error);
-    this.raffstore$.next({ ...previousState, isMoving: false });
+  /**
+   * Favorit anwenden
+   */
+  applyFavorite(raffstoreId: string, favorite: Favorite): void {
+    this.setPosition(raffstoreId, favorite.heightStep, favorite.angleStep);
   }
 
-  setAutoMode(enabled: boolean): void {
-    const current = this.raffstore$.value;
-    if (!current) return;
-    this.raffstore$.next({ ...current, autoMode: enabled });
-    console.log(`[RaffstoreService] Auto mode: ${enabled}`);
+  /**
+   * Automatik-Modus umschalten
+   */
+  toggleAutoMode(raffstoreId: string): void {
+    const raffstores = this.raffstores$.value;
+    const index = raffstores.findIndex(r => r.id === raffstoreId);
+    if (index === -1) return;
+
+    const updated = [...raffstores];
+    updated[index] = {
+      ...updated[index],
+      autoMode: !updated[index].autoMode
+    };
+    this.raffstores$.next(updated);
+    console.log(`[RaffstoreService] Auto mode toggled: ${raffstoreId} -> ${updated[index].autoMode}`);
+  }
+
+  /**
+   * Favoriten für ein Stockwerk abrufen
+   */
+  getFavorites(floor: 'EG' | 'OG'): Favorite[] {
+    return this.favorites[floor];
+  }
+
+  /**
+   * Mock-Daten: 17 Raffstores
+   */
+  private getMockRaffstores(): Raffstore[] {
+    return [
+      // EG (9)
+      { id: '1', name: 'Wohnzimmer Süd', floor: 'EG', orientation: 'SUED', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '2', name: 'Wohnzimmer West', floor: 'EG', orientation: 'WEST', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '3', name: 'Küche', floor: 'EG', orientation: 'OST', heightStep: 0, angleStep: 0, autoMode: false },
+      { id: '4', name: 'Esszimmer', floor: 'EG', orientation: 'SUED', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '5', name: 'Büro', floor: 'EG', orientation: 'OST', heightStep: 2, angleStep: 2, autoMode: false, isMoving: true },
+      { id: '6', name: 'Gästezimmer', floor: 'EG', orientation: 'NORD', heightStep: 0, angleStep: 0, autoMode: false },
+      { id: '7', name: 'Windfang', floor: 'EG', orientation: 'WEST', heightStep: 3, angleStep: 0, autoMode: false },
+      { id: '8', name: 'Terrasse', floor: 'EG', orientation: 'SUED', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '9', name: 'Sauna', floor: 'EG', orientation: 'NORD', heightStep: 3, angleStep: 0, autoMode: false },
+      // OG (8)
+      { id: '10', name: 'Schlafzimmer', floor: 'OG', orientation: 'SUED', heightStep: 2, angleStep: 1, autoMode: false },
+      { id: '11', name: 'Kinderzimmer 1', floor: 'OG', orientation: 'OST', heightStep: 0, angleStep: 0, autoMode: false },
+      { id: '12', name: 'Kinderzimmer 2', floor: 'OG', orientation: 'WEST', heightStep: 0, angleStep: 0, autoMode: false },
+      { id: '13', name: 'Bad', floor: 'OG', orientation: 'NORD', heightStep: 3, angleStep: 0, autoMode: false },
+      { id: '14', name: 'Ankleide', floor: 'OG', orientation: 'SUED', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '15', name: 'Flur', floor: 'OG', orientation: 'NORD', heightStep: 0, angleStep: 0, autoMode: false },
+      { id: '16', name: 'Balkon', floor: 'OG', orientation: 'SUED', heightStep: 1, angleStep: 1, autoMode: true },
+      { id: '17', name: 'Gästebad', floor: 'OG', orientation: 'WEST', heightStep: 3, angleStep: 0, autoMode: false }
+    ];
   }
 }
