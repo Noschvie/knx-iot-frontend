@@ -12,14 +12,14 @@ export interface Raffstore {
   autoMode?: boolean;
 }
 
-export const HEIGHT_STEPS = {
+export const HEIGHT_STEPS: Record<number, string> = {
   0: 'Auf',
   1: '1/3',
   2: '2/3',
   3: 'Zu'
 } as const;
 
-export const ANGLE_STEPS = {
+export const ANGLE_STEPS: Record<number, string> = {
   0: 'Offen',
   1: 'Schräg',
   2: 'Zu'
