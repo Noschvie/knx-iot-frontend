@@ -120,7 +120,7 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
     .full-width {
       width: 100%;
     }
-    .login-card .mat-mdc-text-field-wrapper {
+    .login-card input.mat-mdc-input-element {
       padding-left: 8px;
       padding-right: 8px;
     }
