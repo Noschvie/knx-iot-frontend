@@ -6,7 +6,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-height: 100px;
   transition: all 0.2s ease;
   user-select: none;
@@ -32,7 +32,7 @@
 .tile-name {
   font-size: 13px;
   font-weight: 500;
-  color: #000;
+  color: #0066cc;
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -63,28 +63,22 @@
   }
 }
 
-.bar-container {
-  flex: 1;
+.bar-row {
   display: flex;
-  align-items: flex-end;
-  height: 40px;
-}
-
-.bar-background {
-  width: 100%;
+  gap: 3px;
   height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column-reverse;
+  align-items: stretch;
 }
 
-.bar-fill {
-  background: #999;
+.bar-segment {
+  flex: 1;
   border-radius: 3px;
-  width: 100%;
-  transition: height 0.3s ease;
+  background: #e5e7eb;
+  transition: background 0.2s ease;
+
+  &.filled {
+    background: #999;
+  }
 }
 
 .tile-status {
@@ -92,3 +86,4 @@
   color: #999;
   text-align: left;
 }
+

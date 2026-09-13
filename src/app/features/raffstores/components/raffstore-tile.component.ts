@@ -24,9 +24,4 @@ export class RaffstoreTileComponent {
       data: { raffstore: this.raffstore }
     });
   }
-
-  getHeightPercent(): number {
-    // 0=oben, 3=unten -> visuell: 0=100%, 3=0%
-    return ((3 - this.raffstore.heightStep) / 3) * 100;
-  }
 }

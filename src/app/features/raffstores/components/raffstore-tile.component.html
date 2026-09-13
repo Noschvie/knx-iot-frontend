@@ -4,25 +4,17 @@
     <span class="tile-name">{{ raffstore.name }}</span>
     <div class="tile-icons">
       <!-- Movement Indicator -->
-      <span *ngIf="raffstore.isMoving" class="icon icon-moving" title="Bewegung">
-        ↕
-      </span>
+      <span *ngIf="raffstore.isMoving" class="icon icon-moving" title="Bewegung">↕</span>
       <!-- Auto Mode Badge -->
-      <span *ngIf="raffstore.autoMode && !raffstore.isMoving" class="icon icon-auto" title="Automatik aktiv">
-        ☀
-      </span>
+      <span *ngIf="raffstore.autoMode && !raffstore.isMoving" class="icon icon-auto" title="Automatik aktiv">☀</span>
     </div>
   </div>
 
-  <!-- Height Bar -->
-  <div class="bar-container">
-    <div class="bar-background">
-      <div class="bar-fill" [style.height.%]="getHeightPercent()"></div>
-    </div>
+  <!-- Height Bar - 4 Segmente -->
+  <div class="bar-row">
+    <div *ngFor="let i of [0,1,2,3]" class="bar-segment" [class.filled]="i <= raffstore.heightStep"></div>
   </div>
 
   <!-- Status Line -->
-  <div class="tile-status">
-    {{ HEIGHT_STEPS[raffstore.heightStep] }} · {{ ANGLE_STEPS[raffstore.angleStep] }}
-  </div>
+  <div class="tile-status">{{ HEIGHT_STEPS[raffstore.heightStep] }} · {{ ANGLE_STEPS[raffstore.angleStep] }}</div>
 </div>
