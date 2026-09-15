@@ -524,9 +524,9 @@ export class RaffstoreService {
         if (datapoint) {
           loadedDatapoints.push(datapoint);
           successCount++;
-          console.log(`[RaffstoreService] ✓ GA ${ga} → DP ${datapoint.title}`);
+          console.log(`[RaffstoreService] ✓ Datapoint loaded: ${ga}`);
         } else {
-          console.warn(`[RaffstoreService] ✗ No datapoint found for GA ${ga}`);
+          console.warn(`[RaffstoreService] ✗ Datapoint NOT FOUND: GA=${ga}`);
         }
       } catch (error) {
         console.error(`[RaffstoreService] Error loading GA ${ga}:`, error);
