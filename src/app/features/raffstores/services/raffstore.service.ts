@@ -7,7 +7,7 @@ import { RAFFSTORE_CONFIG, RaffstoreDatapoints } from '../config/raffstore.confi
 import { map, tap, catchError } from 'rxjs/operators';
 
 /**
- * DPT 5.001 Mapping: Diskrete Stufen (0-3 für Höhe, 0-2 für Winkel) ↔ KNX Prozent (0-100)
+ * DPT 5.001 Mapping: Discrete steps (0-3 for height, 0-2 for an angle) ↔ KNX percent (0-100)
  */
 const STEP_TO_KNX = {
   height: { 0: 0, 1: 33, 2: 66, 3: 100 },
@@ -25,7 +25,7 @@ export class RaffstoreService {
   private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
   private apiEndpoint: string = '';
 
-  // Favoriten je Stockwerk
+  // Favorites per floor
   private favorites: Record<'EG' | 'OG', Favorite[]> = {
     EG: [
       { label: 'Sonnenschutz', heightStep: 1, angleStep: 1 },
@@ -48,8 +48,8 @@ export class RaffstoreService {
   }
 
   /**
-   * Initialisiere Raffstores aus Config
-   * Wird beim Service-Konstruktor aufgerufen
+   * Initialize raffstores from config
+   * Called by service constructor
    * @private
    */
   private initializeRaffstores(): void {
@@ -76,8 +76,8 @@ export class RaffstoreService {
   }
 
   /**
-   * Hole Observable-Stream für ausgewählten Raffstore
-   * @returns Observable mit einem Raffstore oder null wenn nichts ausgewählt
+   * Get observable stream for selected raffstore
+   * @returns Observable containing a raffstore or null if nothing is selected
    */
   getSelectedRaffstore(): Observable<Raffstore | null> {
     return this.selectedRaffstoreId$.pipe(
@@ -97,25 +97,25 @@ export class RaffstoreService {
   }
 
   /**
-   * Wähle ein Raffstore aus (für Detail-Ansicht)
-   * @param id ID des zu wählenden Raffstores
+   * Select a raffstore (for detail view)
+   * @param id ID of raffstore to select
    */
   selectRaffstore(id: string): void {
     this.selectedRaffstoreId$.next(id);
   }
 
   /**
-   * Deselektiere den ausgewählten Raffstore
+   * Deselect the selected raffstore
    */
   deselectRaffstore(): void {
     this.selectedRaffstoreId$.next(null);
   }
 
   /**
-   * Auf-Befehl (DPT 1.008 MOVE_UP = 0)
-   * Schreibe zu 2/1/x (gaMove)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @returns Observable<void> Befehl wurde gesendet
+   * Move up command (DPT 1.008 MOVE_UP = 0)
+   * Write to 2/1/x (gaMove)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @returns Observable<void> command was sent
    */
   moveUp(raffstoreId: string): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -138,10 +138,10 @@ export class RaffstoreService {
   }
 
   /**
-   * Zu-Befehl (DPT 1.008 MOVE_DOWN = 1)
-   * Schreibe zu 2/1/x (gaMove)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @returns Observable<void> Befehl wurde gesendet
+   * Move down command (DPT 1.008 MOVE_DOWN = 1)
+   * Write to 2/1/x (gaMove)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @returns Observable<void> command was sent
    */
   moveDown(raffstoreId: string): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -164,10 +164,10 @@ export class RaffstoreService {
   }
 
   /**
-   * Stop-Befehl (DPT 1.007 STEP = 1)
-   * Schreibe zu 2/2/x (gaStep)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @returns Observable<void> Befehl wurde gesendet
+   * Stop command (DPT 1.007 STEP = 1)
+   * Write to 2/2/x (gaStep)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @returns Observable<void> command was sent
    */
   moveStop(raffstoreId: string): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -190,9 +190,9 @@ export class RaffstoreService {
   }
 
   /**
-   * Höhe setzen: Schreibe DPT 5.001 (0-100) zu 2/3/x (gaPositionSet)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @param step 0-3 → konvertiert zu 0-100 (Auf → 1/3 → 2/3 → Zu)
+   * Set height: Write DPT 5.001 (0-100) to 2/3/x (gaPositionSet)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @param step 0-3 → converted to 0-100 (Up → 1/3 → 2/3 → Down)
    */
   setHeight(raffstoreId: string, step: number): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -217,9 +217,9 @@ export class RaffstoreService {
   }
 
   /**
-   * Lamellenwinkel setzen: Schreibe DPT 5.001 (0-100) zu 2/4/x (gaLamellasSet)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @param step 0-2 → konvertiert zu 0-100 (Offen → Schräg → Zu)
+   * Set lamella angle: Write DPT 5.001 (0-100) to 2/4/x (gaLamellasSet)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @param step 0-2 → converted to 0-100 (Open → Diagonal → Closed)
    */
   setAngle(raffstoreId: string, step: number): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -244,12 +244,12 @@ export class RaffstoreService {
   }
 
   /**
-   * Position (Höhe + Winkel) setzen
-   * Schreibe zu 2/3/x und 2/4/x (gaPositionSet und gaLamellasSet)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @param heightStep 0-3 (Auf → 1/3 → 2/3 → Zu)
-   * @param angleStep 0-2 (Offen → Schräg → Zu)
-   * @returns Observable<void> Befehl wurde gesendet
+   * Set position (height + angle)
+   * Write to 2/3/x and 2/4/x (gaPositionSet and gaLamellasSet)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @param heightStep 0-3 (Up → 1/3 → 2/3 → Down)
+   * @param angleStep 0-2 (Open → Diagonal → Closed)
+   * @returns Observable<void> command was sent
    */
   setPosition(raffstoreId: string, heightStep: number, angleStep: number): Observable<void> {
     const config = this.getConfig(raffstoreId);
@@ -282,11 +282,11 @@ export class RaffstoreService {
   }
 
   /**
-   * Gruppbefehl: Alle Raffstores eines Stockwerks
-   * Schreibe zu allen 2/1/x (gaMove) für diesen Floor
-   * @param floor Stockwerk ('EG' = Erdgeschoss oder 'OG' = Obergeschoss)
-   * @param command Bewegungsrichtung ('up' = nach oben, 'down' = nach unten)
-   * @returns Observable<void> Befehl wurde gesendet
+   * Group command: All raffstores of a floor
+   * Write to all 2/1/x (gaMove) for this floor
+   * @param floor Floor ('EG' = first floor or 'OG' = upper floor)
+   * @param command Movement direction ('up' = upward, 'down' = downward)
+   * @returns Observable<void> command was sent
    */
   groupCommand(floor: 'EG' | 'OG', command: 'up' | 'down'): Observable<void> {
     const knxValue = command === 'up' ? '0' : '1';  // DPT 1.008
@@ -312,24 +312,24 @@ export class RaffstoreService {
   }
 
   /**
-   * Favorit anwenden
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @param favorite Favorit-Objekt mit Höhe und Winkel-Stufe
-   * @returns Observable<void> Position wurde gesetzt
+   * Apply favorite
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @param favorite Favorite object with height and angle step
+   * @returns Observable<void> position was set
    */
   applyFavorite(raffstoreId: string, favorite: Favorite): Observable<void> {
     return this.setPosition(raffstoreId, favorite.heightStep, favorite.angleStep);
   }
 
   /**
-   * Automatik-Modus umschalten (schreibe zu 2/7/x - gaLock)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @returns Observable<void> Befehl wurde gesendet
+   * Toggle automation mode (write to 2/7/x - gaLock)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @returns Observable<void> command was sent
    */
   toggleAutoMode(raffstoreId: string): Observable<void> {
     const config = this.getConfig(raffstoreId);
     const raffstore = this.raffstores$.value.find(r => r.id === raffstoreId);
-    const newValue = raffstore?.autoMode ? '1' : '0';  // 0=freigegeben (manuell), 1=gesperrt (auto)
+    const newValue = raffstore?.autoMode ? '1' : '0';  // 0=released (manual), 1=locked (auto)
 
     const payload = {
       data: [{
@@ -350,10 +350,10 @@ export class RaffstoreService {
   }
 
   /**
-   * Lade aktuelle Status-Werte vom Backend
-   * Liest 2/5/x (gaStatusPosition) und 2/6/x (gaStatusLamellus)
-   * @param raffstoreId ID des Raffstores (z.B. 'rs-1')
-   * @returns Observable mit Höhen- und Winkel-Stufen
+   * Load current status values from backend
+   * Reads 2/5/x (gaStatusPosition) and 2/6/x (gaStatusLamellus)
+   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
+   * @returns Observable with height and angle steps
    */
   loadCurrentStatus(raffstoreId: string): Observable<{ heightStep: number; angleStep: number }> {
     const config = this.getConfig(raffstoreId);
@@ -383,9 +383,9 @@ export class RaffstoreService {
   }
 
   /**
-   * Favoriten für ein Stockwerk abrufen
-   * @param floor Stockwerk ('EG' oder 'OG')
-   * @returns Array von Favoriten für den Stockwerk
+   * Get favorites for a floor
+   * @param floor Floor ('EG' or 'OG')
+   * @returns Array of favorites for the floor
    */
   getFavorites(floor: 'EG' | 'OG'): Favorite[] {
     return this.favorites[floor];
@@ -394,9 +394,9 @@ export class RaffstoreService {
   // ========== PRIVATE HELPERS ==========
 
   /**
-   * Hole Config für eine Raffstore-ID
-   * @param raffstoreId ID des Raffstores
-   * @returns Konfigurations-Objekt oder wirft Error wenn nicht gefunden
+   * Get config for a raffstore ID
+   * @param raffstoreId ID of raffstore
+   * @returns Config object or throws error if not found
    */
   private getConfig(raffstoreId: string): RaffstoreDatapoints {
     const config = RAFFSTORE_CONFIG.find(c => c.id === raffstoreId);
@@ -407,9 +407,9 @@ export class RaffstoreService {
   }
 
   /**
-   * Update ein einzelnes Raffstore in der Liste
-   * @param raffstoreId ID des Raffstores
-   * @param updates Teilweise Update-Objekt mit zu ändernden Feldern
+   * Update a single raffstore in the list
+   * @param raffstoreId ID of raffstore
+   * @param updates Partial update object with fields to change
    */
   private updateRaffstoreInList(raffstoreId: string, updates: Partial<Raffstore>): void {
     const raffstores = this.raffstores$.value;
@@ -422,9 +422,9 @@ export class RaffstoreService {
   }
 
   /**
-   * Update alle Raffstores eines Stockwerks
-   * @param floor Stockwerk ('EG' oder 'OG')
-   * @param updates Teilweise Update-Objekt mit zu ändernden Feldern
+   * Update all raffstores of a floor
+   * @param floor Floor ('EG' or 'OG')
+   * @param updates Partial update object with fields to change
    */
   private updateRaffstoresForFloor(floor: 'EG' | 'OG', updates: Partial<Raffstore>): void {
     const raffstores = this.raffstores$.value;
@@ -435,10 +435,10 @@ export class RaffstoreService {
   }
 
   /**
-   * Konvertiere KNX-Wert (0-100) zu diskretem Schritt
-   * @param type 'height' (0-3 Stufen) oder 'angle' (0-2 Stufen)
-   * @param knxValue KNX Prozent-Wert (0-100)
-   * @returns Diskrete Stufe mit Toleranz-Mapping
+   * Convert KNX value (0-100) to discrete step
+   * @param type 'height' (0-3 steps) or 'angle' (0-2 steps)
+   * @param knxValue KNX percent value (0-100)
+   * @returns Discrete step with tolerance mapping
    */
   private knxToStep(type: 'height' | 'angle', knxValue: number): number {
     const mapping = type === 'height' ? KNX_TO_STEP.height : KNX_TO_STEP.angle;
@@ -446,11 +446,11 @@ export class RaffstoreService {
   }
 
   /**
-   * Error Handling für HTTP-Fehler
-   * @param method Name der Methode, die fehlgeschlagen ist
-   * @param context Kontext-Information (z.B. raffstoreId oder floor)
-   * @param error Error-Objekt vom HTTP-Client
-   * @returns Observable<never> - wirft Error für Subscriber
+   * Error handling for HTTP errors
+   * @param method Name of the method that failed
+   * @param context Context information (e.g. raffstoreId or floor)
+   * @param error Error object from HTTP client
+   * @returns Observable<never> - throws error to subscriber
    */
   private handleError(method: string, context: string, error: any): Observable<never> {
     console.error(`[RaffstoreService] ✗ ${method} failed for ${context}:`, error);
