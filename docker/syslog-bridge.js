@@ -49,14 +49,20 @@ const server = http.createServer((req, res) => {
         const { priority, timestamp, hostname, tag, level, message } = logData;
         const syslogMessage = `<${priority}>${timestamp} ${hostname} ${tag}[${level}]: ${message}`;
 
-        console.log(`[Syslog Bridge] Parsed message: ${message.substring(0, 60)}`);
+        // RFC 3164 limit: 1024 bytes. Truncate if necessary to prevent message loss.
+        const MAX_SYSLOG_LENGTH = 1024;
+        const truncatedMessage = syslogMessage.length > MAX_SYSLOG_LENGTH 
+          ? syslogMessage.substring(0, MAX_SYSLOG_LENGTH - 4) + '...'
+          : syslogMessage;
+
+        console.log(`[Syslog Bridge] MSG: ${message.substring(0, 80)} (len: ${truncatedMessage.length})`);
 
         // Send to Syslog server via UDP
-        syslogClient.send(syslogMessage, 0, syslogMessage.length, SYSLOG_PORT, SYSLOG_HOST, (err) => {
+        syslogClient.send(truncatedMessage, 0, truncatedMessage.length, SYSLOG_PORT, SYSLOG_HOST, (err) => {
           if (err) {
-            console.error(`[Syslog Bridge] Error sending to ${SYSLOG_HOST}:${SYSLOG_PORT}:`, err.message);
+            console.error(`[Syslog Bridge] ✗ Error: ${SYSLOG_HOST}:${SYSLOG_PORT} - ${err.message}`);
           } else {
-            console.log(`[Syslog Bridge] ✓ Sent to Syslog: <${priority}> ${tag}[${level}]: ${message.substring(0, 50)}...`);
+            console.log(`[Syslog Bridge] ✓ TX: [${level}] len=${truncatedMessage.length}`);
           }
         });
 
