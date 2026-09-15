@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
+import { inject, Injectable } from '@angular/core';
+import { BehaviorSubject, Observable, forkJoin, of, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '@core/config/config.service';
 import { Raffstore, Favorite, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN } from '../models/raffstore.model';
 import { RAFFSTORE_CONFIG, RaffstoreDatapoints } from '../config/raffstore.config';
 import { map, tap, catchError } from 'rxjs/operators';
+import { DatapointService } from '@core/services/datapoint.service';
+import { Datapoint } from '@shared/models';
 
 /**
  * DPT 5.001 Mapping: Discrete steps (0-3 for height, 0-2 for an angle) ↔ KNX percent (0-100)
@@ -21,8 +23,11 @@ const KNX_TO_STEP = {
 
 @Injectable({ providedIn: 'root' })
 export class RaffstoreService {
+  private readonly datapointApi = inject(DatapointService);
   private raffstores$ = new BehaviorSubject<Raffstore[]>([]);
   private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
+  private loadedDatapoints$ = new BehaviorSubject<Datapoint[]>([]);
+
   private apiEndpoint: string = '';
 
   // Favorites per floor
@@ -53,23 +58,45 @@ export class RaffstoreService {
    * @private
    */
   private initializeRaffstores(): void {
-    const raffstores = RAFFSTORE_CONFIG.map(config => ({
-      id: config.id,
-      name: config.name,
-      floor: config.floor,
-      orientation: config.orientation,
-      heightStep: 1,
-      angleStep: 1,
-      autoMode: false,
-      isMoving: false
-    }));
+    console.log('[RaffstoreService] Initializing...');
+
+    // 1. Load config
+    const raffstores = this.mapConfigToRaffstores(RAFFSTORE_CONFIG);
+
     this.raffstores$.next(raffstores);
     console.log(`[RaffstoreService] Initialized ${raffstores.length} raffstores from config`);
+
+    // 2. Extract all GAs from config
+    const allGAs = Array.from(this.extractAllGAsFromConfig(RAFFSTORE_CONFIG));
+    console.log(`[RaffstoreService] Found ${allGAs.length} unique GAs to initialize`);
+
+    // 3. Request datapoint IDs from semantic-knx-gateway
+    this.initializeDatapoints(allGAs);
+
+    // 4. Done
+    this.datapointApi.logCache(); // Debug: Print cache
+    console.log('[RaffstoreService] ✓ Initialization complete');
   }
 
   /**
-   * Hole Observable-Stream aller Raffstores
-   * @returns Observable mit Array aller Raffstores (initialisiert aus RAFFSTORE_CONFIG)
+   * Convert config to a raffstore array
+   */
+  private mapConfigToRaffstores(config: any[]): Raffstore[] {
+    return config.map((cfg) => ({
+      id: cfg.id,
+      name: cfg.name,
+      floor: cfg.floor,
+      orientation: cfg.orientation,
+      heightStep: 1, // Default
+      angleStep: 0,  // Default
+      autoMode: false,
+      isMoving: false
+    })) as any;
+  }
+
+  /**
+   * Get an observable stream of all raffstores
+   * @returns Observable a containing array of all raffstores (initialized from RAFFSTORE_CONFIG)
    */
   getRaffstores(): Observable<Raffstore[]> {
     return this.raffstores$.asObservable();
@@ -455,5 +482,77 @@ export class RaffstoreService {
   private handleError(method: string, context: string, error: any): Observable<never> {
     console.error(`[RaffstoreService] ✗ ${method} failed for ${context}:`, error);
     throw error;
+  }
+
+  /**
+   * Extract all group addresses from the configuration
+   * Collects all GA properties from raffstore config objects
+   * @param raffstores Array of raffstore config objects
+   * @returns Set of unique group addresses
+   */
+  private extractAllGAsFromConfig(raffstores: any[]): Set<string> {
+    const allGAs = new Set<string>();
+
+    raffstores.forEach(rs => {
+      allGAs.add(rs.gaMove);
+      allGAs.add(rs.gaStep);
+      allGAs.add(rs.gaPositionSet);
+      allGAs.add(rs.gaLamellasSet);
+      allGAs.add(rs.gaStatusPosition);
+      allGAs.add(rs.gaStatusLamellus);
+      allGAs.add(rs.gaLock);
+      allGAs.add(rs.gaEndTop);
+      allGAs.add(rs.gaEndBottom);
+    });
+
+    return allGAs;
+  }
+
+  /**
+   * Initialize datapoint IDs for the given group addresses
+   * Loads and caches all datapoints from the backend API
+   * @param gasToLoad Array of group addresses to load
+   */
+  private async initializeDatapoints(gasToLoad: string[]): Promise<void> {
+    console.log(`[RaffstoreService] Initializing ${gasToLoad.length} datapoints...`);
+    const loadedDatapoints: Datapoint[] = [];
+    let successCount = 0;
+
+    for (const ga of gasToLoad) {
+      try {
+        const datapoint = await firstValueFrom(this.datapointApi.getById(ga));
+        if (datapoint) {
+          loadedDatapoints.push(datapoint);
+          successCount++;
+          console.log(`[RaffstoreService] ✓ GA ${ga} → DP ${datapoint.title}`);
+        } else {
+          console.warn(`[RaffstoreService] ✗ No datapoint found for GA ${ga}`);
+        }
+      } catch (error) {
+        console.error(`[RaffstoreService] Error loading GA ${ga}:`, error);
+      }
+    }
+
+    // Store loaded datapoints locally
+    this.loadedDatapoints$.next(loadedDatapoints);
+
+    console.log(`[RaffstoreService] Datapoint cache ready: ${successCount}/${gasToLoad.length} entries loaded`);
+  }
+
+  /**
+   * Get loaded datapoints (synchronous access)
+   * @returns Array of all loaded datapoints
+   */
+  getLoadedDatapoints(): Datapoint[] {
+    return this.loadedDatapoints$.value;
+  }
+
+  /**
+   * Find a datapoint by ID in loaded datapoints
+   * @param id Datapoint ID / Group address
+   * @returns Datapoint or undefined if not found
+   */
+  findLoadedDatapoint(id: string): Datapoint | undefined {
+    return this.loadedDatapoints$.value.find(dp => dp.id === id);
   }
 }
