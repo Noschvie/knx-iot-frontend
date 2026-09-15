@@ -58,24 +58,24 @@ export class RaffstoreService {
    * @private
    */
   private initializeRaffstores(): void {
-    console.log('[RaffstoreService] Initializing...');
+    console.log('[RaffstoreService] Initializing raffstores');
 
     // 1. Load config
     const raffstores = this.mapConfigToRaffstores(RAFFSTORE_CONFIG);
 
     this.raffstores$.next(raffstores);
-    console.log(`[RaffstoreService] Initialized ${raffstores.length} raffstores from config`);
+    console.log(`[RaffstoreService] Loaded ${raffstores.length} raffstores`);
 
     // 2. Extract all GAs from config
     const allGAs = Array.from(this.extractAllGAsFromConfig(RAFFSTORE_CONFIG));
-    console.log(`[RaffstoreService] Found ${allGAs.length} unique GAs to initialize`);
+    console.log(`[RaffstoreService] Found ${allGAs.length} group addresses`);
 
     // 3. Request datapoint IDs from semantic-knx-gateway
     this.initializeDatapoints(allGAs);
 
     // 4. Done
     this.datapointApi.logCache(); // Debug: Print cache
-    console.log('[RaffstoreService] ✓ Initialization complete');
+    console.log('[RaffstoreService] Initialization complete');
   }
 
   /**
@@ -514,7 +514,7 @@ export class RaffstoreService {
    * @param gasToLoad Array of group addresses to load
    */
   private async initializeDatapoints(gasToLoad: string[]): Promise<void> {
-    console.log(`[RaffstoreService] Initializing ${gasToLoad.length} datapoints...`);
+    console.log(`[RaffstoreService] Initializing ${gasToLoad.length} datapoints`);
     const loadedDatapoints: Datapoint[] = [];
     let successCount = 0;
 
@@ -524,19 +524,19 @@ export class RaffstoreService {
         if (datapoint) {
           loadedDatapoints.push(datapoint);
           successCount++;
-          console.log(`[RaffstoreService] ✓ Datapoint loaded: ${ga}`);
+          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}`);
         } else {
-          console.warn(`[RaffstoreService] ✗ Datapoint NOT FOUND: GA=${ga}`);
+          console.warn(`[RaffstoreService] [!] NOT FOUND: GA=${ga}`);
         }
       } catch (error) {
-        console.error(`[RaffstoreService] Error loading GA ${ga}:`, error);
+        console.error(`[RaffstoreService] [ERR] Error loading GA=${ga}:`, error);
       }
     }
 
     // Store loaded datapoints locally
     this.loadedDatapoints$.next(loadedDatapoints);
 
-    console.log(`[RaffstoreService] Datapoint cache ready: ${successCount}/${gasToLoad.length} entries loaded`);
+    console.log(`[RaffstoreService] [OK] Datapoint cache loaded: ${successCount}/${gasToLoad.length}`);
   }
 
   /**
