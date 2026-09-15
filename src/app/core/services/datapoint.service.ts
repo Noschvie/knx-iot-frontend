@@ -283,4 +283,15 @@ export class DatapointService {
     console.log('[Datapoint Service] Transformation complete. Total:', result.length);
     return result;
   }
+
+  /**
+   * Print cache contents (for logging)
+   */
+  logCache(): void {
+    const cache = this.datapointsCache$.value;
+    console.log('[DatapointService] Datapoint Cache:');
+    cache.forEach((entry, ga) => {
+      console.log(`  ${ga} → ${entry.title}`);
+    });
+  }
 }
