@@ -131,8 +131,8 @@ interface NavItem {
 
 export class MainLayoutComponent {
   navItems: NavItem[] = [
-    { labelKey: 'navigation.raffstores', icon: 'window_shade',   route: '/raffstores'  },
     { labelKey: 'navigation.dashboard',  icon: 'dashboard',      route: '/dashboard'   },
+    { labelKey: 'navigation.raffstores', icon: 'window_shade',   route: '/raffstores'  },
     { labelKey: 'navigation.monitor',    icon: 'monitor_heart',  route: '/monitor'     },
     { labelKey: 'navigation.datapoints', icon: 'sensors',        route: '/datapoints'  },
     { labelKey: 'navigation.devices',    icon: 'device_hub',     route: '/devices'     },
