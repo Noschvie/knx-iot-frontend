@@ -26,15 +26,17 @@ const LISTEN_PORT = process.env.LOG_BRIDGE_PORT || 9514;
 const SYSLOG_HOST = process.env.SYSLOG_HOST || 'localhost';
 const SYSLOG_PORT = process.env.SYSLOG_PORT || 514;
 
+// RFC 3164 limit: 1024 bytes
+const MAX_SYSLOG_LENGTH = 1024;
+
 // Create UDP client for Syslog
 const syslogClient = dgram.createSocket('udp4');
 
 // Create HTTP server
 const server = http.createServer((req, res) => {
-  console.log(`[Syslog Bridge] ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
 
   if (req.method === 'POST' && req.url === '/syslog') {
-    console.log(`[Syslog Bridge] ✓ Received POST /syslog from ${req.socket.remoteAddress}`);
+    console.log(`[Syslog Bridge] [OK] Received POST /syslog from ${req.socket.remoteAddress}`);
     let body = '';
 
     req.on('data', (chunk) => {
@@ -49,20 +51,15 @@ const server = http.createServer((req, res) => {
         const { priority, timestamp, hostname, tag, level, message } = logData;
         const syslogMessage = `<${priority}>${timestamp} ${hostname} ${tag}[${level}]: ${message}`;
 
-        // RFC 3164 limit: 1024 bytes. Truncate if necessary to prevent message loss.
-        const MAX_SYSLOG_LENGTH = 1024;
-        const truncatedMessage = syslogMessage.length > MAX_SYSLOG_LENGTH 
+        // Truncate if necessary to prevent message loss.
+        const truncatedMessage = syslogMessage.length > MAX_SYSLOG_LENGTH
           ? syslogMessage.substring(0, MAX_SYSLOG_LENGTH - 4) + '...'
           : syslogMessage;
-
-        console.log(`[Syslog Bridge] MSG: ${message.substring(0, 80)} (len: ${truncatedMessage.length})`);
 
         // Send to Syslog server via UDP
         syslogClient.send(truncatedMessage, 0, truncatedMessage.length, SYSLOG_PORT, SYSLOG_HOST, (err) => {
           if (err) {
-            console.error(`[Syslog Bridge] ✗ Error: ${SYSLOG_HOST}:${SYSLOG_PORT} - ${err.message}`);
-          } else {
-            console.log(`[Syslog Bridge] ✓ TX: [${level}] len=${truncatedMessage.length}`);
+            console.error(`[Syslog Bridge] [ERR] Error: ${SYSLOG_HOST}:${SYSLOG_PORT} - ${err.message}`);
           }
         });
 
@@ -90,11 +87,8 @@ syslogClient.on('error', (err) => {
 
 // Start server
 server.listen(LISTEN_PORT, '0.0.0.0', () => {
-  console.log('=== Syslog UDP Bridge Started ===');
-  console.log(`Listening on: 0.0.0.0:${LISTEN_PORT}`);
-  console.log(`Syslog Server: ${SYSLOG_HOST}:${SYSLOG_PORT}`);
-  console.log('Health Check: GET /health');
-  console.log('==================================');
+  console.log('[Syslog Bridge] Started on 0.0.0.0:' + LISTEN_PORT);
+  console.log('[Syslog Bridge] Forwarding to ' + SYSLOG_HOST + ':' + SYSLOG_PORT);
 });
 
 // Graceful shutdown
