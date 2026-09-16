@@ -1,20 +1,21 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideAppInitializer, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { translateHttpLoaderProviders } from '@core/i18n/translate-http-loader.provider';
-import { DEFAULT_LANGUAGE, resolveInitialLanguage } from '@core/i18n/i18n.constants';
-import { CoreModule } from '@core/core.module';
-import { ConfigService } from '@core/config/config.service';
+import { CoreModule } from './core/core.module';
+import { LayoutModule } from './features/layout/layout.module';
+import { ConfigService } from './core/config/config.service';
+import { LoggerService } from './shared/services/logger.service';
+import { translateHttpLoaderProviders } from './core/i18n/translate-http-loader.provider';
+import { DEFAULT_LANGUAGE, resolveInitialLanguage } from './core/i18n/i18n.constants';
 import { AuthService } from '@core/auth/auth.service';
-import { OAuthService } from '@core/auth/oauth.service';
-import { LayoutModule } from '@features/layout/layout.module';
-import { LoggerService } from '@shared/services/logger.service';
+import { OAuthService } from './core/auth/oauth.service';
 
 @NgModule({
     declarations: [AppComponent],
@@ -26,6 +27,7 @@ import { LoggerService } from '@shared/services/logger.service';
     ],
     providers: [
         provideHttpClient(withInterceptorsFromDi()),
+        provideAnimations(),
         provideTranslateService({
             lang: DEFAULT_LANGUAGE,
             fallbackLang: DEFAULT_LANGUAGE,
@@ -46,17 +48,13 @@ import { LoggerService } from '@shared/services/logger.service';
         }),
         // Then load configuration
         provideAppInitializer(() => firstValueFrom(inject(ConfigService).loadConfig())),
-
-        // Acquire backend (client_credentials) tokens at startup.
+        // Acquire backend (client_credentials) tokens at startup, BLOCKING.
+        // Without valid tokens, the app cannot load any backend data, so we wait here.
         // Retries 3x with 15s pause to bridge a backend that is still starting up.
-        // A final failure must NOT block the app from rendering (login/UI stays reachable);
-        // renewal/retry keeps running in the background.
         provideAppInitializer(() => {
             const auth = inject(AuthService);
             if (auth instanceof OAuthService) {
-                return firstValueFrom(auth.acquireTokens(true)).catch(() => {
-                    // Swallow the error so bootstrap completes and the UI (incl. login) renders.
-                });
+                return firstValueFrom(auth.acquireTokens(true));
             }
             return Promise.resolve();
         })
