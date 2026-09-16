@@ -20,8 +20,18 @@ Bearbeite `config/raffstore-config.json` nach Bedarf:
   "raffstores": [
     {
       "id": "rs-1",
-      "name": "Mein angepasster Name",
-      // ... weitere Felder
+      "name": "Wohnbereich",
+      "floor": "EG",
+      "orientation": "SUED",
+      "gaMove": "2/1/1",
+      "gaStep": "2/2/1",
+      "gaPositionSet": "2/3/1",
+      "gaLamellasSet": "2/4/1",
+      "gaStatusPosition": "2/5/1",
+      "gaStatusLamellus": "2/6/1",
+      "gaLock": "2/7/1",
+      "gaEndTop": "2/8/1",
+      "gaEndBottom": "2/9/1"
     }
   ]
 }
