@@ -8,6 +8,10 @@ import { map, tap, catchError } from 'rxjs/operators';
 import { DatapointService } from '@core/services/datapoint.service';
 import { Datapoint } from '@shared/models';
 
+interface RaffstoreConfigFile {
+  raffstores: RaffstoreDatapoints[];
+}
+
 /**
  * DPT 5.001 Mapping: Discrete steps (0-3 for height, 0-2 for an angle) ↔ KNX percent (0-100)
  */
@@ -29,6 +33,7 @@ export class RaffstoreService {
   private loadedDatapoints$ = new BehaviorSubject<Datapoint[]>([]);
 
   private apiEndpoint: string = '';
+  private raffstoreConfig: RaffstoreDatapoints[] = RAFFSTORE_CONFIG; // Fallback to hardcoded config
 
   // Favorites per floor
   private favorites: Record<'EG' | 'OG', Favorite[]> = {
@@ -53,21 +58,52 @@ export class RaffstoreService {
   }
 
   /**
-   * Initialize raffstores from config
+   * Initialize raffstores from the config file (JSON) or fallback to hardcoded config
    * Called by service constructor
    * @private
    */
   private initializeRaffstores(): void {
     console.log('[RaffstoreService] Initializing raffstores');
 
-    // 1. Load config
-    const raffstores = this.mapConfigToRaffstores(RAFFSTORE_CONFIG);
+    // Try to load config from JSON file
+    this.loadConfigFromFile().subscribe({
+      next: (config) => {
+        this.raffstoreConfig = config;
+        this.initializeFromConfig();
+      },
+      error: (err) => {
+        console.warn('[RaffstoreService] Failed to load config from file, using fallback:', err);
+        // Fallback to hardcoded config
+        this.raffstoreConfig = RAFFSTORE_CONFIG;
+        this.initializeFromConfig();
+      }
+    });
+  }
+
+  /**
+   * Load raffstore configuration from JSON file
+   * @private
+   */
+  private loadConfigFromFile(): Observable<RaffstoreDatapoints[]> {
+    return this.http.get<RaffstoreConfigFile>('/assets/config/raffstore-config.json').pipe(
+      map(data => data.raffstores),
+      tap(() => console.log('[RaffstoreService] Successfully loaded config from raffstore-config.json'))
+    );
+  }
+
+  /**
+   * Initialize raffstore data from loaded config
+   * @private
+   */
+  private initializeFromConfig(): void {
+    // 1. Convert config to raffstore array
+    const raffstores = this.mapConfigToRaffstores(this.raffstoreConfig);
 
     this.raffstores$.next(raffstores);
     console.log(`[RaffstoreService] Loaded ${raffstores.length} raffstores`);
 
     // 2. Extract all GAs from config
-    const allGAs = Array.from(this.extractAllGAsFromConfig(RAFFSTORE_CONFIG));
+    const allGAs = Array.from(this.extractAllGAsFromConfig(this.raffstoreConfig));
     console.log(`[RaffstoreService] Found ${allGAs.length} group addresses`);
 
     // 3. Request datapoint IDs from semantic-knx-gateway
@@ -317,7 +353,7 @@ export class RaffstoreService {
    */
   groupCommand(floor: 'EG' | 'OG', command: 'up' | 'down'): Observable<void> {
     const knxValue = command === 'up' ? '0' : '1';  // DPT 1.008
-    const raffstoredForFloor = RAFFSTORE_CONFIG.filter(c => c.floor === floor);
+    const raffstoredForFloor = this.raffstoreConfig.filter(c => c.floor === floor);
 
     const payload = {
       data: raffstoredForFloor.map(config => ({
@@ -426,7 +462,7 @@ export class RaffstoreService {
    * @returns Config object or throws error if not found
    */
   private getConfig(raffstoreId: string): RaffstoreDatapoints {
-    const config = RAFFSTORE_CONFIG.find(c => c.id === raffstoreId);
+    const config = this.raffstoreConfig.find(c => c.id === raffstoreId);
     if (!config) {
       throw new Error(`[RaffstoreService] Config not found for raffstore: ${raffstoreId}`);
     }

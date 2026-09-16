@@ -17,4 +17,7 @@ services:
     ports:
       - "8080:80"
       - "9514:9514"
+    volumes:
+      # Mount custom raffstore config (optional - if not mounted, hardcoded config is used)
+      - ./config/raffstore-config.json:/usr/share/nginx/html/assets/config/raffstore-config.json:ro
     restart: unless-stopped
