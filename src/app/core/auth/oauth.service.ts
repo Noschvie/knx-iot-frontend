@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map, catchError, forkJoin } from 'rxjs';
+import {BehaviorSubject, Observable, tap, map, catchError, forkJoin, Subscription, timer, retry} from 'rxjs';
 import { throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 
@@ -19,16 +19,29 @@ interface TokenPair {
 }
 
 @Injectable()
-export class OAuthService extends AuthService {
+export class OAuthService extends AuthService implements OnDestroy {
     private tokens$ = new BehaviorSubject<TokenPair>({ read: null, write: null });
 
     // TEST MODE: Hardcoded credentials for backend authentication
     private readonly HARDCODED_CLIENT_ID = 'knx-default-client';
     private readonly HARDCODED_CLIENT_SECRET = 'change-me-in-production';
 
+    // Renew the tokens this many seconds BEFORE they actually expire
+    private readonly REFRESH_SKEW_SECONDS = 60;
+
+    // Startup retry policy (used only for the initial, blocking acquisition)
+    private readonly STARTUP_RETRY_COUNT = 3;
+    private readonly STARTUP_RETRY_DELAY_MS = 15_000;
+
+    private refreshSub?: Subscription;
+
     constructor(private http: HttpClient, private config: ConfigService) {
         super();
         this.loadTokens();
+    }
+
+    ngOnDestroy(): void {
+        this.refreshSub?.unsubscribe();
     }
 
     login(username: string, password: string): Observable<void> {
@@ -68,6 +81,91 @@ export class OAuthService extends AuthService {
             }),
             map(() => void 0)
         );
+    }
+
+    /**
+     * Acquires read and write backend tokens via the client_credentials flow.
+     * Independent of any frontend user login. Called at application startup
+     * (blocking) and on a schedule for automatic renewal.
+     *
+     * @param withStartupRetry when true, retries the acquisition
+     *        {@link STARTUP_RETRY_COUNT} times with {@link STARTUP_RETRY_DELAY_MS}
+     *        between attempts (useful while the backend is still starting up).
+     */
+    acquireTokens(withStartupRetry = false): Observable<void> {
+        console.log(`[AUTH] Acquiring backend tokens (client_credentials, client_id: ${this.HARDCODED_CLIENT_ID})`);
+
+        const readTokenReq = this.fetchToken(this.HARDCODED_CLIENT_ID, this.HARDCODED_CLIENT_SECRET, 'read');
+        const writeTokenReq = this.fetchToken(this.HARDCODED_CLIENT_ID, this.HARDCODED_CLIENT_SECRET, 'write');
+
+        let request$ = forkJoin([readTokenReq, writeTokenReq]).pipe(
+            tap(([readToken, writeToken]) => {
+                console.log(`[AUTH] ✓ Both backend tokens received`);
+                localStorage.setItem('access_token_read', readToken.access_token);
+                localStorage.setItem('access_token_write', writeToken.access_token);
+                localStorage.setItem('token_expires_at_read', String(Date.now() + readToken.expires_in * 1000));
+                localStorage.setItem('token_expires_at_write', String(Date.now() + writeToken.expires_in * 1000));
+                this.tokens$.next({
+                    read: readToken.access_token,
+                    write: writeToken.access_token
+                });
+
+                const minExpiresIn = Math.min(readToken.expires_in, writeToken.expires_in);
+                this.scheduleRefresh(minExpiresIn);
+            })
+        );
+
+        if (withStartupRetry) {
+            request$ = request$.pipe(
+                retry({
+                    count: this.STARTUP_RETRY_COUNT,
+                    delay: (error, retryIndex) => {
+                        console.warn(
+                            `[AUTH] Token acquisition attempt ${retryIndex} failed, ` +
+                            `retrying in ${this.STARTUP_RETRY_DELAY_MS / 1000}s ` +
+                            `(${this.STARTUP_RETRY_COUNT - retryIndex + 1} attempt(s) left)...`
+                        );
+                        return timer(this.STARTUP_RETRY_DELAY_MS);
+                    }
+                })
+            );
+        }
+
+        return request$.pipe(
+            catchError((error: HttpErrorResponse) => {
+                console.error(`[AUTH] ✗ Token acquisition failed!`, {
+                    status: error.status,
+                    message: error.message,
+                    errorDescription: error.error?.error_description || error.message,
+                    url: `${this.config.getApiBase()}${environment.tokenEndpoint}`
+                });
+                return throwError(() => error);
+            }),
+            map(() => void 0)
+        );
+    }
+
+    /**
+     * Schedules the next automatic token renewal based on the shortest lifetime.
+     * Renewal runs without a startup retry, but reschedules itself after the skew
+     * window if it fails, so a temporary backend outage self-heals.
+     * @param expiresInSeconds lifetime (in seconds) of the freshly obtained tokens
+     */
+    private scheduleRefresh(expiresInSeconds: number): void {
+        this.refreshSub?.unsubscribe();
+
+        const delaySeconds = Math.max(expiresInSeconds - this.REFRESH_SKEW_SECONDS, this.REFRESH_SKEW_SECONDS);
+        console.log(`[AUTH] Next token refresh scheduled in ${delaySeconds}s`);
+
+        this.refreshSub = timer(delaySeconds * 1000).subscribe(() => {
+            console.log(`[AUTH] Refreshing backend tokens...`);
+            this.acquireTokens().subscribe({
+                error: () => {
+                    // Renewal failed (e.g. backends down); retry after the skew window.
+                    this.scheduleRefresh(this.REFRESH_SKEW_SECONDS);
+                }
+            });
+        });
     }
 
     private fetchToken(clientId: string, clientSecret: string, scope: string): Observable<OAuthToken> {

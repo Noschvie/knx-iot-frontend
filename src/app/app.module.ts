@@ -14,6 +14,8 @@ import { ConfigService } from './core/config/config.service';
 import { LoggerService } from './shared/services/logger.service';
 import { translateHttpLoaderProviders } from './core/i18n/translate-http-loader.provider';
 import { DEFAULT_LANGUAGE, resolveInitialLanguage } from './core/i18n/i18n.constants';
+import {AuthService} from "@core/auth/auth.service";
+import { OAuthService } from "./core/auth/oauth.service";
 
 @NgModule({
     declarations: [AppComponent],
@@ -45,7 +47,17 @@ import { DEFAULT_LANGUAGE, resolveInitialLanguage } from './core/i18n/i18n.const
             return firstValueFrom(translate.use(lang));
         }),
         // Then load configuration
-        provideAppInitializer(() => firstValueFrom(inject(ConfigService).loadConfig()))
+        provideAppInitializer(() => firstValueFrom(inject(ConfigService).loadConfig())),
+        // Acquire backend (client_credentials) tokens at startup, BLOCKING.
+        // Without valid tokens, the app cannot load any backend data, so we wait here.
+        // Retries 3x with 15s pause to bridge a backend that is still starting up.
+        provideAppInitializer(() => {
+            const auth = inject(AuthService);
+            if (auth instanceof OAuthService) {
+                return firstValueFrom(auth.acquireTokens(true));
+            }
+            return Promise.resolve();
+        })
     ],
     bootstrap: [AppComponent]
 })
