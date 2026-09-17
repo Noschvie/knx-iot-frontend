@@ -22,10 +22,6 @@ interface TokenPair {
 export class OAuthService extends AuthService implements OnDestroy {
     private tokens$ = new BehaviorSubject<TokenPair>({ read: null, write: null });
 
-    // TEST MODE: Hardcoded credentials for backend authentication
-    private readonly HARDCODED_CLIENT_ID = 'knx-default-client';
-    private readonly HARDCODED_CLIENT_SECRET = 'change-me-in-production';
-
     // Renew the tokens this many seconds BEFORE they actually expire
     private readonly REFRESH_SKEW_SECONDS = 60;
 
@@ -41,14 +37,18 @@ export class OAuthService extends AuthService implements OnDestroy {
     }
 
     login(username: string, password: string): Observable<void> {
+        // LAN-only deployment: no real user login. Backend uses OAuth2
+        // client_credentials with values from the runtime config (app-config.json).
+        const clientId = this.config.getClientId();
+        const clientSecret = this.config.getClientSecret();
+
         // TEST MODE: Ignore user input and use hardcoded credentials for backend
-        console.log(`[AUTH] TEST MODE: Accepting any UI credentials`);
-        console.log(`[AUTH] Backend will use hardcoded credentials (client_id: ${this.HARDCODED_CLIENT_ID})`);
+        console.log(`[AUTH] Backend will use hardcoded credentials (client_id: ${clientId})`);
         console.log(`[AUTH] Starting OAuth2 login with hardcoded client credentials`);
         console.log(`[AUTH] Using token endpoint: ${this.config.getApiBase()}${environment.tokenEndpoint}`);
 
-        const readTokenReq = this.fetchToken(this.HARDCODED_CLIENT_ID, this.HARDCODED_CLIENT_SECRET, 'read');
-        const writeTokenReq = this.fetchToken(this.HARDCODED_CLIENT_ID, this.HARDCODED_CLIENT_SECRET, 'write');
+        const readTokenReq = this.fetchToken(clientId, clientSecret, 'read');
+        const writeTokenReq = this.fetchToken(clientId, clientSecret, 'write');
 
         return forkJoin([readTokenReq, writeTokenReq]).pipe(
             tap(([readToken, writeToken]) => {

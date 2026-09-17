@@ -1,4 +1,6 @@
 {
   "apiBase": "http://localhost:8080",
-  "wsBase": "ws://localhost:8080"
+  "wsBase": "ws://localhost:8080",
+  "clientId": "knx-default-client",
+  "clientSecret": "change-me-in-production"
 }
