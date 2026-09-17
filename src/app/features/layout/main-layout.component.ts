@@ -148,6 +148,6 @@ export class MainLayoutComponent {
 
   logout(): void {
     this.auth.logout();
-    this.router.navigate(['/login']);
+    this.router.navigate(['/dashboard']);
   }
 }

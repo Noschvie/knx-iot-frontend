@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/auth/auth.guard';
-import { LoginComponent } from './features/auth/login.component';
 import { SetupWizardComponent } from './features/auth/setup-wizard.component';
 import { MainLayoutComponent } from './features/layout/main-layout.component';
 
@@ -10,10 +9,6 @@ const routes: Routes = [
         path: '',
         redirectTo: '/dashboard',
         pathMatch: 'full'
-    },
-    {
-        path: 'login',
-        component: LoginComponent
     },
     {
         path: 'setup',

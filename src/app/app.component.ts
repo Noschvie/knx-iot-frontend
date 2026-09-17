@@ -8,17 +8,7 @@ import { AuthService } from './core/auth/auth.service';
   template: `<router-outlet></router-outlet>`,
   styles: []
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'KNX IoT Frontend';
 
-  constructor(
-      private auth: AuthService,
-      private router: Router
-  ) {}
-
-  ngOnInit(): void {
-    if (!this.auth.isAuthenticated()) {
-      this.router.navigate(['/login']);
-    }
-  }
 }
