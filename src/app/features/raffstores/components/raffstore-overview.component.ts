@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Raffstore } from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 @Component({
   standalone: false,
@@ -10,32 +10,15 @@ import { takeUntil } from 'rxjs/operators';
   templateUrl: './raffstore-overview.component.html',
   styleUrls: ['./raffstore-overview.component.scss']
 })
-export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
-  raffstores: Raffstore[] = [];
-  raffstoresEG: Raffstore[] = [];
-  raffstoresOG: Raffstore[] = [];
-  isLoading = false;
+export class RaffstoreOverviewComponent {
+  raffstoresEG$: Observable<Raffstore[]>;
+  raffstoresOG$: Observable<Raffstore[]>;
   groupCommandInProgress: { EG?: boolean; OG?: boolean } = {};
 
-  private destroy$ = new Subject<void>();
-
-  constructor(private raffstoreService: RaffstoreService) {}
-
-  ngOnInit(): void {
-    // Lade Raffstores von Config
-    this.raffstoreService.getRaffstores()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(raffstores => {
-        this.raffstores = raffstores;
-        this.raffstoresEG = raffstores.filter(r => r.floor === 'EG');
-        this.raffstoresOG = raffstores.filter(r => r.floor === 'OG');
-        console.log(`[Overview] Loaded ${raffstores.length} raffstores (EG: ${this.raffstoresEG.length}, OG: ${this.raffstoresOG.length})`);
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  constructor(private raffstoreService: RaffstoreService) {
+    const raffstores$ = this.raffstoreService.getRaffstores();
+    this.raffstoresEG$ = raffstores$.pipe(map(list => list.filter(r => r.floor === 'EG')));
+    this.raffstoresOG$ = raffstores$.pipe(map(list => list.filter(r => r.floor === 'OG')));
   }
 
   /**
@@ -43,17 +26,16 @@ export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
    */
   onGroupCommandUp(floor: 'EG' | 'OG'): void {
     this.groupCommandInProgress[floor] = true;
-    this.raffstoreService.groupCommand(floor, 'up').subscribe(
-      () => {
+    this.raffstoreService.groupCommand(floor, 'up').subscribe({
+      next: () => {
         console.log(`✓ Group command UP completed for floor: ${floor}`);
         this.groupCommandInProgress[floor] = false;
       },
-      error => {
+      error: error => {
         console.error(`✗ Group command UP failed for floor: ${floor}`, error);
         this.groupCommandInProgress[floor] = false;
-        // TODO: Show error toast/snackbar
       }
-    );
+    });
   }
 
   /**
@@ -61,16 +43,15 @@ export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
    */
   onGroupCommandDown(floor: 'EG' | 'OG'): void {
     this.groupCommandInProgress[floor] = true;
-    this.raffstoreService.groupCommand(floor, 'down').subscribe(
-      () => {
+    this.raffstoreService.groupCommand(floor, 'down').subscribe({
+      next: () => {
         console.log(`✓ Group command DOWN completed for floor: ${floor}`);
         this.groupCommandInProgress[floor] = false;
       },
-      error => {
+      error: error => {
         console.error(`✗ Group command DOWN failed for floor: ${floor}`, error);
         this.groupCommandInProgress[floor] = false;
-        // TODO: Show error toast/snackbar
       }
-    );
+    });
   }
 }

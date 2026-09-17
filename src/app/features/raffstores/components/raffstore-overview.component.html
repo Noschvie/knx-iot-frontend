@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="tile-grid">
-      <app-raffstore-tile *ngFor="let rs of raffstoresEG" [raffstore]="rs"></app-raffstore-tile>
+        <app-raffstore-tile *ngFor="let rs of raffstoresEG$ | async" [raffstore]="rs"></app-raffstore-tile>
     </div>
   </div>
 
@@ -33,7 +33,7 @@
       </div>
     </div>
     <div class="tile-grid">
-      <app-raffstore-tile *ngFor="let rs of raffstoresOG" [raffstore]="rs"></app-raffstore-tile>
+        <app-raffstore-tile *ngFor="let rs of raffstoresOG$ | async" [raffstore]="rs"></app-raffstore-tile>
     </div>
   </div>
 </div>
