@@ -1,39 +1,43 @@
 <div class="overview-container">
-  <div class="page-title">Raffstores</div>
+    <div class="page-title">Raffstores</div>
 
-  <!-- Erdgeschoss -->
-  <div class="floor-section">
-    <div class="floor-header">
-      <span class="floor-name">Erdgeschoss</span>
-      <div class="floor-buttons">
-        <button class="group-btn" (click)="onGroupCommandUp('EG')">
-          <span class="icon">⬆</span>Alle auf
-        </button>
-        <button class="group-btn" (click)="onGroupCommandDown('EG')">
-          <span class="icon">⬇</span>Alle zu
-        </button>
-      </div>
+    <!-- Erdgeschoss -->
+    <div class="floor-section">
+        <div class="floor-header">
+            <span class="floor-name">Erdgeschoss</span>
+            <div class="floor-buttons">
+                <button class="group-btn" (click)="onGroupCommandUp('EG')">
+                    <span class="icon">⬆</span>Alle auf
+                </button>
+                <button class="group-btn" (click)="onGroupCommandDown('EG')">
+                    <span class="icon">⬇</span>Alle zu
+                </button>
+            </div>
+        </div>
+        <div class="tile-grid">
+            @for (rs of raffstoresEG; track rs.id) {
+                <app-raffstore-tile [raffstore]="rs"></app-raffstore-tile>
+            }
+        </div>
     </div>
-    <div class="tile-grid">
-        <app-raffstore-tile *ngFor="let rs of raffstoresEG$ | async" [raffstore]="rs"></app-raffstore-tile>
-    </div>
-  </div>
 
-  <!-- Obergeschoss -->
-  <div class="floor-section">
-    <div class="floor-header">
-      <span class="floor-name">Obergeschoss</span>
-      <div class="floor-buttons">
-        <button class="group-btn" (click)="onGroupCommandUp('OG')">
-          <span class="icon">⬆</span>Alle auf
-        </button>
-        <button class="group-btn" (click)="onGroupCommandDown('OG')">
-          <span class="icon">⬇</span>Alle zu
-        </button>
-      </div>
+    <!-- Obergeschoss -->
+    <div class="floor-section">
+        <div class="floor-header">
+            <span class="floor-name">Obergeschoss</span>
+            <div class="floor-buttons">
+                <button class="group-btn" (click)="onGroupCommandUp('OG')">
+                    <span class="icon">⬆</span>Alle auf
+                </button>
+                <button class="group-btn" (click)="onGroupCommandDown('OG')">
+                    <span class="icon">⬇</span>Alle zu
+                </button>
+            </div>
+        </div>
+        <div class="tile-grid">
+            @for (rs of raffstoresOG; track rs.id) {
+                <app-raffstore-tile [raffstore]="rs"></app-raffstore-tile>
+            }
+        </div>
     </div>
-    <div class="tile-grid">
-        <app-raffstore-tile *ngFor="let rs of raffstoresOG$ | async" [raffstore]="rs"></app-raffstore-tile>
-    </div>
-  </div>
 </div>

@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { Raffstore } from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 
@@ -10,15 +10,31 @@ import { RaffstoreService } from '../services/raffstore.service';
   templateUrl: './raffstore-overview.component.html',
   styleUrls: ['./raffstore-overview.component.scss']
 })
-export class RaffstoreOverviewComponent {
-  raffstoresEG$: Observable<Raffstore[]>;
-  raffstoresOG$: Observable<Raffstore[]>;
+export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
+  raffstoresEG: Raffstore[] = [];
+  raffstoresOG: Raffstore[] = [];
   groupCommandInProgress: { EG?: boolean; OG?: boolean } = {};
 
-  constructor(private raffstoreService: RaffstoreService) {
-    const raffstores$ = this.raffstoreService.getRaffstores();
-    this.raffstoresEG$ = raffstores$.pipe(map(list => list.filter(r => r.floor === 'EG')));
-    this.raffstoresOG$ = raffstores$.pipe(map(list => list.filter(r => r.floor === 'OG')));
+  private destroy$ = new Subject<void>();
+
+  constructor(
+      private raffstoreService: RaffstoreService,
+      private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.raffstoreService.getRaffstores()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(raffstores => {
+          this.raffstoresEG = raffstores.filter(r => r.floor === 'EG');
+          this.raffstoresOG = raffstores.filter(r => r.floor === 'OG');
+          this.cdr.detectChanges();
+        });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
