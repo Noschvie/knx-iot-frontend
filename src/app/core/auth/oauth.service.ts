@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map, catchError, forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map, catchError, forkJoin, Subscription, timer } from 'rxjs';
 import { throwError } from 'rxjs';
 import { environment } from '@environments/environment';
 
@@ -19,16 +19,25 @@ interface TokenPair {
 }
 
 @Injectable()
-export class OAuthService extends AuthService {
+export class OAuthService extends AuthService implements OnDestroy {
     private tokens$ = new BehaviorSubject<TokenPair>({ read: null, write: null });
 
     // TEST MODE: Hardcoded credentials for backend authentication
     private readonly HARDCODED_CLIENT_ID = 'knx-default-client';
     private readonly HARDCODED_CLIENT_SECRET = 'change-me-in-production';
 
+    // Renew the tokens this many seconds BEFORE they actually expire
+    private readonly REFRESH_SKEW_SECONDS = 60;
+
+    private refreshSub?: Subscription;
+
     constructor(private http: HttpClient, private config: ConfigService) {
         super();
         this.loadTokens();
+    }
+
+    ngOnDestroy(): void {
+        this.refreshSub?.unsubscribe();
     }
 
     login(username: string, password: string): Observable<void> {
@@ -56,6 +65,10 @@ export class OAuthService extends AuthService {
                     write: writeToken.access_token
                 });
                 console.log(`[AUTH] ✓ Tokens stored successfully`);
+
+                // Schedule automatic renewal based on the shortest token lifetime.
+                const minExpiresIn = Math.min(readToken.expires_in, writeToken.expires_in);
+                this.scheduleRefresh(minExpiresIn);
             }),
             catchError((error: HttpErrorResponse) => {
                 console.error(`[AUTH] ✗ Login failed!`, {
@@ -68,6 +81,31 @@ export class OAuthService extends AuthService {
             }),
             map(() => void 0)
         );
+    }
+
+    /**
+     * Schedules the next automatic token renewal based on the shortest lifetime.
+     * On failure, it reschedules itself after the skew window, so a temporary
+     * backend outage self-heals. Non-blocking: never affects UI rendering.
+     * @param expiresInSeconds lifetime (in seconds) of the freshly obtained tokens
+     */
+    private scheduleRefresh(expiresInSeconds: number): void {
+        this.refreshSub?.unsubscribe();
+
+        const delaySeconds = Math.max(expiresInSeconds - this.REFRESH_SKEW_SECONDS, this.REFRESH_SKEW_SECONDS);
+        console.log(`[AUTH] Next token refresh scheduled in ${delaySeconds}s`);
+
+        this.refreshSub = timer(delaySeconds * 1000).subscribe(() => {
+            console.log(`[AUTH] Refreshing backend tokens...`);
+            // login() re-runs the full client_credentials acquisition and, on
+            // success, schedules the following refresh again.
+            this.login('', '').subscribe({
+                error: () => {
+                    console.warn(`[AUTH] Token refresh failed; retrying in ${this.REFRESH_SKEW_SECONDS}s`);
+                    this.scheduleRefresh(this.REFRESH_SKEW_SECONDS);
+                }
+            });
+        });
     }
 
     private fetchToken(clientId: string, clientSecret: string, scope: string): Observable<OAuthToken> {
