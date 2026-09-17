@@ -1,6 +1,6 @@
 ﻿import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@core/auth/auth.service';
 
 interface NavItem {
   labelKey: string;

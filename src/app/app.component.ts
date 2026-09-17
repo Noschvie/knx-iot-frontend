@@ -1,6 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { AuthService } from './core/auth/auth.service';
+﻿import { Component } from '@angular/core';
 
 @Component({
   standalone: false,
@@ -10,5 +8,4 @@ import { AuthService } from './core/auth/auth.service';
 })
 export class AppComponent {
   title = 'KNX IoT Frontend';
-
 }
