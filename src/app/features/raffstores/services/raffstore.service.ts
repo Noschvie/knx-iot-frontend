@@ -32,6 +32,9 @@ export class RaffstoreService {
   private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
   private loadedDatapoints$ = new BehaviorSubject<Datapoint[]>([]);
 
+  // Mapping: GA → Datapoint UUID
+  private gaToDatapointIdMap = new Map<string, string>();
+
   private apiEndpoint: string = '';
   private raffstoreConfig: RaffstoreDatapoints[] = RAFFSTORE_CONFIG; // Fallback to hardcoded config
 
@@ -501,18 +504,18 @@ export class RaffstoreService {
   }
 
   /**
-   * Get Datapoint ID from cache or throw error if not found
+   * Get Datapoint UUID from GA mapping or throw error if not found
    * @param ga Group Address (e.g., "2/1/1")
    * @param gaName Friendly name (e.g., "gaMove")
-   * @returns Datapoint ID from backend
+   * @returns Datapoint UUID from backend
    * @throws Error if datapoint not loaded
    */
   private getDatapointIdOrThrow(ga: string, gaName: string): string {
-    const loadedDatapoint = this.findLoadedDatapoint(ga);
-    if (!loadedDatapoint?.id) {
-      throw new Error(`[RaffstoreService] Datapoint ID NOT FOUND for ${gaName} (GA: ${ga}). Datapoints not yet loaded!`);
+    const datapointUuid = this.gaToDatapointIdMap.get(ga);
+    if (!datapointUuid) {
+      throw new Error(`[RaffstoreService] Datapoint UUID NOT FOUND for ${gaName} (GA: ${ga}). Mapping not available!`);
     }
-    return loadedDatapoint.id;
+    return datapointUuid;
   }
 
   /**
@@ -605,8 +608,10 @@ export class RaffstoreService {
         const datapoint = await firstValueFrom(this.datapointApi.getById(ga));
         if (datapoint) {
           loadedDatapoints.push(datapoint);
+          // Create mapping: GA → Datapoint UUID
+          this.gaToDatapointIdMap.set(ga, datapoint.id);
           successCount++;
-          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, DatapointID=${datapoint.id}`);
+          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, DatapointUUID=${datapoint.id}`);
         } else {
           console.warn(`[RaffstoreService] [!] NOT FOUND: GA=${ga}`);
         }
@@ -619,7 +624,7 @@ export class RaffstoreService {
     this.loadedDatapoints$.next(loadedDatapoints);
 
     console.log(`[RaffstoreService] [OK] Datapoint cache loaded: ${successCount}/${gasToLoad.length}`);
-    console.log(`[RaffstoreService] Cached datapoint IDs:`, loadedDatapoints.map(dp => dp.id));
+    console.log(`[RaffstoreService] GA → UUID Mapping:`, Array.from(this.gaToDatapointIdMap.entries()));
   }
 
   /**
@@ -650,12 +655,10 @@ export class RaffstoreService {
         title: dp.title
       })),
       raffstoresCount: this.raffstores$.value.length,
-      raffstoreConfig: this.raffstoreConfig.slice(0, 2) // First 2 for brevity
+      raffstoreConfig: this.raffstoreConfig.slice(0, 2)
     });
 
-    // DETAILED: Show all loaded datapoint IDs
-    console.log('[RaffstoreService] ALL LOADED DATAPOINT IDs:',
-      this.loadedDatapoints$.value.map(dp => dp.id)
-    );
+    // Show GA → UUID mapping
+    console.log('[RaffstoreService] GA → UUID Mapping:', Array.from(this.gaToDatapointIdMap.entries()));
   }
 }
