@@ -23,18 +23,18 @@ export interface RaffstoreDatapoints {
 export const RAFFSTORE_CONFIG: RaffstoreDatapoints[] = [
   // Erdgeschoss (9 Raffstores, Index 1-9)
   {
-    id: 'rs-1',
-    name: 'Wohnbereich',
-    floor: 'EG',
-    orientation: 'SUED',
-    gaMove: '2/1/1',
-    gaStep: '2/2/1',
-    gaPositionSet: '2/3/1',
-    gaLamellasSet: '2/4/1',
-    gaStatusPosition: '2/5/1',
-    gaStatusLamellus: '2/6/1',
-    gaLock: '2/7/1',
-    gaEndTop: '2/8/1',
-    gaEndBottom: '2/9/1'
+    "id": "rs-1",
+    "name": "Wohnbereich",
+    "floor": "EG",
+    "orientation": "SUED",
+    "gaMove": "2/1/1",
+    "gaStep": "2/2/1",
+    "gaPositionSet": "2/3/1",
+    "gaLamellasSet": "2/5/1",
+    "gaStatusPosition": "2/4/1",
+    "gaStatusLamellus": "2/6/1",
+    "gaLock": "2/7/1",
+    "gaEndTop": "2/4/31",
+    "gaEndBottom": "2/4/51"
   }
 ];
