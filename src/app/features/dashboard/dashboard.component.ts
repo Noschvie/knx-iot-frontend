@@ -130,10 +130,10 @@ export class DashboardComponent implements OnInit {
     // Enrich datapoints with location information
     const enrichedDatapoints = datapoints.map(dp => {
       const location = locationMap.get(dp.locationId || '');
-      return {
+      return new Datapoint({
         ...dp,
         deviceTitle: location?.title || 'Unknown Location'
-      };
+      });
     });
 
 

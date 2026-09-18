@@ -268,7 +268,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
    */
   private handleDatapointUpdate(message: any): void {
     // Create or update datapoint from message
-    const updatedDatapoint: Datapoint = {
+    const updatedDatapoint = new Datapoint({
       id: message.id,
       title: message.title || 'Unknown',
       value: message.value,
@@ -282,7 +282,7 @@ export class MonitorComponent implements OnInit, OnDestroy {
       readable: true,
       writable: false,
       qualityValid: message.qualityValid !== false
-    };
+    });
 
     if (!this.isPaused) {
       this.liveBuffer.push(updatedDatapoint);
