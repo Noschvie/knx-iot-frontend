@@ -52,7 +52,7 @@ export class LoggerService {
     console.warn = this.createLogFunction('WARN', this.originalWarn);
 
     // Log service initialization
-    this.originalLog('[Logger Service] ✓ INITIALIZED - console methods overridden');
+    this.originalLog('[Logger Service] INITIALIZED - console methods overridden');
     this.originalLog('[Logger Service] timestamp:', this.formatLocalTimestamp());
     this.originalLog('[Logger Service] All console.log/error/warn calls will now be timestamped and sent to Syslog');
   }
