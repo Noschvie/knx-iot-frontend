@@ -10,6 +10,8 @@ import { ConfigService } from '@core/config/config.service';
  *
  * Logs are sent directly to Syslog server via UDP-bridge service.
  * Especially useful for auth debugging.
+ *
+ * Unicode characters are sanitized before sending to Syslog (RFC 3164 compliance).
  */
 @Injectable({
   providedIn: 'root'
@@ -52,7 +54,7 @@ export class LoggerService {
     console.warn = this.createLogFunction('WARN', this.originalWarn);
 
     // Log service initialization
-    this.originalLog('[Logger Service] ✓ INITIALIZED - console methods overridden');
+    this.originalLog('[Logger Service] INITIALIZED - console methods overridden');
     this.originalLog('[Logger Service] timestamp:', this.formatLocalTimestamp());
     this.originalLog('[Logger Service] All console.log/error/warn calls will now be timestamped and sent to Syslog');
   }
@@ -109,6 +111,34 @@ export class LoggerService {
   }
 
   /**
+   * Sanitize log message by removing/replacing Unicode characters
+   * This prevents issues with Syslog servers that expect ASCII text (RFC 3164)
+   */
+  private sanitizeForSyslog(message: string): string {
+    if (!message) return message;
+
+    // Replace common Unicode symbols with ASCII equivalents
+    let sanitized = message
+      .replace(/✓/g, '[OK]')           // Check mark
+      .replace(/✗/g, '[FAIL]')         // Cross mark
+      .replace(/•/g, '*')              // Bullet point
+      .replace(/→/g, '->')             // Right arrow
+      .replace(/←/g, '<-')             // Left arrow
+      .replace(/…/g, '...')            // Ellipsis
+      .replace(/—/g, '--')             // Em dash
+      .replace(/–/g, '-')              // En dash
+      .replace(/"/g, '"')              // Left double quote
+      .replace(/"/g, '"')              // Right double quote
+      .replace(/'/g, "'")              // Left single quote
+      .replace(/'/g, "'");             // Right single quote
+
+    // Remove any remaining non-ASCII characters (keep only 32-126 and common whitespace)
+    sanitized = sanitized.replace(/[^\x20-\x7E\t\n\r]/g, '?');
+
+    return sanitized;
+  }
+
+  /**
    * Map log level to syslog severity (0-7)
    */
   private mapLevelToSeverity(level: string): number {
@@ -151,6 +181,9 @@ export class LoggerService {
       // Nginx proxies /syslog to localhost:9514 (bridge service)
       const bridgeUrl = `/syslog`;
 
+      // Sanitize message to remove Unicode characters that may cause Syslog issues (RFC 3164)
+      const sanitizedMessage = this.sanitizeForSyslog(message);
+
       const logData = {
         priority,
         severity,
@@ -158,7 +191,7 @@ export class LoggerService {
         level,
         hostname,
         tag,
-        message,
+        message: sanitizedMessage,
         userAgent: navigator.userAgent
       };
 

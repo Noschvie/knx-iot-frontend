@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { DeviceService } from '@core/services/device.service';
 import { Device } from '@shared/models';
 import { Subject } from 'rxjs';
@@ -45,10 +45,10 @@ export class DevicesComponent implements OnInit, OnDestroy {
           this.devices = devices || [];
           this.loading = false;
           this.cdr.markForCheck();
-          console.log(`[Devices Component] ✓ ${devices.length} devices loaded`);
+          console.log(`[Devices Component] [OK] ${devices.length} devices loaded`);
         },
         error: (err) => {
-          console.error('[Devices Component] ✗ Error loading devices:', err);
+          console.error('[Devices Component] Error loading devices:', err);
           this.error = 'Error loading devices';
           this.loading = false;
           this.cdr.markForCheck();

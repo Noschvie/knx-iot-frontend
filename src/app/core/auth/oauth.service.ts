@@ -26,6 +26,7 @@ export class OAuthService extends AuthService implements OnDestroy {
     private readonly REFRESH_SKEW_SECONDS = 60;
 
     private refreshSub?: Subscription;
+    private immediateRefreshInProgress = false;
 
     constructor(private http: HttpClient, private config: ConfigService) {
         super();
@@ -69,6 +70,7 @@ export class OAuthService extends AuthService implements OnDestroy {
                 // Schedule automatic renewal based on the shortest token lifetime.
                 const minExpiresIn = Math.min(readToken.expires_in, writeToken.expires_in);
                 this.scheduleRefresh(minExpiresIn);
+                this.immediateRefreshInProgress = false;
             }),
             catchError((error: HttpErrorResponse) => {
                 console.error(`[AUTH] ✗ Login failed!`, {
@@ -77,10 +79,31 @@ export class OAuthService extends AuthService implements OnDestroy {
                     errorDescription: error.error?.error_description || error.message,
                     url: `${this.config.getApiBase()}${environment.tokenEndpoint}`
                 });
+                this.immediateRefreshInProgress = false;
                 return throwError(() => error);
             }),
             map(() => void 0)
         );
+    }
+
+    /**
+     * Triggers an immediate token refresh if one is not already in progress.
+     * This is called when tokens are about to expire.
+     */
+    private triggerImmediateRefresh(): void {
+        if (this.immediateRefreshInProgress) {
+            console.log(`[AUTH] Token refresh already in progress, skipping duplicate request`);
+            return;
+        }
+
+        this.immediateRefreshInProgress = true;
+        console.log(`[AUTH] Triggering immediate token refresh (tokens about to expire)`);
+        this.login('', '').subscribe({
+            error: () => {
+                console.warn(`[AUTH] Immediate token refresh failed`);
+                this.immediateRefreshInProgress = false;
+            }
+        });
     }
 
     /**
@@ -146,6 +169,13 @@ export class OAuthService extends AuthService implements OnDestroy {
     getReadToken(): string | null {
         const token = this.tokens$.value.read ?? localStorage.getItem('access_token_read');
         const expiresAt = parseInt(localStorage.getItem('token_expires_at_read') ?? '0', 10);
+
+        // If token is about to expire (within skew window), trigger immediate refresh
+        if (expiresAt > 0 && Date.now() + this.REFRESH_SKEW_SECONDS * 1000 > expiresAt) {
+            console.log(`[AUTH] Read token about to expire, triggering immediate refresh`);
+            this.triggerImmediateRefresh();
+        }
+
         if (Date.now() > expiresAt) {
             return null;
         }
@@ -155,6 +185,13 @@ export class OAuthService extends AuthService implements OnDestroy {
     getWriteToken(): string | null {
         const token = this.tokens$.value.write ?? localStorage.getItem('access_token_write');
         const expiresAt = parseInt(localStorage.getItem('token_expires_at_write') ?? '0', 10);
+
+        // If token is about to expire (within skew window), trigger immediate refresh
+        if (expiresAt > 0 && Date.now() + this.REFRESH_SKEW_SECONDS * 1000 > expiresAt) {
+            console.log(`[AUTH] Write token about to expire, triggering immediate refresh`);
+            this.triggerImmediateRefresh();
+        }
+
         if (Date.now() > expiresAt) {
             return null;
         }
@@ -178,17 +215,36 @@ export class OAuthService extends AuthService implements OnDestroy {
         localStorage.removeItem('token_expires_at_read');
         localStorage.removeItem('token_expires_at_write');
         this.tokens$.next({ read: null, write: null });
+        this.refreshSub?.unsubscribe();
         console.log(`[AUTH] ✓ Logout complete`);
     }
 
     private loadTokens(): void {
         const readToken = localStorage.getItem('access_token_read');
         const writeToken = localStorage.getItem('access_token_write');
+        const readExpiresAt = parseInt(localStorage.getItem('token_expires_at_read') ?? '0', 10);
+        const writeExpiresAt = parseInt(localStorage.getItem('token_expires_at_write') ?? '0', 10);
+
         if (readToken || writeToken) {
             console.log(`[AUTH] Loaded tokens from localStorage (read: ${readToken ? 'yes' : 'no'}, write: ${writeToken ? 'yes' : 'no'})`);
             this.tokens$.next({ read: readToken, write: writeToken });
+
+            // Schedule automatic renewal based on the remaining time until expiration
+            if (readExpiresAt > 0 && writeExpiresAt > 0) {
+                const readRemainingSeconds = Math.max(0, Math.floor((readExpiresAt - Date.now()) / 1000));
+                const writeRemainingSeconds = Math.max(0, Math.floor((writeExpiresAt - Date.now()) / 1000));
+                const minRemainingSeconds = Math.min(readRemainingSeconds, writeRemainingSeconds);
+
+                if (minRemainingSeconds > 0) {
+                    console.log(`[AUTH] Token refresh will be rescheduled after ${minRemainingSeconds}s (read expires in ${readRemainingSeconds}s, write expires in ${writeRemainingSeconds}s)`);
+                    this.scheduleRefresh(minRemainingSeconds);
+                } else {
+                    console.log(`[AUTH] Tokens have already expired and need to be renewed immediately`);
+                }
+            }
         } else {
             console.log(`[AUTH] No tokens found in localStorage`);
         }
     }
 }
+

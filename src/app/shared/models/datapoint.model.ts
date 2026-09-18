@@ -54,7 +54,7 @@ export interface DatapointResource {
  * Flattened DTO for UI consumption
  * (after JSON:API transformation)
  */
-export interface Datapoint {
+export interface IDatapoint {
   id: string;
   title: string;
   description?: string;
@@ -80,7 +80,102 @@ export interface Datapoint {
 }
 
 /**
- * Query filters for datapoint list
+ * Datapoint Class - Full domain model with helper methods
+ */
+export class Datapoint implements IDatapoint {
+  id: string;
+  title: string;
+  description?: string;
+  value?: string;
+  valueRaw?: string;
+  lastUpdated?: Date;
+  dptType?: string;
+  unit?: string;
+  deviceId?: string;
+  deviceTitle?: string;
+  locationId?: string;
+  locationTitle?: string;
+  functionId?: string;
+  readable: boolean;
+  writable: boolean;
+  qualityValid: boolean;
+
+  constructor(data: IDatapoint) {
+    this.id = data.id;
+    this.title = data.title;
+    this.description = data.description;
+    this.value = data.value;
+    this.valueRaw = data.valueRaw;
+    this.lastUpdated = data.lastUpdated;
+    this.dptType = data.dptType;
+    this.unit = data.unit;
+    this.deviceId = data.deviceId;
+    this.deviceTitle = data.deviceTitle;
+    this.locationId = data.locationId;
+    this.locationTitle = data.locationTitle;
+    this.functionId = data.functionId;
+    this.readable = data.readable;
+    this.writable = data.writable;
+    this.qualityValid = data.qualityValid;
+  }
+
+  /**
+   * Get a display name (title with optional device/location)
+   */
+  getDisplayName(): string {
+    if (this.deviceTitle) {
+      return `${this.title} (${this.deviceTitle})`;
+    }
+    return this.title;
+  }
+
+  /**
+   * Check if datapoint can be read
+   */
+  canRead(): boolean {
+    return this.readable;
+  }
+
+  /**
+   * Check if datapoint can be written
+   */
+  canWrite(): boolean {
+    return this.writable;
+  }
+
+  /**
+   * Check if the value is valid/trustworthy
+   */
+  isValueValid(): boolean {
+    return this.qualityValid;
+  }
+
+  /**
+   * Get formatted value with unit
+   */
+  getFormattedValue(): string {
+    if (!this.value) {
+      return 'N/A';
+    }
+    return this.unit ? `${this.value} ${this.unit}` : this.value;
+  }
+
+  /**
+   * Check if datapoint has recent update
+   * @param maxAgeMs Maximum age in milliseconds (default: 5 minutes)
+   */
+  hasRecentUpdate(maxAgeMs: number = 5 * 60 * 1000): boolean {
+    if (!this.lastUpdated) {
+      return false;
+    }
+    const now = new Date();
+    const age = now.getTime() - new Date(this.lastUpdated).getTime();
+    return age <= maxAgeMs;
+  }
+}
+
+/**
+ * Query filters for a datapoint list
  */
 export interface DatapointFilterCriteria {
   search?: string;
@@ -90,4 +185,3 @@ export interface DatapointFilterCriteria {
   writable?: boolean;
   readable?: boolean;
 }
-

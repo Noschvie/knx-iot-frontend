@@ -31,7 +31,7 @@ export class WebSocketService {
             const token = this.auth.getToken();
             const wsUrl = `${wsBase}/messaging/ws?token=${token}`;
 
-            console.log('[WebSocket] 🔌 ATTEMPTING CONNECTION', {
+            console.log('[WebSocket] [CONNECTING] ATTEMPTING CONNECTION', {
                 wsBase: wsBase,
                 wsUrl: wsUrl,
                 tokenAvailable: !!token,
@@ -43,7 +43,7 @@ export class WebSocketService {
                 this.ws = new WebSocket(wsUrl, ['gw.knx.org']);
 
                 this.ws.onopen = () => {
-                    console.log('[WebSocket] ✅ Connected successfully');
+                    console.log('[WebSocket] [OK] Connected successfully');
                     this.isConnecting = false;
                     this.reconnectAttempts = 0; // Reset on successful connection
                     this.connectionStatus$.next(true);
@@ -61,7 +61,7 @@ export class WebSocketService {
                 };
 
                 this.ws.onerror = (error) => {
-                    console.error('[WebSocket] ❌ ERROR', {
+                    console.error('[WebSocket] Error:', {
                         error: error,
                         wsUrl: wsUrl,
                         readyState: this.ws?.readyState,
@@ -89,7 +89,7 @@ export class WebSocketService {
                 };
 
                 this.ws.onclose = (event) => {
-                    console.log('[WebSocket] ❌ CLOSED', {
+                    console.log('[WebSocket] [CLOSED] CLOSED', {
                         code: event.code,
                         reason: event.reason,
                         wasClean: event.wasClean,
@@ -118,7 +118,7 @@ export class WebSocketService {
 
                 return () => this.disconnect();
             } catch (e) {
-                console.error('[WebSocket] ❌ CONNECTION EXCEPTION', {
+                console.error('[WebSocket] Connection exception:', {
                     error: e,
                     wsUrl: wsUrl,
                     message: (e as any).message

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { LocationService } from '@core/services/location.service';
 import { Location } from '@shared/models';
 import { Subject } from 'rxjs';
@@ -45,10 +45,10 @@ export class LocationsComponent implements OnInit, OnDestroy {
           this.locations = locations || [];
           this.loading = false;
           this.cdr.markForCheck();
-          console.log(`[Locations Component] ✓ ${locations.length} locations loaded, rendered=${this.locations.length}`);
+          console.log(`[Locations Component] [OK] ${locations.length} locations loaded, rendered=${this.locations.length}`);
         },
         error: (err) => {
-          console.error('[Locations Component] ✗ Error loading locations:', err);
+          console.error('[Locations Component] Error loading locations:', err);
           this.error = 'Error loading locations';
           this.loading = false;
           this.cdr.markForCheck();

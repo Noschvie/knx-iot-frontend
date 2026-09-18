@@ -1,6 +1,10 @@
 # Local config
 src/assets/config/app-config.local.json
 
+# NPM local configuration (can contain secrets)
+.npmrc
+!.npmrc.example
+
 # Docker volume mounts (optional local config overrides)
 config/*.json
 
