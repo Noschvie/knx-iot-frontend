@@ -98,7 +98,7 @@ export class DatapointService {
         return this.transformDatapoints(response.data as DatapointResource[], devices, locations);
       }),
       tap(datapoints => {
-        console.log(`[Datapoint Service] ✓ Latest values retrieved: ${datapoints.length} datapoints`);
+        console.log(`[Datapoint Service] Latest values retrieved: ${datapoints.length} datapoints`);
         // Update cache for latest values
         const current = this.datapointsCache$.value;
         const idMap = new Map(current.map(d => [d.id, d]));
@@ -106,7 +106,7 @@ export class DatapointService {
         this.datapointsCache$.next(Array.from(idMap.values()));
       }),
       catchError(err => {
-        console.error('[Datapoint Service] ✗ Error fetching latest values:', {
+        console.error('[Datapoint Service] Error fetching latest values:', {
           status: err.status,
           message: err.message,
           url: url
