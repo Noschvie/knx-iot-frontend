@@ -19,9 +19,9 @@ export class AppComponent implements OnInit {
     if (!this.auth.isAuthenticated()) {
       // username/password are ignored in TEST MODE (client_credentials flow).
       this.auth.login('', '').subscribe({
-        next: () => console.log('[AppComponent] ✓ Backend tokens acquired'),
+        next: () => console.log('[AppComponent] Backend tokens acquired'),
         error: (err) =>
-            console.error('[AppComponent] ✗ Failed to acquire backend tokens:', err)
+            console.error('[AppComponent] Failed to acquire backend tokens:', err)
       });
     }
   }
