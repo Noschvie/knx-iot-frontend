@@ -447,7 +447,7 @@ export class RaffstoreService {
 
   /**
    * Load current status values from backend
-   * Reads 2/5/x (gaStatusPosition) and 2/6/x (gaStatusLamellus)
+   * Reads 2/5/x (gaStatusPosition) and 2/6/x (gaStatusLamellas)
    * @param raffstoreId ID of raffstore (e.g. 'rs-1')
    * @returns Observable with height and angle steps
    */
@@ -456,7 +456,7 @@ export class RaffstoreService {
 
     return forkJoin([
       this.http.get<any>(`${this.apiEndpoint}/datapoints/${encodeURIComponent(config.gaStatusPosition)}`),
-      this.http.get<any>(`${this.apiEndpoint}/datapoints/${encodeURIComponent(config.gaStatusLamellus)}`)
+      this.http.get<any>(`${this.apiEndpoint}/datapoints/${encodeURIComponent(config.gaStatusLamellas)}`)
     ]).pipe(
       map(([heightRes, angleRes]) => {
         const heightValue = parseInt(heightRes.data.attributes.value || '0');
@@ -583,7 +583,7 @@ export class RaffstoreService {
       allGAs.add(rs.gaPositionSet);
       allGAs.add(rs.gaLamellasSet);
       allGAs.add(rs.gaStatusPosition);
-      allGAs.add(rs.gaStatusLamellus);
+      allGAs.add(rs.gaStatusLamellas);
       allGAs.add(rs.gaLock);
       allGAs.add(rs.gaEndTop);
       allGAs.add(rs.gaEndBottom);

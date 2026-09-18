@@ -28,10 +28,10 @@ Bearbeite `config/raffstore-config.json` nach Bedarf:
       "gaPositionSet": "2/3/1",
       "gaLamellasSet": "2/4/1",
       "gaStatusPosition": "2/5/1",
-      "gaStatusLamellus": "2/6/1",
+      "gaStatusLamellas": "2/6/1",
       "gaLock": "2/7/1",
-      "gaEndTop": "2/8/1",
-      "gaEndBottom": "2/9/1"
+      "gaEndTop": "2/4/41",
+      "gaEndBottom": "2/4/51"
     }
   ]
 }

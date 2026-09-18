@@ -10,7 +10,7 @@
       "gaPositionSet": "2/3/1",
       "gaLamellasSet": "2/4/1",
       "gaStatusPosition": "2/5/1",
-      "gaStatusLamellus": "2/6/1",
+      "gaStatusLamellas": "2/6/1",
       "gaLock": "2/7/1",
       "gaEndTop": "2/8/1",
       "gaEndBottom": "2/9/1"
@@ -25,7 +25,7 @@
       "gaPositionSet": "2/3/2",
       "gaLamellasSet": "2/4/2",
       "gaStatusPosition": "2/5/2",
-      "gaStatusLamellus": "2/6/2",
+      "gaStatusLamellas": "2/6/2",
       "gaLock": "2/7/2",
       "gaEndTop": "2/8/2",
       "gaEndBottom": "2/9/2"
@@ -40,7 +40,7 @@
       "gaPositionSet": "2/3/3",
       "gaLamellasSet": "2/4/3",
       "gaStatusPosition": "2/5/3",
-      "gaStatusLamellus": "2/6/3",
+      "gaStatusLamellas": "2/6/3",
       "gaLock": "2/7/3",
       "gaEndTop": "2/8/3",
       "gaEndBottom": "2/9/3"
@@ -55,7 +55,7 @@
       "gaPositionSet": "2/3/4",
       "gaLamellasSet": "2/4/4",
       "gaStatusPosition": "2/5/4",
-      "gaStatusLamellus": "2/6/4",
+      "gaStatusLamellas": "2/6/4",
       "gaLock": "2/7/4",
       "gaEndTop": "2/8/4",
       "gaEndBottom": "2/9/4"
@@ -70,7 +70,7 @@
       "gaPositionSet": "2/3/5",
       "gaLamellasSet": "2/4/5",
       "gaStatusPosition": "2/5/5",
-      "gaStatusLamellus": "2/6/5",
+      "gaStatusLamellas": "2/6/5",
       "gaLock": "2/7/5",
       "gaEndTop": "2/8/5",
       "gaEndBottom": "2/9/5"
@@ -85,7 +85,7 @@
       "gaPositionSet": "2/3/6",
       "gaLamellasSet": "2/4/6",
       "gaStatusPosition": "2/5/6",
-      "gaStatusLamellus": "2/6/6",
+      "gaStatusLamellas": "2/6/6",
       "gaLock": "2/7/6",
       "gaEndTop": "2/8/6",
       "gaEndBottom": "2/9/6"
@@ -100,7 +100,7 @@
       "gaPositionSet": "2/3/7",
       "gaLamellasSet": "2/4/7",
       "gaStatusPosition": "2/5/7",
-      "gaStatusLamellus": "2/6/7",
+      "gaStatusLamellas": "2/6/7",
       "gaLock": "2/7/7",
       "gaEndTop": "2/8/7",
       "gaEndBottom": "2/9/7"
@@ -115,7 +115,7 @@
       "gaPositionSet": "2/3/8",
       "gaLamellasSet": "2/4/8",
       "gaStatusPosition": "2/5/8",
-      "gaStatusLamellus": "2/6/8",
+      "gaStatusLamellas": "2/6/8",
       "gaLock": "2/7/8",
       "gaEndTop": "2/8/8",
       "gaEndBottom": "2/9/8"
@@ -130,7 +130,7 @@
       "gaPositionSet": "2/3/9",
       "gaLamellasSet": "2/4/9",
       "gaStatusPosition": "2/5/9",
-      "gaStatusLamellus": "2/6/9",
+      "gaStatusLamellas": "2/6/9",
       "gaLock": "2/7/9",
       "gaEndTop": "2/8/9",
       "gaEndBottom": "2/9/9"
@@ -145,7 +145,7 @@
       "gaPositionSet": "2/3/10",
       "gaLamellasSet": "2/4/10",
       "gaStatusPosition": "2/5/10",
-      "gaStatusLamellus": "2/6/10",
+      "gaStatusLamellas": "2/6/10",
       "gaLock": "2/7/10",
       "gaEndTop": "2/8/10",
       "gaEndBottom": "2/9/10"
@@ -160,7 +160,7 @@
       "gaPositionSet": "2/3/11",
       "gaLamellasSet": "2/4/11",
       "gaStatusPosition": "2/5/11",
-      "gaStatusLamellus": "2/6/11",
+      "gaStatusLamellas": "2/6/11",
       "gaLock": "2/7/11",
       "gaEndTop": "2/8/11",
       "gaEndBottom": "2/9/11"
@@ -175,7 +175,7 @@
       "gaPositionSet": "2/3/12",
       "gaLamellasSet": "2/4/12",
       "gaStatusPosition": "2/5/12",
-      "gaStatusLamellus": "2/6/12",
+      "gaStatusLamellas": "2/6/12",
       "gaLock": "2/7/12",
       "gaEndTop": "2/8/12",
       "gaEndBottom": "2/9/12"
@@ -190,7 +190,7 @@
       "gaPositionSet": "2/3/13",
       "gaLamellasSet": "2/4/13",
       "gaStatusPosition": "2/5/13",
-      "gaStatusLamellus": "2/6/13",
+      "gaStatusLamellas": "2/6/13",
       "gaLock": "2/7/13",
       "gaEndTop": "2/8/13",
       "gaEndBottom": "2/9/13"
@@ -205,7 +205,7 @@
       "gaPositionSet": "2/3/14",
       "gaLamellasSet": "2/4/14",
       "gaStatusPosition": "2/5/14",
-      "gaStatusLamellus": "2/6/14",
+      "gaStatusLamellas": "2/6/14",
       "gaLock": "2/7/14",
       "gaEndTop": "2/8/14",
       "gaEndBottom": "2/9/14"
@@ -220,7 +220,7 @@
       "gaPositionSet": "2/3/15",
       "gaLamellasSet": "2/4/15",
       "gaStatusPosition": "2/5/15",
-      "gaStatusLamellus": "2/6/15",
+      "gaStatusLamellas": "2/6/15",
       "gaLock": "2/7/15",
       "gaEndTop": "2/8/15",
       "gaEndBottom": "2/9/15"
@@ -235,7 +235,7 @@
       "gaPositionSet": "2/3/16",
       "gaLamellasSet": "2/4/16",
       "gaStatusPosition": "2/5/16",
-      "gaStatusLamellus": "2/6/16",
+      "gaStatusLamellas": "2/6/16",
       "gaLock": "2/7/16",
       "gaEndTop": "2/8/16",
       "gaEndBottom": "2/9/16"
@@ -250,7 +250,7 @@
       "gaPositionSet": "2/3/17",
       "gaLamellasSet": "2/4/17",
       "gaStatusPosition": "2/5/17",
-      "gaStatusLamellus": "2/6/17",
+      "gaStatusLamellas": "2/6/17",
       "gaLock": "2/7/17",
       "gaEndTop": "2/8/17",
       "gaEndBottom": "2/9/17"
