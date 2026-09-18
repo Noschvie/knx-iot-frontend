@@ -1,0 +1,35 @@
+# NPM Registry Configuration für LAN-Umgebungen
+# ========================================
+# TEMPLATE: Kopieren Sie diese Datei zu .npmrc und passen Sie sie an
+#
+# cp .npmrc.example .npmrc
+#
+# HINWEIS: Passen Sie die Proxy-Adresse mit Ihrer Firmenkonfiguration an!
+# ========================================
+
+# Corporate Proxy Einstellungen
+# WICHTIG: Ändern Sie die Proxy-Adresse für Ihre Umgebung!
+# Beispiel:
+#   proxy=http://proxy.YOUR_COMPANY.com:3128
+#   https-proxy=http://proxy.YOUR_COMPANY.com:3128
+proxy=http://proxy.YOUR_COMPANY.com:3128
+https-proxy=http://proxy.YOUR_COMPANY.com:3128
+
+# Timeouts für langsame Proxy-Verbindungen
+fetch-timeout=120000
+fetch-retry-mintimeout=20000
+fetch-retry-maxtimeout=120000
+
+# ========================================
+# Zusätzliche Konfiguration (Optional):
+# ========================================
+
+# Falls der Proxy Authentifizierung benötigt:
+# proxy=http://username:password@proxy.YOUR_COMPANY.com:3128
+# https-proxy=http://username:password@proxy.YOUR_COMPANY.com:3128
+
+# SSL-Verifikation nur in isolierten Test-Umgebungen deaktivieren
+# strict-ssl=false
+
+# Registrierung ändern (normalerweise nicht nötig)
+# registry=https://registry.npmjs.org/
