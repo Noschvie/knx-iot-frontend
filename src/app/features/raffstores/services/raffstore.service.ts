@@ -30,10 +30,9 @@ export class RaffstoreService {
   private readonly datapointApi = inject(DatapointService);
   private raffstores$ = new BehaviorSubject<Raffstore[]>([]);
   private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
-  private loadedDatapoints$ = new BehaviorSubject<Datapoint[]>([]);
 
-  // Mapping: GA → Datapoint UUID
-  private gaToDatapointIdMap = new Map<string, string>();
+  // Cache: GA → komplettes Datapoint-Objekt (mit ID, title, type, etc.)
+  private datapointsCache = new Map<string, Datapoint>();
 
   private apiEndpoint: string = '';
   private raffstoreConfig: RaffstoreDatapoints[] = RAFFSTORE_CONFIG; // Fallback to hardcoded config
@@ -504,18 +503,18 @@ export class RaffstoreService {
   }
 
   /**
-   * Get Datapoint UUID from GA mapping or throw error if not found
+   * Get Datapoint UUID from cache or throw error if not found
    * @param ga Group Address (e.g., "2/1/1")
    * @param gaName Friendly name (e.g., "gaMove")
-   * @returns Datapoint UUID from backend
+   * @returns Datapoint UUID from cache
    * @throws Error if datapoint not loaded
    */
   private getDatapointIdOrThrow(ga: string, gaName: string): string {
-    const datapointUuid = this.gaToDatapointIdMap.get(ga);
-    if (!datapointUuid) {
-      throw new Error(`[RaffstoreService] Datapoint UUID NOT FOUND for ${gaName} (GA: ${ga}). Mapping not available!`);
+    const datapoint = this.datapointsCache.get(ga);
+    if (!datapoint?.id) {
+      throw new Error(`[RaffstoreService] Datapoint NOT FOUND for ${gaName} (GA: ${ga}). Cache not initialized!`);
     }
-    return datapointUuid;
+    return datapoint.id;
   }
 
   /**
@@ -594,24 +593,22 @@ export class RaffstoreService {
   }
 
   /**
-   * Initialize datapoint IDs for the given group addresses
-   * Loads and caches all datapoints from the backend API
+   * Initialize datapoint cache from backend
+   * Loads all datapoints for group addresses and stores complete objects
    * @param gasToLoad Array of group addresses to load
    */
   private async initializeDatapoints(gasToLoad: string[]): Promise<void> {
     console.log(`[RaffstoreService] Initializing ${gasToLoad.length} datapoints`);
-    const loadedDatapoints: Datapoint[] = [];
     let successCount = 0;
 
     for (const ga of gasToLoad) {
       try {
         const datapoint = await firstValueFrom(this.datapointApi.getById(ga));
         if (datapoint) {
-          loadedDatapoints.push(datapoint);
-          // Create mapping: GA → Datapoint UUID
-          this.gaToDatapointIdMap.set(ga, datapoint.id);
+          // Store complete Datapoint object in cache: GA → Datapoint
+          this.datapointsCache.set(ga, datapoint);
           successCount++;
-          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, DatapointUUID=${datapoint.id}`);
+          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, ID=${datapoint.id}, Title=${datapoint.title}`);
         } else {
           console.warn(`[RaffstoreService] [!] NOT FOUND: GA=${ga}`);
         }
@@ -620,28 +617,16 @@ export class RaffstoreService {
       }
     }
 
-    // Store loaded datapoints locally
-    this.loadedDatapoints$.next(loadedDatapoints);
-
     console.log(`[RaffstoreService] [OK] Datapoint cache loaded: ${successCount}/${gasToLoad.length}`);
-    console.log(`[RaffstoreService] GA → UUID Mapping:`, Array.from(this.gaToDatapointIdMap.entries()));
   }
 
   /**
-   * Get loaded datapoints (synchronous access)
-   * @returns Array of all loaded datapoints
+   * Get cached datapoint by GA
+   * @param ga Group Address (e.g., "2/1/1")
+   * @returns Cached Datapoint object or undefined
    */
-  getLoadedDatapoints(): Datapoint[] {
-    return this.loadedDatapoints$.value;
-  }
-
-  /**
-   * Find a datapoint by ID in loaded datapoints
-   * @param id Datapoint ID / Group address
-   * @returns Datapoint or undefined if not found
-   */
-  findLoadedDatapoint(id: string): Datapoint | undefined {
-    return this.loadedDatapoints$.value.find(dp => dp.id === id);
+  getDatapointByGA(ga: string): Datapoint | undefined {
+    return this.datapointsCache.get(ga);
   }
 
   /**
@@ -649,16 +634,17 @@ export class RaffstoreService {
    */
   debugLogCache(): void {
     console.log('[RaffstoreService] DEBUG CACHE STATE:', {
-      loadedDatapointsCount: this.loadedDatapoints$.value.length,
-      loadedDatapoints: this.loadedDatapoints$.value.map(dp => ({
-        id: dp.id,
-        title: dp.title
-      })),
       raffstoresCount: this.raffstores$.value.length,
+      datapointsCacheCount: this.datapointsCache.size,
       raffstoreConfig: this.raffstoreConfig.slice(0, 2)
     });
 
-    // Show GA → UUID mapping
-    console.log('[RaffstoreService] GA → UUID Mapping:', Array.from(this.gaToDatapointIdMap.entries()));
+    // Show cached datapoints with details
+    console.log('[RaffstoreService] Cached Datapoints:', Array.from(this.datapointsCache.entries()).map(([ga, dp]) => ({
+      ga,
+      id: dp.id,
+      title: dp.title,
+      type: dp.dptType
+    })));
   }
 }

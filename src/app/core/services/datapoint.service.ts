@@ -246,7 +246,7 @@ export class DatapointService {
     const deviceId = (resource.relationships?.device?.data as any)?.id;
     const locationId = (resource.relationships?.location?.data as any)?.id;
 
-    return {
+    return new Datapoint({
       id: resource.id,
       title: resource.attributes.title || 'Unknown',
       description: resource.attributes.description,
@@ -267,7 +267,7 @@ export class DatapointService {
       readable: resource.attributes.readable ?? true,
       writable: resource.attributes.writable ?? false,
       qualityValid: resource.attributes.qualityValid ?? true
-    };
+    });
   }
 
   /**
