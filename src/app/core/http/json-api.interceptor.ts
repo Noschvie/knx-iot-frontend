@@ -58,9 +58,16 @@ export class JsonApiInterceptor implements HttpInterceptor {
     });
 
     // Set Accept header for JSON:API compliance
-    let headers = req.headers
-      .set('Accept', 'application/vnd.api+json')
-      .set('Content-Type', 'application/vnd.api+json');
+    let headers = req.headers.set('Accept', 'application/vnd.api+json');
+
+    // Only set Content-Type for requests with a body (POST, PUT, PATCH)
+    // GET, HEAD, DELETE typically should not have Content-Type header
+    const hasBody = req.body !== null && req.body !== undefined;
+    const methodsWithBody = ['POST', 'PUT', 'PATCH'];
+
+    if (hasBody && methodsWithBody.includes(req.method)) {
+      headers = headers.set('Content-Type', 'application/vnd.api+json');
+    }
 
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
@@ -72,7 +79,7 @@ export class JsonApiInterceptor implements HttpInterceptor {
       endpoint: endpoint,
       queryParams: queryParams,
       acceptAfter: headers.get('Accept'),
-      contentTypeAfter: headers.get('Content-Type'),
+      contentTypeAfter: headers.get('Content-Type') || '(not set for GET/HEAD/DELETE)',
       hasAuth: headers.has('Authorization') ? 'YES' : 'NO'
     });
 
