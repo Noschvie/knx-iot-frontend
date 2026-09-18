@@ -606,12 +606,12 @@ export class RaffstoreService {
         if (datapoint) {
           loadedDatapoints.push(datapoint);
           successCount++;
-          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}`);
+          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, DatapointID=${datapoint.id}`);
         } else {
           console.warn(`[RaffstoreService] [!] NOT FOUND: GA=${ga}`);
         }
       } catch (error) {
-        console.error(`[RaffstoreService] [ERR] Error loading GA=${ga}:`, error);
+        console.error(`[RaffstoreService] Error loading GA=${ga}:`, error);
       }
     }
 
@@ -619,6 +619,7 @@ export class RaffstoreService {
     this.loadedDatapoints$.next(loadedDatapoints);
 
     console.log(`[RaffstoreService] [OK] Datapoint cache loaded: ${successCount}/${gasToLoad.length}`);
+    console.log(`[RaffstoreService] Cached datapoint IDs:`, loadedDatapoints.map(dp => dp.id));
   }
 
   /**
@@ -651,5 +652,10 @@ export class RaffstoreService {
       raffstoresCount: this.raffstores$.value.length,
       raffstoreConfig: this.raffstoreConfig.slice(0, 2) // First 2 for brevity
     });
+
+    // DETAILED: Show all loaded datapoint IDs
+    console.log('[RaffstoreService] ALL LOADED DATAPOINT IDs:',
+      this.loadedDatapoints$.value.map(dp => dp.id)
+    );
   }
 }

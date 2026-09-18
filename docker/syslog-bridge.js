@@ -92,7 +92,7 @@ const server = http.createServer((req, res) => {
         // Send to Syslog server via UDP
         syslogClient.send(truncatedMessage, 0, truncatedMessage.length, SYSLOG_PORT, SYSLOG_HOST, (err) => {
           if (err) {
-            console.error(`[Syslog Bridge] [ERR] Error: ${SYSLOG_HOST}:${SYSLOG_PORT} - ${err.message}`);
+            console.error(`[Syslog Bridge] Error: ${SYSLOG_HOST}:${SYSLOG_PORT} - ${err.message}`);
           }
         });
 
