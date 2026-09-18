@@ -46,6 +46,12 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
     this.favorites = this.raffstoreService.getFavorites(this.raffstore.floor);
     // Lade aktuelle Status-Werte vom Backend
     this.refreshStatus();
+
+    // DEBUG: Log raffstore and loaded datapoints
+    console.log('[DetailComponent] Init - raffstoreId:', this.raffstore.id);
+    setTimeout(() => {
+      this.raffstoreService.debugLogCache();
+    }, 1000);
   }
 
   ngOnDestroy(): void {
@@ -81,6 +87,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
     if (this.isCommandInProgress) return;
     this.isCommandInProgress = true;
 
+    console.log('[DetailComponent] moveUp clicked for:', this.raffstore.id);
+
     this.raffstoreService.moveUp(this.raffstore.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe(
@@ -103,6 +111,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   moveStop(): void {
     if (this.isCommandInProgress) return;
     this.isCommandInProgress = true;
+
+    console.log('[DetailComponent] moveStop clicked for:', this.raffstore.id);
 
     this.raffstoreService.moveStop(this.raffstore.id)
       .pipe(takeUntil(this.destroy$))
@@ -127,6 +137,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   moveDown(): void {
     if (this.isCommandInProgress) return;
     this.isCommandInProgress = true;
+
+    console.log('[DetailComponent] moveDown clicked for:', this.raffstore.id);
 
     this.raffstoreService.moveDown(this.raffstore.id)
       .pipe(takeUntil(this.destroy$))
