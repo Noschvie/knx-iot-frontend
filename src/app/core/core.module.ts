@@ -6,7 +6,6 @@ import { JsonApiInterceptor } from './http/json-api.interceptor';
 import { ErrorInterceptor } from './http/error.interceptor';
 import { WebSocketService } from './websocket/websocket.service';
 
-import { MockAuthService } from '@core/auth/mock-auth.service';
 import { environment } from '@environments/environment';
 import { ConfigService } from './config/config.service';
 import { AuthService } from './auth/auth.service';
@@ -27,7 +26,7 @@ import { LocationService } from './services/location.service';
   providers: [
     {
       provide: AuthService,
-      useClass: environment.features.enableMockData ? MockAuthService : OAuthService
+      useClass: OAuthService
     },
     AuthGuard,
     WebSocketService,
