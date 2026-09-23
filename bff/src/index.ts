@@ -49,14 +49,15 @@ const gatewayWsProxy = createGatewayWsProxy(GATEWAY_URL, getGatewayToken);
  * Initialize BFF services
  */
 async function initializeServices(): Promise<void> {
+  // Validate OAuth credentials
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    console.error('[BFF] Failed to initialize services: Missing OAuth credentials (CLIENT_ID or CLIENT_SECRET)');
+    process.exit(1);
+  }
+
   try {
     console.log('[BFF] Initializing services...');
     console.log(`[BFF] Gateway URL: ${GATEWAY_URL}`);
-
-    // Validate OAuth credentials
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-      throw new Error('Missing OAuth credentials (CLIENT_ID or CLIENT_SECRET)');
-    }
 
     // Create Token Service and acquire tokens
     tokenService = new TokenService(GATEWAY_URL, OAUTH_TOKEN_ENDPOINT, CLIENT_ID, CLIENT_SECRET);
@@ -170,7 +171,7 @@ app.use((req: Request, res: Response) => {
 /**
  * Error Handler
  */
-app.use((error: any, req: Request, res: Response, next: any) => {
+app.use((error: any, req: Request, res: Response, _next: any) => {
   console.error('[BFF] Unhandled error:', error);
   res.status(500).json({
     success: false,
