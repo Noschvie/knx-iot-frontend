@@ -13,7 +13,8 @@
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "dotenv": "^18.0.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
