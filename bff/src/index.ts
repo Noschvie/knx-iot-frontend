@@ -19,7 +19,6 @@ dotenv.config();
 const app: Express = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:8080';
-const OAUTH_API_BASE = process.env.OAUTH_API_BASE || 'http://localhost:8080';
 const OAUTH_TOKEN_ENDPOINT = process.env.OAUTH_TOKEN_ENDPOINT || '/oauth/access';
 const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
@@ -39,7 +38,6 @@ async function initializeServices(): Promise<void> {
   try {
     console.log('[BFF] Initializing services...');
     console.log(`[BFF] Gateway URL: ${GATEWAY_URL}`);
-    console.log(`[BFF] OAuth API Base: ${OAUTH_API_BASE}`);
 
     // Validate OAuth credentials
     if (!OAUTH_CLIENT_ID || !OAUTH_CLIENT_SECRET) {
@@ -47,7 +45,7 @@ async function initializeServices(): Promise<void> {
     }
 
     // Create Token Service and acquire tokens
-    tokenService = new TokenService(OAUTH_API_BASE, OAUTH_TOKEN_ENDPOINT, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
+    tokenService = new TokenService(GATEWAY_URL, OAUTH_TOKEN_ENDPOINT, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
     await tokenService.acquireTokens();
 
     // Create Gateway Service with token service
