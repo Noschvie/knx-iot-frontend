@@ -6,7 +6,9 @@ import express, { Router, Request, Response } from 'express';
 import { RaffstoreService } from '../services/raffstore.service';
 import { BFFResponse } from '../models';
 
-export function createRaffstoreRouter(raffstoreService: RaffstoreService): Router {
+export function createRaffstoreRouter(
+  getRaffstoreService: () => RaffstoreService
+): Router {
   const router = express.Router();
 
   /**
@@ -15,6 +17,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.get('/raffstores', (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const raffstores = raffstoreService.getRaffstores();
       const response: BFFResponse = {
         success: true,
@@ -38,6 +41,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.get('/raffstores/:id', (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const raffstore = raffstoreService.getRaffstore(req.params.id as string);
       if (!raffstore) {
         return res.status(404).json({
@@ -69,6 +73,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/:id/moveUp', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       await raffstoreService.moveUp(req.params.id as string);
       const raffstore = raffstoreService.getRaffstore(req.params.id as string);
       const response: BFFResponse = {
@@ -93,6 +98,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/:id/moveDown', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       await raffstoreService.moveDown(req.params.id as string);
       const raffstore = raffstoreService.getRaffstore(req.params.id as string);
       const response: BFFResponse = {
@@ -117,6 +123,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/:id/stop', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       await raffstoreService.stop(req.params.id as string);
       const raffstore = raffstoreService.getRaffstore(req.params.id as string);
       const response: BFFResponse = {
@@ -142,6 +149,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.put('/raffstores/:id/height', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const { heightStep } = req.body;
       if (heightStep === undefined || typeof heightStep !== 'number') {
         return res.status(400).json({
@@ -176,6 +184,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.put('/raffstores/:id/angle', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const { angleStep } = req.body;
       if (angleStep === undefined || typeof angleStep !== 'number') {
         return res.status(400).json({
@@ -210,6 +219,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.put('/raffstores/:id/position', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const { heightStep, angleStep } = req.body;
       if (heightStep === undefined || angleStep === undefined) {
         return res.status(400).json({
@@ -244,6 +254,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/:id/favorite', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const { favorite } = req.body;
       if (!favorite || favorite.heightStep === undefined || favorite.angleStep === undefined) {
         return res.status(400).json({
@@ -277,6 +288,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/:id/toggleAutoMode', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       await raffstoreService.toggleAutoMode(req.params.id as string);
       const raffstore = raffstoreService.getRaffstore(req.params.id as string);
       const response: BFFResponse = {
@@ -302,6 +314,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
    */
   router.post('/raffstores/group/:floor/:direction', async (req: Request, res: Response) => {
     try {
+      const raffstoreService = getRaffstoreService();
       const floor = req.params.floor as 'EG' | 'OG';
       const direction = req.params.direction as 'up' | 'down';
 
@@ -349,6 +362,7 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
 
+    const raffstoreService = getRaffstoreService();
     const unsubscribe = raffstoreService.onEvent((event) => {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     });

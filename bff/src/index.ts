@@ -154,7 +154,7 @@ app.use('/api', (req: Request, res: Response, next) => {
   next();
 });
 
-app.use('/api', createRaffstoreRouter(raffstoreService!));
+app.use('/api', createRaffstoreRouter(() => raffstoreService!));
 
 /**
  * 404 Handlers
