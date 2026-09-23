@@ -6,7 +6,6 @@ import { JsonApiInterceptor } from './http/json-api.interceptor';
 import { ErrorInterceptor } from './http/error.interceptor';
 import { WebSocketService } from './websocket/websocket.service';
 
-import { environment } from '@environments/environment';
 import { ConfigService } from './config/config.service';
 import { AuthService } from './auth/auth.service';
 import { OAuthService } from './auth/oauth.service';
