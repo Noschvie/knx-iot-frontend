@@ -61,8 +61,12 @@ export class GatewayService {
           
           const datapoints: GatewayDatapoint[] = response.data.data || [];
           for (const dp of datapoints) {
-            this.gaToDatapointId.set(dp.groupAddress, dp.id);
-            console.log(`[GatewayService] Mapped GA ${dp.groupAddress} → DP ${dp.id}`);
+            // The datapoints API returns JSON:API resources whose top-level `id`
+            // is the vendor datapoint UUID; the group address is not present as a
+            // top-level `groupAddress` field. Since we query one GA at a time, the
+            // queried `ga` is the correct key for the returned datapoint(s).
+            this.gaToDatapointId.set(ga, dp.id);
+            console.log(`[GatewayService] Mapped GA ${ga} → DP ${dp.id}`);
           }
         } catch (error) {
           console.warn(`[GatewayService] Failed to initialize datapoint for GA ${ga}:`, error);
