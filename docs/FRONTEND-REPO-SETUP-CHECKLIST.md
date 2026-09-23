@@ -209,7 +209,7 @@ cp src/environments/environment.ts src/environments/environment.dev.ts
 cp src/environments/environment.ts src/environments/environment.staging.ts
 
 # Production environment (copy from environment.ts)
-cp src/environments/environment.ts src/environments/environment.prod.ts
+cp src/environments/environment.ts src/environments/environment.ts
 ```
 
 ### Step 5.3: Verify Configuration
