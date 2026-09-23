@@ -36,7 +36,10 @@ export class GatewayService {
 
       // Get all datapoints from gateway with auth token
       const response = await this.client.get('/api/v2/datapoints', {
-        headers: { Authorization: `Bearer ${readToken}` }
+        headers: {
+          Authorization: `Bearer ${readToken}`,
+          Accept: 'application/json'
+        }
       });
       const datapoints: GatewayDatapoint[] = response.data.data || [];
 
@@ -79,7 +82,11 @@ export class GatewayService {
       }
 
       await this.client.put('/api/v2/datapoints/values', command, {
-        headers: { Authorization: `Bearer ${writeToken}` }
+        headers: {
+          Authorization: `Bearer ${writeToken}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
       console.log('[GatewayService] Command sent successfully');
     } catch (error) {
@@ -100,7 +107,10 @@ export class GatewayService {
       }
 
       const response = await this.client.get(`/api/v2/datapoints/${datapointId}`, {
-        headers: { Authorization: `Bearer ${readToken}` }
+        headers: {
+          Authorization: `Bearer ${readToken}`,
+          Accept: 'application/json'
+        }
       });
       return response.data.data.attributes.value;
     } catch (error) {

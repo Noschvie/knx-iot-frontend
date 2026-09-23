@@ -20,8 +20,8 @@ const app: Express = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:8080';
 const OAUTH_TOKEN_ENDPOINT = process.env.OAUTH_TOKEN_ENDPOINT || '/oauth/access';
-const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID;
-const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 // Middleware
 app.use(cors());
@@ -40,12 +40,12 @@ async function initializeServices(): Promise<void> {
     console.log(`[BFF] Gateway URL: ${GATEWAY_URL}`);
 
     // Validate OAuth credentials
-    if (!OAUTH_CLIENT_ID || !OAUTH_CLIENT_SECRET) {
-      throw new Error('Missing OAuth credentials (OAUTH_CLIENT_ID or OAUTH_CLIENT_SECRET)');
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      throw new Error('Missing OAuth credentials (CLIENT_ID or CLIENT_SECRET)');
     }
 
     // Create Token Service and acquire tokens
-    tokenService = new TokenService(GATEWAY_URL, OAUTH_TOKEN_ENDPOINT, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
+    tokenService = new TokenService(GATEWAY_URL, OAUTH_TOKEN_ENDPOINT, CLIENT_ID, CLIENT_SECRET);
     await tokenService.acquireTokens();
 
     // Create Gateway Service with token service
