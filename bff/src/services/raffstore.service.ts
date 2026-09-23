@@ -261,6 +261,40 @@ export class RaffstoreService {
   }
 
   /**
+   * Create GatewayCommand for lock/auto mode (gaLock, DPT 1.001)
+   */
+  private createLockCommand(raffstoreId: string, locked: boolean): GatewayCommand {
+    const config = this.getConfig(raffstoreId);
+    const datapointId = this.gatewayService.getDatapointId(config.gaLock);
+
+    return {
+      data: [{
+        type: 'datapoint',
+        id: datapointId,
+        attributes: { value: locked ? '1' : '0' } // DPT 1.001: 1 = locked (auto), 0 = released (manual)
+      }]
+    };
+  }
+
+  /**
+   * Execute command: toggleAutoMode (write to gaLock)
+   */
+  async toggleAutoMode(raffstoreId: string): Promise<void> {
+    const current = this.raffstores.get(raffstoreId);
+    const newAutoMode = !current?.autoMode;
+
+    const command = this.createLockCommand(raffstoreId, newAutoMode);
+    await this.gatewayService.sendCommand(command);
+    this.updateRaffstore(raffstoreId, { autoMode: newAutoMode });
+    this.emitEvent({
+      type: 'command_executed',
+      raffstoreId,
+      command: { type: 'toggleAutoMode', raffstoreId, timestamp: Date.now() },
+      timestamp: Date.now()
+    });
+  }
+
+  /**
    * Execute command: applyFavorite
    */
   async applyFavorite(raffstoreId: string, favorite: Favorite): Promise<void> {

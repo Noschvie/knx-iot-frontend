@@ -48,20 +48,24 @@ export class GatewayService {
         throw new Error('No valid read token available');
       }
 
-      // Get all datapoints from gateway with auth token
-      const response = await this.client.get('/api/v2/datapoints', {
-        headers: {
-          Authorization: `Bearer ${readToken}`,
-          Accept: 'application/json'
-        }
-      });
-      const datapoints: GatewayDatapoint[] = response.data.data || [];
-
-      // Build mapping GA → DatapointID
-      for (const dp of datapoints) {
-        if (gasToDiscover.includes(dp.groupAddress)) {
-          this.gaToDatapointId.set(dp.groupAddress, dp.id);
-          console.log(`[GatewayService] Mapped GA ${dp.groupAddress} → DP ${dp.id}`);
+      // Query each GA individually to avoid URL length issues
+      for (const ga of gasToDiscover) {
+        try {
+          const response = await this.client.get(this.getApiEndpoint('/datapoints'), {
+            params: { 'filter[ga]': ga },
+            headers: { 
+              Authorization: `Bearer ${readToken}`,
+              Accept: 'application/json'
+            }
+          });
+          
+          const datapoints: GatewayDatapoint[] = response.data.data || [];
+          for (const dp of datapoints) {
+            this.gaToDatapointId.set(dp.groupAddress, dp.id);
+            console.log(`[GatewayService] Mapped GA ${dp.groupAddress} → DP ${dp.id}`);
+          }
+        } catch (error) {
+          console.warn(`[GatewayService] Failed to initialize datapoint for GA ${ga}:`, error);
         }
       }
 
@@ -95,7 +99,7 @@ export class GatewayService {
         throw new Error('No valid write token available');
       }
 
-      await this.client.put('/api/v2/datapoints/values', command, {
+      await this.client.put(this.getApiEndpoint('/datapoints/values'), command, {
         headers: {
           Authorization: `Bearer ${writeToken}`,
           Accept: 'application/json',
@@ -120,7 +124,7 @@ export class GatewayService {
         throw new Error('No valid read token available');
       }
 
-      const response = await this.client.get(`/api/v2/datapoints/${datapointId}`, {
+      const response = await this.client.get(this.getApiEndpoint(`/datapoints/${datapointId}`), {
         headers: {
           Authorization: `Bearer ${readToken}`,
           Accept: 'application/json'

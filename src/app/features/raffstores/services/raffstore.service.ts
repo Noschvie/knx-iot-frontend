@@ -1,37 +1,42 @@
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, forkJoin, of, firstValueFrom } from 'rxjs';
+/**
+ * Raffstore Service - Angular Client
+ * Communicates with BFF instead of directly with KNX Gateway
+ * 
+ * Architecture:
+ * Angular Client → BFF → KNX Gateway
+ * 
+ * Benefits:
+ * - No direct gateway logic in the frontend
+ * - Centralized command handling
+ * - Event-driven updates
+ * - Better security and control
+ */
+
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, Observable, Subject, interval, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '@core/config/config.service';
 import { Raffstore, Favorite, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN } from '../models/raffstore.model';
-import { RAFFSTORE_CONFIG, RaffstoreDatapoints } from '../config/raffstore.config';
-import { map, tap, catchError } from 'rxjs/operators';
-import { DatapointService } from '@core/services/datapoint.service';
-import { Datapoint } from '@shared/models';
+import { map, tap, catchError, switchMap, takeUntil, startWith } from 'rxjs/operators';
 
-/**
- * DPT 5.001 Mapping: Discrete steps (0-3 for height, 0-2 for an angle) ↔ KNX percent (0-100)
- */
-const STEP_TO_KNX = {
-  height: { 0: 0, 1: 33, 2: 66, 3: 100 },
-  angle: { 0: 0, 1: 50, 2: 100 }
-};
-
-const KNX_TO_STEP = {
-  height: { 0: 0, 25: 0, 33: 1, 50: 1, 66: 2, 75: 2, 100: 3 },
-  angle: { 0: 0, 25: 0, 50: 1, 75: 1, 100: 2 }
-};
+interface BFFResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  timestamp: number;
+}
 
 @Injectable({ providedIn: 'root' })
-export class RaffstoreService {
-  private readonly datapointApi = inject(DatapointService);
+export class RaffstoreService implements OnDestroy {
   private raffstores$ = new BehaviorSubject<Raffstore[]>([]);
   private selectedRaffstoreId$ = new BehaviorSubject<string | null>(null);
+  private isLoading$ = new BehaviorSubject<boolean>(false);
+  private error$ = new BehaviorSubject<string | null>(null);
+  private destroy$ = new Subject<void>();
 
-  // Cache: GA → komplettes Datapoint-Objekt (mit ID, title, type, etc.)
-  private datapointsCache = new Map<string, Datapoint>();
-
-  private apiEndpoint: string = '';
-  private raffstoreConfig: RaffstoreDatapoints[] = RAFFSTORE_CONFIG; // Fallback to hardcoded config
+  private bffEndpoint: string = '';
+  private pollInterval = 5000; // Poll every 5 seconds
+  private eventSource: EventSource | null = null;
 
   // Favorites per floor
   private favorites: Record<'EG' | 'OG', Favorite[]> = {
@@ -51,86 +56,121 @@ export class RaffstoreService {
     private http: HttpClient,
     private configService: ConfigService
   ) {
-    this.apiEndpoint = this.configService.getApiEndpoint();
-    this.initializeRaffstores();
+    this.bffEndpoint = this.configService.getApiEndpoint().replace('/api/v2', '/api');
+    // Angular does not call ngOnInit on services, so initialize here
+    this.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.disconnectEventSource();
   }
 
   /**
-   * Initialize raffstores from the config file (JSON) or fallback to hardcoded config
-   * Called by service constructor
-   * @private
+   * Initialize: Load raffstores and subscribe to events
    */
-  private initializeRaffstores(): void {
-    console.log('[RaffstoreService] Initializing raffstores');
-
-    // Try to load config from JSON file
-    this.loadConfigFromFile().subscribe({
-      next: (config) => {
-        this.raffstoreConfig = config;
-        this.initializeFromConfig();
-      },
-      error: (err) => {
-        console.warn('[RaffstoreService] Failed to load config from file, using fallback:', err);
-        // Fallback to hardcoded config
-        this.raffstoreConfig = RAFFSTORE_CONFIG;
-        this.initializeFromConfig();
-      }
-    });
+  private initialize(): void {
+    console.log('[RaffstoreService] Initializing...');
+    this.loadRaffstores();
+    this.subscribeToEvents();
+    this.pollRaffstores();
   }
 
   /**
-   * Load raffstore configuration from BFF endpoint
-   * @private
+   * Load all raffstores from BFF
    */
-  private loadConfigFromFile(): Observable<RaffstoreDatapoints[]> {
-    return this.http.get<any>(`${this.apiEndpoint}/config/raffstore`).pipe(
-      map(response => response.data.raffstores),
-      tap(() => console.log('[RaffstoreService] Successfully loaded config from BFF'))
-    );
+  private loadRaffstores(): void {
+    this.isLoading$.next(true);
+    this.http.get<BFFResponse<Raffstore[]>>(`${this.bffEndpoint}/raffstores`)
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            this.raffstores$.next(response.data);
+            this.error$.next(null);
+            console.log(`[RaffstoreService] Loaded ${response.data.length} raffstores`);
+          }
+        }),
+        catchError(err => {
+          console.error('[RaffstoreService] Failed to load raffstores:', err);
+          this.error$.next(err.message || 'Failed to load raffstores');
+          return of(null);
+        }),
+        tap(() => this.isLoading$.next(false)),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
   }
 
   /**
-   * Initialize raffstore data from a loaded config
-   * @private
+   * Poll raffstores periodically to keep them in sync
    */
-  private initializeFromConfig(): void {
-    // 1. Convert config to a raffstore array
-    const raffstores = this.mapConfigToRaffstores(this.raffstoreConfig);
-
-    this.raffstores$.next(raffstores);
-    console.log(`[RaffstoreService] Loaded ${raffstores.length} raffstores`);
-
-    // 2. Extract all GAs from config
-    const allGAs = Array.from(this.extractAllGAsFromConfig(this.raffstoreConfig));
-    console.log(`[RaffstoreService] Found ${allGAs.length} group addresses`);
-
-    // 3. Request datapoint IDs from semantic-knx-gateway
-    this.initializeDatapoints(allGAs);
-
-    // 4. Done
-    this.datapointApi.logCache(); // Debug: Print cache
-    console.log('[RaffstoreService] Initialization complete');
+  private pollRaffstores(): void {
+    interval(this.pollInterval)
+      .pipe(
+        startWith(0),
+        switchMap(() => 
+          this.http.get<BFFResponse<Raffstore[]>>(`${this.bffEndpoint}/raffstores`).pipe(
+            catchError(err => {
+              console.warn('[RaffstoreService] Poll failed:', err);
+              return of(null);
+            })
+          )
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(response => {
+        if (response?.success && response.data) {
+          this.raffstores$.next(response.data);
+        }
+      });
   }
 
   /**
-   * Convert config to a raffstore array
+   * Subscribe to BFF events via Server-Sent Events (SSE)
    */
-  private mapConfigToRaffstores(config: any[]): Raffstore[] {
-    return config.map((cfg) => ({
-      id: cfg.id,
-      name: cfg.name,
-      floor: cfg.floor,
-      orientation: cfg.orientation,
-      heightStep: 1, // Default
-      angleStep: 0,  // Default
-      autoMode: false,
-      isMoving: false
-    })) as any;
+  private subscribeToEvents(): void {
+    try {
+      const eventUrl = `${this.bffEndpoint}/raffstores/events`;
+      console.log('[RaffstoreService] Connecting to event stream:', eventUrl);
+
+      this.eventSource = new EventSource(eventUrl);
+
+      this.eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[RaffstoreService] Event received:', data);
+          
+          // Trigger a refresh after event
+          this.loadRaffstores();
+        } catch (error) {
+          console.error('[RaffstoreService] Failed to parse event:', error);
+        }
+      };
+
+      this.eventSource.onerror = (error) => {
+        console.error('[RaffstoreService] Event stream error:', error);
+        this.disconnectEventSource();
+        // Try to reconnect after 5 seconds
+        setTimeout(() => this.subscribeToEvents(), 5000);
+      };
+    } catch (error) {
+      console.error('[RaffstoreService] Failed to connect to event stream:', error);
+    }
   }
 
   /**
-   * Get an observable stream of all raffstores
-   * @returns Observable a containing array of all raffstores (initialized from RAFFSTORE_CONFIG)
+   * Disconnect event source
+   */
+  private disconnectEventSource(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+  }
+
+  /**
+   * Get observable stream of all raffstores
    */
   getRaffstores(): Observable<Raffstore[]> {
     return this.raffstores$.asObservable();
@@ -138,28 +178,20 @@ export class RaffstoreService {
 
   /**
    * Get observable stream for selected raffstore
-   * @returns Observable containing a raffstore or null if nothing is selected
    */
   getSelectedRaffstore(): Observable<Raffstore | null> {
     return this.selectedRaffstoreId$.pipe(
-      (obsId) => {
-        return new Observable(observer => {
-          obsId.subscribe(id => {
-            if (id) {
-              const raffstore = this.raffstores$.value.find(r => r.id === id);
-              observer.next(raffstore || null);
-            } else {
-              observer.next(null);
-            }
-          });
-        });
-      }
+      switchMap(id => {
+        if (!id) return of(null);
+        return this.raffstores$.pipe(
+          map(raffstores => raffstores.find(r => r.id === id) || null)
+        );
+      })
     );
   }
 
   /**
-   * Select a raffstore (for detail view)
-   * @param id ID of raffstore to select
+   * Select a raffstore
    */
   selectRaffstore(id: string): void {
     this.selectedRaffstoreId$.next(id);
@@ -173,474 +205,245 @@ export class RaffstoreService {
   }
 
   /**
-   * Move up command (DPT 1.008 MOVE_UP = 0)
-   * Write to 2/1/x (gaMove)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @returns Observable<void> command was sent
+   * Get loading state
    */
-  moveUp(raffstoreId: string): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const datapointId = this.getDatapointIdOrThrow(config.gaMove, 'gaMove');
-
-    console.log(`[RaffstoreService] moveUp - DatapointID: ${datapointId}`);
-
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: '0' }  // DPT 1.008: 0 = Up
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { heightStep: HEIGHT_STEP_UP, isMoving: true });
-        console.log(`[RaffstoreService] Move UP sent: ${raffstoreId}`);
-      }),
-      map(() => void 0),
-      catchError(err => this.handleError('moveUp', raffstoreId, err))
-    );
+  getLoadingState(): Observable<boolean> {
+    return this.isLoading$.asObservable();
   }
 
   /**
-   * Move down command (DPT 1.008 MOVE_DOWN = 1)
-   * Write to 2/1/x (gaMove)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @returns Observable<void> command was sent
+   * Get error state
    */
-  moveDown(raffstoreId: string): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const datapointId = this.getDatapointIdOrThrow(config.gaMove, 'gaMove');
-
-    console.log(`[RaffstoreService] moveDown - DatapointID: ${datapointId}`);
-
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: '1' }  // DPT 1.008: 1 = Down
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { heightStep: HEIGHT_STEP_DOWN, isMoving: true });
-        console.log(`[RaffstoreService] Move DOWN sent: ${raffstoreId}`);
-      }),
-      map(() => void 0),
-      catchError(err => this.handleError('moveDown', raffstoreId, err))
-    );
+  getError(): Observable<string | null> {
+    return this.error$.asObservable();
   }
 
   /**
-   * Stop command (DPT 1.007 STEP = 1)
-   * Write to 2/2/x (gaStep)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @returns Observable<void> command was sent
+   * Get favorites for floor
    */
-  moveStop(raffstoreId: string): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const datapointId = this.getDatapointIdOrThrow(config.gaStep, 'gaStep');
+  getFavorites(floor: 'EG' | 'OG'): Favorite[] {
+    return this.favorites[floor];
+  }
 
-    console.log(`[RaffstoreService] moveStop - DatapointID: ${datapointId}`);
+  // ===== COMMANDS =====
 
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: '1' }  // DPT 1.007: Step/Stop
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { isMoving: false });
-        console.log(`[RaffstoreService] Move STOP sent: ${raffstoreId}`);
-      }),
-      map(() => void 0),
-      catchError(err => this.handleError('moveStop', raffstoreId, err))
-    );
+  /**
+   * Move up
+   */
+  moveUp(raffstoreId: string): Observable<Raffstore> {
+    return this.http.post<BFFResponse<Raffstore>>(`${this.bffEndpoint}/raffstores/${raffstoreId}/moveUp`, {})
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            this.updateLocalRaffstore(response.data);
+            console.log(`[RaffstoreService] Move UP sent: ${raffstoreId}`);
+          }
+        }),
+        map(response => response.data!),
+        catchError(err => this.handleError('moveUp', raffstoreId, err))
+      );
   }
 
   /**
-   * Set height: Write DPT 5.001 (0-100) to 2/3/x (gaPositionSet)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @param step 0-3 → converted to 0-100 (Up → 1/3 → 2/3 → Down)
+   * Move down
    */
-  setHeight(raffstoreId: string, step: number): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const knxValue = (STEP_TO_KNX.height as any)[step] ?? 0;
-    const datapointId = this.getDatapointIdOrThrow(config.gaPositionSet, 'gaPositionSet');
+  moveDown(raffstoreId: string): Observable<Raffstore> {
+    return this.http.post<BFFResponse<Raffstore>>(`${this.bffEndpoint}/raffstores/${raffstoreId}/moveDown`, {})
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            this.updateLocalRaffstore(response.data);
+            console.log(`[RaffstoreService] Move DOWN sent: ${raffstoreId}`);
+          }
+        }),
+        map(response => response.data!),
+        catchError(err => this.handleError('moveDown', raffstoreId, err))
+      );
+  }
 
-    console.log(`[RaffstoreService] setHeight - DatapointID: ${datapointId}, value: ${knxValue}`);
+  /**
+   * Stop
+   */
+  moveStop(raffstoreId: string): Observable<Raffstore> {
+    return this.http.post<BFFResponse<Raffstore>>(`${this.bffEndpoint}/raffstores/${raffstoreId}/stop`, {})
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            this.updateLocalRaffstore(response.data);
+            console.log(`[RaffstoreService] Move STOP sent: ${raffstoreId}`);
+          }
+        }),
+        map(response => response.data!),
+        catchError(err => this.handleError('moveStop', raffstoreId, err))
+      );
+  }
 
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: knxValue.toString() }  // DPT 5.001: 0-100
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { heightStep: step });
-        console.log(`[RaffstoreService] Height set: ${raffstoreId} → ${step} (${knxValue}%)`);
+  /**
+   * Set height
+   */
+  setHeight(raffstoreId: string, heightStep: number): Observable<Raffstore> {
+    return this.http.put<BFFResponse<Raffstore>>(
+      `${this.bffEndpoint}/raffstores/${raffstoreId}/height`,
+      { heightStep }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.updateLocalRaffstore(response.data);
+          console.log(`[RaffstoreService] Height set: ${raffstoreId} → ${heightStep}`);
+        }
       }),
-      map(() => void 0),
+      map(response => response.data!),
       catchError(err => this.handleError('setHeight', raffstoreId, err))
     );
   }
 
   /**
-   * Set lamella angle: Write DPT 5.001 (0-100) to 2/4/x (gaLamellasSet)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @param step 0-2 → converted to 0-100 (Open → Diagonal → Closed)
+   * Set angle
    */
-  setAngle(raffstoreId: string, step: number): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const knxValue = (STEP_TO_KNX.angle as any)[step] ?? 0;
-    const datapointId = this.getDatapointIdOrThrow(config.gaLamellasSet, 'gaLamellasSet');
-
-    console.log(`[RaffstoreService] setAngle - DatapointID: ${datapointId}, value: ${knxValue}`);
-
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: knxValue.toString() }  // DPT 5.001: 0-100
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { angleStep: step });
-        console.log(`[RaffstoreService] Angle set: ${raffstoreId} → ${step} (${knxValue}%)`);
+  setAngle(raffstoreId: string, angleStep: number): Observable<Raffstore> {
+    return this.http.put<BFFResponse<Raffstore>>(
+      `${this.bffEndpoint}/raffstores/${raffstoreId}/angle`,
+      { angleStep }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.updateLocalRaffstore(response.data);
+          console.log(`[RaffstoreService] Angle set: ${raffstoreId} → ${angleStep}`);
+        }
       }),
-      map(() => void 0),
+      map(response => response.data!),
       catchError(err => this.handleError('setAngle', raffstoreId, err))
     );
   }
 
   /**
    * Set position (height + angle)
-   * Write to 2/3/x and 2/4/x (gaPositionSet and gaLamellasSet)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @param heightStep 0-3 (Up → 1/3 → 2/3 → Down)
-   * @param angleStep 0-2 (Open → Diagonal → Closed)
-   * @returns Observable<void> command was sent
    */
-  setPosition(raffstoreId: string, heightStep: number, angleStep: number): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const heightValue = (STEP_TO_KNX.height as any)[heightStep];
-    const angleValue = (STEP_TO_KNX.angle as any)[angleStep];
-
-    const heightDatapointId = this.getDatapointIdOrThrow(config.gaPositionSet, 'gaPositionSet');
-    const angleDatapointId = this.getDatapointIdOrThrow(config.gaLamellasSet, 'gaLamellasSet');
-
-    console.log(`[RaffstoreService] setPosition - Height ID: ${heightDatapointId}, Angle ID: ${angleDatapointId}`);
-
-    const payload = {
-      data: [
-        {
-          type: 'datapoint',
-          id: heightDatapointId,
-          attributes: { value: heightValue.toString() }
-        },
-        {
-          type: 'datapoint',
-          id: angleDatapointId,
-          attributes: { value: angleValue.toString() }
+  setPosition(raffstoreId: string, heightStep: number, angleStep: number): Observable<Raffstore> {
+    return this.http.put<BFFResponse<Raffstore>>(
+      `${this.bffEndpoint}/raffstores/${raffstoreId}/position`,
+      { heightStep, angleStep }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.updateLocalRaffstore(response.data);
+          console.log(`[RaffstoreService] Position set: ${raffstoreId} → ${heightStep}/${angleStep}`);
         }
-      ]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { heightStep, angleStep });
-        console.log(`[RaffstoreService] Position set: ${raffstoreId} → height=${heightStep} (${heightValue}%), angle=${angleStep} (${angleValue}%)`);
       }),
-      map(() => void 0),
+      map(response => response.data!),
       catchError(err => this.handleError('setPosition', raffstoreId, err))
     );
   }
 
   /**
-   * Group command: All raffstores of a floor
-   * Write to all 2/1/x (gaMove) for this floor
-   * @param floor Floor ('EG' = first floor or 'OG' = upper floor)
-   * @param command Movement direction ('up' = upward, 'down' = downward)
-   * @returns Observable<void> command was sent
+   * Apply favorite
    */
-  groupCommand(floor: 'EG' | 'OG', command: 'up' | 'down'): Observable<void> {
-    const knxValue = command === 'up' ? '0' : '1';  // DPT 1.008
-    const raffstoredForFloor = this.raffstoreConfig.filter(c => c.floor === floor);
-
-    const payload = {
-      data: raffstoredForFloor.map(config => {
-        const datapointId = this.getDatapointIdOrThrow(config.gaMove, 'gaMove');
-        console.log(`[RaffstoreService] groupCommand - DatapointID: ${datapointId}`);
-
-        return {
-          type: 'datapoint',
-          id: datapointId,
-          attributes: { value: knxValue }
-        };
-      })
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        const heightStep = command === 'up' ? HEIGHT_STEP_UP : HEIGHT_STEP_DOWN;
-        this.updateRaffstoresForFloor(floor, { heightStep, isMoving: false });
-        console.log(`[RaffstoreService] Group command sent: ${floor} ${command}`);
+  applyFavorite(raffstoreId: string, favorite: Favorite): Observable<Raffstore> {
+    return this.http.post<BFFResponse<Raffstore>>(
+      `${this.bffEndpoint}/raffstores/${raffstoreId}/favorite`,
+      { favorite }
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.updateLocalRaffstore(response.data);
+          console.log(`[RaffstoreService] Favorite applied: ${raffstoreId} → ${favorite.label}`);
+        }
       }),
-      map(() => void 0),
+      map(response => response.data!),
+      catchError(err => this.handleError('applyFavorite', raffstoreId, err))
+    );
+  }
+
+  /**
+   * Group command (all raffstores on a floor)
+   */
+  groupCommand(floor: 'EG' | 'OG', direction: 'up' | 'down'): Observable<Raffstore[]> {
+    return this.http.post<BFFResponse<Raffstore[]>>(
+      `${this.bffEndpoint}/raffstores/group/${floor}/${direction}`,
+      {}
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.raffstores$.next(response.data);
+          console.log(`[RaffstoreService] Group command: ${floor} ${direction}`);
+        }
+      }),
+      map(response => response.data!),
       catchError(err => this.handleError('groupCommand', floor, err))
     );
   }
 
   /**
-   * Apply favorite
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @param favorite Favorite object with height and angle step
-   * @returns Observable<void> position was set
+   * Toggle automation/lock mode via BFF
    */
-  applyFavorite(raffstoreId: string, favorite: Favorite): Observable<void> {
-    return this.setPosition(raffstoreId, favorite.heightStep, favorite.angleStep);
-  }
-
-  /**
-   * Toggle automation mode (write to 2/7/x - gaLock)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @returns Observable<void> command was sent
-   */
-  toggleAutoMode(raffstoreId: string): Observable<void> {
-    const config = this.getConfig(raffstoreId);
-    const raffstore = this.raffstores$.value.find(r => r.id === raffstoreId);
-    const newValue = raffstore?.autoMode ? '1' : '0';  // 0=released (manual), 1=locked (auto)
-    const datapointId = this.getDatapointIdOrThrow(config.gaLock, 'gaLock');
-
-    console.log(`[RaffstoreService] toggleAutoMode - DatapointID: ${datapointId}, value: ${newValue}`);
-
-    const payload = {
-      data: [{
-        type: 'datapoint',
-        id: datapointId,
-        attributes: { value: newValue }  // DPT 1.001
-      }]
-    };
-
-    return this.http.put<any>(`${this.apiEndpoint}/datapoints/values`, payload).pipe(
-      tap(() => {
-        this.updateRaffstoreInList(raffstoreId, { autoMode: !raffstore?.autoMode });
-        console.log(`[RaffstoreService] Auto mode toggled: ${raffstoreId} → ${!raffstore?.autoMode}`);
+  toggleAutoMode(raffstoreId: string): Observable<Raffstore> {
+    return this.http.post<BFFResponse<Raffstore>>(
+      `${this.bffEndpoint}/raffstores/${raffstoreId}/toggleAutoMode`,
+      {}
+    ).pipe(
+      tap(response => {
+        if (response.success && response.data) {
+          this.updateLocalRaffstore(response.data);
+          console.log(`[RaffstoreService] Auto mode toggled: ${raffstoreId}`);
+        }
       }),
-      map(() => void 0),
+      map(response => response.data!),
       catchError(err => this.handleError('toggleAutoMode', raffstoreId, err))
     );
   }
 
   /**
-   * Load current status values from backend
-   * Reads 2/5/x (gaStatusPosition) and 2/6/x (gaStatusLamellas)
-   * @param raffstoreId ID of raffstore (e.g. 'rs-1')
-   * @returns Observable with height and angle steps
+   * Load current status (height + angle) for a raffstore from the BFF
    */
   loadCurrentStatus(raffstoreId: string): Observable<{ heightStep: number; angleStep: number }> {
-    const config = this.getConfig(raffstoreId);
-
-    return forkJoin([
-      this.http.get<any>(`${this.apiEndpoint}/datapoints/${encodeURIComponent(config.gaStatusPosition)}`),
-      this.http.get<any>(`${this.apiEndpoint}/datapoints/${encodeURIComponent(config.gaStatusLamellas)}`)
-    ]).pipe(
-      map(([heightRes, angleRes]) => {
-        const heightValue = parseInt(heightRes.data.attributes.value || '0');
-        const angleValue = parseInt(angleRes.data.attributes.value || '0');
-
-        return {
-          heightStep: this.knxToStep('height', heightValue),
-          angleStep: this.knxToStep('angle', angleValue)
-        };
-      }),
-      tap(status => {
-        this.updateRaffstoreInList(raffstoreId, status);
-        console.log(`[RaffstoreService] Status loaded: ${raffstoreId} → ${JSON.stringify(status)}`);
-      }),
-      catchError(err => {
-        console.error(`[RaffstoreService] Error loading status for ${raffstoreId}:`, err);
-        return of({ heightStep: 1, angleStep: 1 });
-      })
-    );
+    return this.http.get<BFFResponse<Raffstore>>(`${this.bffEndpoint}/raffstores/${raffstoreId}`)
+      .pipe(
+        tap(response => {
+          if (response.success && response.data) {
+            this.updateLocalRaffstore(response.data);
+          }
+        }),
+        map(response => ({
+          heightStep: response.data?.heightStep ?? 1,
+          angleStep: response.data?.angleStep ?? 1
+        })),
+        catchError(err => {
+          console.error(`[RaffstoreService] Failed to load status for ${raffstoreId}:`, err);
+          return of({ heightStep: 1, angleStep: 1 });
+        })
+      );
   }
 
   /**
-   * Get favorites for a floor
-   * @param floor Floor ('EG' or 'OG')
-   * @returns Array of favorites for the floor
-   */
-  getFavorites(floor: 'EG' | 'OG'): Favorite[] {
-    return this.favorites[floor];
-  }
-
-  // ========== PRIVATE HELPERS ==========
-
-  /**
-   * Get config for a raffstore ID
-   * @param raffstoreId ID of raffstore
-   * @returns Config object or throws error if not found
-   */
-  private getConfig(raffstoreId: string): RaffstoreDatapoints {
-    const config = this.raffstoreConfig.find(c => c.id === raffstoreId);
-    if (!config) {
-      throw new Error(`[RaffstoreService] Config not found for raffstore: ${raffstoreId}`);
-    }
-    return config;
-  }
-
-  /**
-   * Get Datapoint UUID from cache or throw error if not found
-   * @param ga Group Address (e.g., "2/1/1")
-   * @param gaName Friendly name (e.g., "gaMove")
-   * @returns Datapoint UUID from cache
-   * @throws Error if datapoint not loaded
-   */
-  private getDatapointIdOrThrow(ga: string, gaName: string): string {
-    const datapoint = this.datapointsCache.get(ga);
-    if (!datapoint?.id) {
-      throw new Error(`[RaffstoreService] Datapoint NOT FOUND for ${gaName} (GA: ${ga}). Cache not initialized!`);
-    }
-    return datapoint.id;
-  }
-
-  /**
-   * Update a single raffstore in the list
-   * @param raffstoreId ID of raffstore
-   * @param updates Partial update object with fields to change
-   */
-  private updateRaffstoreInList(raffstoreId: string, updates: Partial<Raffstore>): void {
-    const raffstores = this.raffstores$.value;
-    const index = raffstores.findIndex(r => r.id === raffstoreId);
-    if (index === -1) return;
-
-    const updated = [...raffstores];
-    updated[index] = { ...updated[index], ...updates };
-    this.raffstores$.next(updated);
-  }
-
-  /**
-   * Update all raffstores of a floor
-   * @param floor Floor ('EG' or 'OG')
-   * @param updates Partial update object with fields to change
-   */
-  private updateRaffstoresForFloor(floor: 'EG' | 'OG', updates: Partial<Raffstore>): void {
-    const raffstores = this.raffstores$.value;
-    const updated = raffstores.map(r =>
-      r.floor === floor ? { ...r, ...updates } : r
-    );
-    this.raffstores$.next(updated);
-  }
-
-  /**
-   * Convert KNX value (0-100) to discrete step
-   * @param type 'height' (0-3 steps) or 'angle' (0-2 steps)
-   * @param knxValue KNX percent value (0-100)
-   * @returns Discrete step with tolerance mapping
-   */
-  private knxToStep(type: 'height' | 'angle', knxValue: number): number {
-    const mapping = type === 'height' ? KNX_TO_STEP.height : KNX_TO_STEP.angle;
-    return (mapping as any)[knxValue] ?? 1;  // Default: 1/50%
-  }
-
-  /**
-   * Error handling for HTTP errors
-   * @param method Name of the method that failed
-   * @param context Context information (e.g. raffstoreId or floor)
-   * @param error Error object from HTTP client
-   * @returns Observable<never> - throws error to subscriber
-   */
-  private handleError(method: string, context: string, error: any): Observable<never> {
-    console.error(`[RaffstoreService] ✗ ${method} failed for ${context}:`, error);
-    throw error;
-  }
-
-  /**
-   * Extract all group addresses from the configuration
-   * Collects all GA properties from raffstore config objects
-   * @param raffstores Array of raffstore config objects
-   * @returns Set of unique group addresses
-   */
-  private extractAllGAsFromConfig(raffstores: any[]): Set<string> {
-    const allGAs = new Set<string>();
-
-    raffstores.forEach(rs => {
-      allGAs.add(rs.gaMove);
-      allGAs.add(rs.gaStep);
-      allGAs.add(rs.gaPositionSet);
-      allGAs.add(rs.gaLamellasSet);
-      allGAs.add(rs.gaStatusPosition);
-      allGAs.add(rs.gaStatusLamellas);
-      allGAs.add(rs.gaLock);
-      allGAs.add(rs.gaEndTop);
-      allGAs.add(rs.gaEndBottom);
-    });
-
-    return allGAs;
-  }
-
-  /**
-   * Initialize datapoint cache from backend
-   * Loads all datapoints for group addresses and stores complete objects
-   * @param gasToLoad Array of group addresses to load
-   */
-  private async initializeDatapoints(gasToLoad: string[]): Promise<void> {
-    console.log(`[RaffstoreService] Initializing ${gasToLoad.length} datapoints`);
-    let successCount = 0;
-
-    for (const ga of gasToLoad) {
-      try {
-        const datapoint = await firstValueFrom(this.datapointApi.getById(ga));
-        if (datapoint) {
-          // Store complete Datapoint object in cache: GA → Datapoint
-          this.datapointsCache.set(ga, datapoint);
-          successCount++;
-          console.log(`[RaffstoreService] [OK] Loaded: GA=${ga}, ID=${datapoint.id}, Title=${datapoint.title}`);
-        } else {
-          console.warn(`[RaffstoreService] [!] NOT FOUND: GA=${ga}`);
-        }
-      } catch (error) {
-        console.error(`[RaffstoreService] Error loading GA=${ga}:`, error);
-      }
-    }
-
-    console.log(`[RaffstoreService] [OK] Datapoint cache loaded: ${successCount}/${gasToLoad.length}`);
-  }
-
-  /**
-   * Get cached datapoint by GA
-   * @param ga Group Address (e.g., "2/1/1")
-   * @returns Cached Datapoint object or undefined
-   */
-  getDatapointByGA(ga: string): Datapoint | undefined {
-    return this.datapointsCache.get(ga);
-  }
-
-  /**
-   * DEBUG: Log current cache state
+   * DEBUG: Log current state
    */
   debugLogCache(): void {
-    console.log('[RaffstoreService] DEBUG CACHE STATE:', {
+    console.log('[RaffstoreService] DEBUG STATE:', {
+      bffEndpoint: this.bffEndpoint,
       raffstoresCount: this.raffstores$.value.length,
-      datapointsCacheCount: this.datapointsCache.size,
-      raffstoreConfig: this.raffstoreConfig.slice(0, 2)
+      raffstores: this.raffstores$.value
     });
+  }
 
-    // Show cached datapoints with details
-    console.log('[RaffstoreService] Cached Datapoints:', Array.from(this.datapointsCache.entries()).map(([ga, dp]) => ({
-      ga,
-      id: dp.id,
-      title: dp.title,
-      type: dp.dptType
-    })));
+  /**
+   * Update local raffstore state
+   */
+  private updateLocalRaffstore(updated: Raffstore): void {
+    const current = this.raffstores$.value;
+    const idx = current.findIndex(r => r.id === updated.id);
+    if (idx >= 0) {
+      current[idx] = updated;
+      this.raffstores$.next([...current]);
+    }
+  }
+
+  /**
+   * Handle command errors
+   */
+  private handleError(operation: string, target: string, error: any): Observable<never> {
+    const errorMsg = error?.error?.error || error?.message || 'Unknown error';
+    console.error(`[RaffstoreService] ${operation} failed for ${target}:`, errorMsg);
+    this.error$.next(`${operation} failed: ${errorMsg}`);
+    throw error;
   }
 }

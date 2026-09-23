@@ -272,6 +272,30 @@ export function createRaffstoreRouter(raffstoreService: RaffstoreService): Route
   });
 
   /**
+   * POST /raffstores/:id/toggleAutoMode
+   * Toggle automation/lock mode (gaLock)
+   */
+  router.post('/raffstores/:id/toggleAutoMode', async (req: Request, res: Response) => {
+    try {
+      await raffstoreService.toggleAutoMode(req.params.id as string);
+      const raffstore = raffstoreService.getRaffstore(req.params.id as string);
+      const response: BFFResponse = {
+        success: true,
+        data: raffstore,
+        timestamp: Date.now()
+      };
+      res.json(response);
+    } catch (error) {
+      console.error('[API] Error toggleAutoMode:', error);
+      res.status(500).json({
+        success: false,
+        error: String(error),
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  /**
    * POST /raffstores/group/:floor/:direction
    * Group command for all raffstores on a floor
    * Params: floor (EG|OG), direction (up|down)
