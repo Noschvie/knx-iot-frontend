@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Observable, ReplaySubject, Subject } from 'rxjs';
-import { OAuthService } from '../auth/oauth.service';
 import { ConfigService } from '../config/config.service';
 
 @Injectable({ providedIn: 'root' })
@@ -13,10 +12,7 @@ export class WebSocketService {
     private maxReconnectAttempts = 5;
     private reconnectDelay = 3000; // Start with 3 seconds
 
-    constructor(
-        private auth: OAuthService,
-        private config: ConfigService
-    ) {}
+    constructor(private config: ConfigService) {}
 
     connect(): Observable<any> {
         return new Observable(observer => {
@@ -28,13 +24,11 @@ export class WebSocketService {
 
             this.isConnecting = true;
             const wsBase = this.config.getWebSocketBase();
-            const token = this.auth.getToken();
-            const wsUrl = `${wsBase}/messaging/ws?token=${token}`;
+            const wsUrl = `${wsBase}/messaging/ws`;
 
             console.log('[WebSocket] [CONNECTING] ATTEMPTING CONNECTION', {
                 wsBase: wsBase,
                 wsUrl: wsUrl,
-                tokenAvailable: !!token,
                 attempt: this.reconnectAttempts + 1,
                 maxAttempts: this.maxReconnectAttempts
             });

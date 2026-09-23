@@ -7,6 +7,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { GatewayService } from './services/gateway.service';
+import { TokenService } from './services/token.service';
 import { RaffstoreService } from './services/raffstore.service';
 import { createRaffstoreRouter } from './routes/raffstore.routes';
 import { DEFAULT_RAFFSTORE_CONFIG } from './config/raffstore-config';
@@ -18,13 +19,17 @@ dotenv.config();
 const app: Express = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:8080';
-const GATEWAY_TOKEN = process.env.GATEWAY_TOKEN;
+const OAUTH_API_BASE = process.env.OAUTH_API_BASE || 'http://localhost:8080';
+const OAUTH_TOKEN_ENDPOINT = process.env.OAUTH_TOKEN_ENDPOINT || '/oauth/access';
+const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID;
+const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Services
+let tokenService: TokenService | null = null;
 let raffstoreService: RaffstoreService | null = null;
 
 /**
@@ -34,9 +39,19 @@ async function initializeServices(): Promise<void> {
   try {
     console.log('[BFF] Initializing services...');
     console.log(`[BFF] Gateway URL: ${GATEWAY_URL}`);
+    console.log(`[BFF] OAuth API Base: ${OAUTH_API_BASE}`);
 
-    // Create Gateway Service
-    const gatewayService = new GatewayService(GATEWAY_URL, GATEWAY_TOKEN);
+    // Validate OAuth credentials
+    if (!OAUTH_CLIENT_ID || !OAUTH_CLIENT_SECRET) {
+      throw new Error('Missing OAuth credentials (OAUTH_CLIENT_ID or OAUTH_CLIENT_SECRET)');
+    }
+
+    // Create Token Service and acquire tokens
+    tokenService = new TokenService(OAUTH_API_BASE, OAUTH_TOKEN_ENDPOINT, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET);
+    await tokenService.acquireTokens();
+
+    // Create Gateway Service with token service
+    const gatewayService = new GatewayService(GATEWAY_URL, tokenService);
 
     // Extract all GAs from config for initialization
     const allGAs = new Set<string>();
@@ -169,11 +184,17 @@ async function start(): Promise<void> {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('[BFF] SIGTERM received, shutting down gracefully');
+  if (tokenService) {
+    tokenService.destroy();
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('[BFF] SIGINT received, shutting down gracefully');
+  if (tokenService) {
+    tokenService.destroy();
+  }
   process.exit(0);
 });
 

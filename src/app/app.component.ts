@@ -1,5 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
-import { AuthService } from '@core/auth/auth.service';
+import { Component } from '@angular/core';
 
 @Component({
   standalone: false,
@@ -7,22 +6,6 @@ import { AuthService } from '@core/auth/auth.service';
   template: `<router-outlet></router-outlet>`,
   styles: []
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'KNX IoT Frontend';
-
-  constructor(private auth: AuthService) {}
-
-  ngOnInit(): void {
-    // LAN-only deployment: no user login screen. Acquire the backend (M2M)
-    // tokens in the background so the UI renders immediately and the app can
-    // connect to the gateway (HTTP + WebSocket).
-    if (!this.auth.isAuthenticated()) {
-      // username/password are ignored in TEST MODE (client_credentials flow).
-      this.auth.login('', '').subscribe({
-        next: () => console.log('[AppComponent] Backend tokens acquired'),
-        error: (err) =>
-            console.error('[AppComponent] Failed to acquire backend tokens:', err)
-      });
-    }
-  }
 }

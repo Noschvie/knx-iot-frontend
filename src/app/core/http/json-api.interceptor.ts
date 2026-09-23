@@ -6,8 +6,6 @@ import {
   HttpRequest
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
-import { OAuthService } from '../auth/oauth.service';
 
 @Injectable()
 export class JsonApiInterceptor implements HttpInterceptor {
@@ -24,28 +22,9 @@ export class JsonApiInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    const auth = this.injector.get(AuthService);
-    let token: string | null = null;
-
     // Extract endpoint name and query params for logging
     const endpoint = this.extractEndpoint(req.url);
     const queryParams = this.extractQueryParams(req.url);
-
-    // Select token based on HTTP method: read for GET/HEAD, write for POST/PUT/PATCH/DELETE
-    if (auth instanceof OAuthService) {
-      const isReadOperation = req.method === 'GET' || req.method === 'HEAD';
-      token = isReadOperation ? auth.getReadToken() : auth.getWriteToken();
-
-      if (!token) {
-        console.warn(`[JSON API Interceptor] No ${isReadOperation ? 'read' : 'write'} token available for ${req.method} ${endpoint}`);
-      }
-    } else {
-      // Fallback for non-OAuth auth services
-      token = auth.getToken();
-      if (!token) {
-        console.warn(`[JSON API Interceptor] No token available for ${req.method} ${endpoint}`);
-      }
-    }
 
     // Log request details BEFORE modification
     console.log(`[JSON API Interceptor] REQUEST_DETAIL`, {
@@ -69,18 +48,13 @@ export class JsonApiInterceptor implements HttpInterceptor {
       headers = headers.set('Content-Type', 'application/vnd.api+json');
     }
 
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-
     // Log request details AFTER modification
     console.log(`[JSON API Interceptor] HEADERS_SET`, {
       method: req.method,
       endpoint: endpoint,
       queryParams: queryParams,
       acceptAfter: headers.get('Accept'),
-      contentTypeAfter: headers.get('Content-Type') || '(not set for GET/HEAD/DELETE)',
-      hasAuth: headers.has('Authorization') ? 'YES' : 'NO'
+      contentTypeAfter: headers.get('Content-Type') || '(not set for GET/HEAD/DELETE)'
     });
 
     return next.handle(req.clone({ headers }));

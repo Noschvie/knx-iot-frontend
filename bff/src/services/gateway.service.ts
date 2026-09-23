@@ -4,17 +4,19 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { GatewayDatapoint, GatewayCommand } from '../models';
+import { TokenService } from './token.service';
 
 export class GatewayService {
   private gatewayUrl: string;
   private client: AxiosInstance;
+  private tokenService: TokenService;
   private gaToDatapointId: Map<string, string> = new Map();
 
-  constructor(gatewayUrl: string, token?: string) {
+  constructor(gatewayUrl: string, tokenService: TokenService) {
     this.gatewayUrl = gatewayUrl;
+    this.tokenService = tokenService;
     this.client = axios.create({
-      baseURL: gatewayUrl,
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+      baseURL: gatewayUrl
     });
   }
 
@@ -26,8 +28,16 @@ export class GatewayService {
     try {
       console.log('[GatewayService] Discovering datapoints for GAs:', gasToDiscover);
       
-      // Get all datapoints from gateway
-      const response = await this.client.get('/api/v2/datapoints');
+      // Get valid read token
+      const readToken = this.tokenService.getReadToken();
+      if (!readToken) {
+        throw new Error('No valid read token available');
+      }
+
+      // Get all datapoints from gateway with auth token
+      const response = await this.client.get('/api/v2/datapoints', {
+        headers: { Authorization: `Bearer ${readToken}` }
+      });
       const datapoints: GatewayDatapoint[] = response.data.data || [];
 
       // Build mapping GA → DatapointID
@@ -62,7 +72,15 @@ export class GatewayService {
   async sendCommand(command: GatewayCommand): Promise<void> {
     try {
       console.log('[GatewayService] Sending command:', JSON.stringify(command));
-      await this.client.put('/api/v2/datapoints/values', command);
+      
+      const writeToken = this.tokenService.getWriteToken();
+      if (!writeToken) {
+        throw new Error('No valid write token available');
+      }
+
+      await this.client.put('/api/v2/datapoints/values', command, {
+        headers: { Authorization: `Bearer ${writeToken}` }
+      });
       console.log('[GatewayService] Command sent successfully');
     } catch (error) {
       console.error('[GatewayService] Failed to send command:', error);
@@ -76,7 +94,14 @@ export class GatewayService {
   async getDatapointValue(ga: string): Promise<string | number> {
     try {
       const datapointId = this.getDatapointId(ga);
-      const response = await this.client.get(`/api/v2/datapoints/${datapointId}`);
+      const readToken = this.tokenService.getReadToken();
+      if (!readToken) {
+        throw new Error('No valid read token available');
+      }
+
+      const response = await this.client.get(`/api/v2/datapoints/${datapointId}`, {
+        headers: { Authorization: `Bearer ${readToken}` }
+      });
       return response.data.data.attributes.value;
     } catch (error) {
       console.error(`[GatewayService] Failed to get datapoint value for GA ${ga}:`, error);

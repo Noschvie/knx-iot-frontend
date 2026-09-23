@@ -5,8 +5,6 @@ import { Observable, tap, catchError } from 'rxjs';
 export interface AppConfig {
     apiBase: string;
     wsBase: string;
-    clientId?: string;
-    clientSecret?: string;
 }
 
 export interface ApiInfo {
@@ -65,16 +63,6 @@ export class ConfigService {
 
     getWebSocketBase(): string {
         return this.config?.wsBase ?? '';
-    }
-
-    /** OAuth2 client_credentials client id used for backend (M2M) token acquisition. */
-    getClientId(): string {
-        return this.config?.clientId ?? 'knx-default-client';
-    }
-
-    /** OAuth2 client_credentials client secret used for backend (M2M) token acquisition. */
-    getClientSecret(): string {
-        return this.config?.clientSecret ?? 'change-me-in-production';
     }
 
     /**
