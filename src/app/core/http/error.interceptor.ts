@@ -1,4 +1,4 @@
-﻿import { Injectable, Injector } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import {
   HttpErrorResponse,
   HttpEvent,
@@ -11,8 +11,6 @@ import { catchError } from 'rxjs/operators';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
-    constructor(private injector: Injector) {}
-
     intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
         // Don't intercept syslog requests - these are internal logging requests and cause infinite loops
         if (req.url.includes('/syslog')) {
