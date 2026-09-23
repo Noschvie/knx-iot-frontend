@@ -13,13 +13,11 @@ import { TokenService } from './token.service';
 const API_VERSION = '/api/v2';
 
 export class GatewayService {
-  private gatewayUrl: string;
   private client: AxiosInstance;
   private tokenService: TokenService;
   private gaToDatapointId: Map<string, string> = new Map();
 
   constructor(gatewayUrl: string, tokenService: TokenService) {
-    this.gatewayUrl = gatewayUrl;
     this.tokenService = tokenService;
     this.client = axios.create({
       baseURL: gatewayUrl
