@@ -4,6 +4,10 @@
  * GA-Schema: 2/<Funktion>/<Raffstore-Index>
  */
 
+import fs from 'fs';
+import path from 'path';
+import { RaffstoreDatapoints } from '../models';
+
 export const DEFAULT_RAFFSTORE_CONFIG = [
   // Erdgeschoss (9 Raffstores)
   {
@@ -143,3 +147,56 @@ export const DEFAULT_RAFFSTORE_CONFIG = [
     gaEndBottom: '2/4/59'
   }
 ];
+
+/**
+ * Default path of the mounted raffstore configuration file.
+ * Can be overridden via the RAFFSTORE_CONFIG_PATH environment variable.
+ */
+const DEFAULT_CONFIG_PATH = '/app/config/raffstore-config.json';
+
+const REQUIRED_FIELDS: Array<keyof RaffstoreDatapoints> = [
+  'id', 'name', 'floor', 'orientation',
+  'gaMove', 'gaStep', 'gaPositionSet', 'gaLamellasSet',
+  'gaStatusPosition', 'gaStatusLamellas', 'gaLock', 'gaEndTop', 'gaEndBottom'
+];
+
+function isValidRaffstore(entry: any): entry is RaffstoreDatapoints {
+  return entry && typeof entry === 'object' &&
+    REQUIRED_FIELDS.every((field) => typeof entry[field] === 'string' && entry[field].length > 0);
+}
+
+/**
+ * Loads the raffstore configuration from a mounted JSON file.
+ * Falls back to DEFAULT_RAFFSTORE_CONFIG when the file is missing or invalid.
+ */
+export function loadRaffstoreConfig(): RaffstoreDatapoints[] {
+  const configPath = path.resolve(process.env.RAFFSTORE_CONFIG_PATH || DEFAULT_CONFIG_PATH);
+
+  if (!fs.existsSync(configPath)) {
+    console.log(`[RaffstoreConfig] No config file at ${configPath}, using built-in default configuration`);
+    return DEFAULT_RAFFSTORE_CONFIG;
+  }
+
+  try {
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    const raffstores = Array.isArray(parsed) ? parsed : parsed?.raffstores;
+
+    if (!Array.isArray(raffstores) || raffstores.length === 0) {
+      console.warn(`[RaffstoreConfig] Config file ${configPath} contains no raffstores, using default configuration`);
+      return DEFAULT_RAFFSTORE_CONFIG;
+    }
+
+    const invalid = raffstores.filter((entry) => !isValidRaffstore(entry));
+    if (invalid.length > 0) {
+      console.warn(`[RaffstoreConfig] Config file ${configPath} has ${invalid.length} invalid entries, using default configuration`);
+      return DEFAULT_RAFFSTORE_CONFIG;
+    }
+
+    console.log(`[RaffstoreConfig] Loaded ${raffstores.length} raffstores from ${configPath}`);
+    return raffstores as RaffstoreDatapoints[];
+  } catch (error) {
+    console.error(`[RaffstoreConfig] Failed to read config file ${configPath}, using default configuration:`, error);
+    return DEFAULT_RAFFSTORE_CONFIG;
+  }
+}

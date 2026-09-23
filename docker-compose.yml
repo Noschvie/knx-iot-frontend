@@ -19,8 +19,13 @@ services:
       # Syslog Configuration (for UDP forwarding)
       - SYSLOG_HOST=${SYSLOG_HOST}
       - SYSLOG_PORT=${SYSLOG_PORT}
+      # Path of the mounted raffstore configuration file inside the container
+      - RAFFSTORE_CONFIG_PATH=/app/config/raffstore-config.json
     ports:
       - "3000:3000"
+    volumes:
+      # Optional: override raffstore config at runtime (falls back to built-in default if missing)
+      - ./config/raffstore-config.json:/app/config/raffstore-config.json:ro
     restart: unless-stopped
     networks:
       - knx-network

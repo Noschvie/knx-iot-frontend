@@ -11,8 +11,9 @@ import { TokenService } from './services/token.service';
 import { RaffstoreService } from './services/raffstore.service';
 import { createRaffstoreRouter } from './routes/raffstore.routes';
 import { createGatewayApiProxy, createGatewayWsProxy } from './routes/gateway-proxy';
-import { DEFAULT_RAFFSTORE_CONFIG } from './config/raffstore-config';
+import { DEFAULT_RAFFSTORE_CONFIG, loadRaffstoreConfig } from './config/raffstore-config';
 import { BFFResponse } from './models';
+import { RaffstoreDatapoints } from './models';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +32,9 @@ app.use(express.json());
 // Services
 let tokenService: TokenService | null = null;
 let raffstoreService: RaffstoreService | null = null;
+
+// Raffstore configuration loaded from the mounted file (with built-in fallback)
+let raffstoreConfig: RaffstoreDatapoints[] = DEFAULT_RAFFSTORE_CONFIG;
 
 /**
  * Returns a currently valid gateway token for proxied requests.
@@ -66,9 +70,12 @@ async function initializeServices(): Promise<void> {
     // Create Gateway Service with token service
     const gatewayService = new GatewayService(GATEWAY_URL, tokenService);
 
+    // Load raffstore configuration (from mounted file, fallback to built-in default)
+    raffstoreConfig = loadRaffstoreConfig();
+
     // Extract all GAs from config for initialization
     const allGAs = new Set<string>();
-    for (const cfg of DEFAULT_RAFFSTORE_CONFIG) {
+    for (const cfg of raffstoreConfig) {
       allGAs.add(cfg.gaMove);
       allGAs.add(cfg.gaStep);
       allGAs.add(cfg.gaPositionSet);
@@ -84,7 +91,7 @@ async function initializeServices(): Promise<void> {
     await gatewayService.initializeDatapoints(Array.from(allGAs));
 
     // Create Raffstore Service
-    raffstoreService = new RaffstoreService(gatewayService, DEFAULT_RAFFSTORE_CONFIG);
+    raffstoreService = new RaffstoreService(gatewayService, raffstoreConfig);
 
     console.log('[BFF] Services initialized successfully');
   } catch (error) {
@@ -129,7 +136,7 @@ app.get('/config/raffstore', (req: Request, res: Response) => {
   const response: BFFResponse = {
     success: true,
     data: {
-      raffstores: DEFAULT_RAFFSTORE_CONFIG
+      raffstores: raffstoreConfig
     },
     timestamp: Date.now()
   };
