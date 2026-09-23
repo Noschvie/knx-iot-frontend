@@ -47,7 +47,9 @@ export class ConfigService {
     }
 
     /**
-     * Get base URL for API calls (e.g., http://localhost:8080)
+     * Get base URL for API calls.
+     * Empty string means same-origin: the browser talks to the BFF, which is
+     * served by nginx on the same host and proxies gateway traffic.
      */
     getApiBase(): string {
         return this.config?.apiBase ?? '';
@@ -61,8 +63,17 @@ export class ConfigService {
         return `${this.getApiBase()}${API_VERSION}`;
     }
 
+    /**
+     * Get the WebSocket base URL. Falls back to the current origin (same-origin)
+     * when no explicit wsBase is configured, since the BFF proxies /messaging/ws.
+     */
     getWebSocketBase(): string {
-        return this.config?.wsBase ?? '';
+        const configured = this.config?.wsBase;
+        if (configured) {
+            return configured;
+        }
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${window.location.host}`;
     }
 
     /**

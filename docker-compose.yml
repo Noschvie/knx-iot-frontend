@@ -32,8 +32,6 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     environment:
-      - API_BASE=${API_BASE:-http://bff:3000}
-      - WS_BASE=${WS_BASE:-ws://bff:3000}
       # Use host timezone for logging consistency
       - TZ=${TZ:-Europe/Vienna}
     ports:

@@ -10,6 +10,7 @@ import { GatewayService } from './services/gateway.service';
 import { TokenService } from './services/token.service';
 import { RaffstoreService } from './services/raffstore.service';
 import { createRaffstoreRouter } from './routes/raffstore.routes';
+import { createGatewayApiProxy, createGatewayWsProxy } from './routes/gateway-proxy';
 import { DEFAULT_RAFFSTORE_CONFIG } from './config/raffstore-config';
 import { BFFResponse } from './models';
 
@@ -30,6 +31,19 @@ app.use(express.json());
 // Services
 let tokenService: TokenService | null = null;
 let raffstoreService: RaffstoreService | null = null;
+
+/**
+ * Returns a currently valid gateway token for proxied requests.
+ */
+const getGatewayToken = (write: boolean): string | null => {
+  if (!tokenService) {
+    return null;
+  }
+  return write ? tokenService.getWriteToken() : tokenService.getReadToken();
+};
+
+// Proxy native gateway traffic through the BFF (token injected server-side)
+const gatewayWsProxy = createGatewayWsProxy(GATEWAY_URL, getGatewayToken);
 
 /**
  * Initialize BFF services
@@ -124,6 +138,11 @@ app.get('/config/raffstore', (req: Request, res: Response) => {
 /**
  * Setup Routes
  */
+
+// Forward the native gateway REST API (/api/v2/*) and messaging WebSocket
+app.use(createGatewayApiProxy(GATEWAY_URL, getGatewayToken));
+app.use(gatewayWsProxy);
+
 app.use('/api', (req: Request, res: Response, next) => {
   if (!raffstoreService) {
     return res.status(503).json({
@@ -167,12 +186,15 @@ async function start(): Promise<void> {
   try {
     await initializeServices();
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`[BFF] Server running on http://localhost:${PORT}`);
       console.log(`[BFF] Raffstores API: http://localhost:${PORT}/api/raffstores`);
       console.log(`[BFF] Health check: http://localhost:${PORT}/health`);
       console.log(`[BFF] Info: http://localhost:${PORT}/info`);
     });
+
+    // Proxy WebSocket upgrades (/messaging/ws) to the gateway
+    server.on('upgrade', gatewayWsProxy.upgrade);
   } catch (error) {
     console.error('[BFF] Failed to start server:', error);
     process.exit(1);
