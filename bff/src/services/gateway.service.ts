@@ -6,6 +6,12 @@ import axios, { AxiosInstance } from 'axios';
 import { GatewayDatapoint, GatewayCommand } from '../models';
 import { TokenService } from './token.service';
 
+/**
+ * API Version - centralized configuration
+ * Ensures all requests use the same API version
+ */
+const API_VERSION = '/api/v2';
+
 export class GatewayService {
   private gatewayUrl: string;
   private client: AxiosInstance;
@@ -18,6 +24,14 @@ export class GatewayService {
     this.client = axios.create({
       baseURL: gatewayUrl
     });
+  }
+
+  /**
+   * Get the full API endpoint URL including a version
+   * e.g., /api/v2 or /api/v2/datapoints
+   */
+  private getApiEndpoint(path: string = ''): string {
+    return `${API_VERSION}${path}`;
   }
 
   /**
