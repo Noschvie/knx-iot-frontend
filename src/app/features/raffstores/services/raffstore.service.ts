@@ -83,22 +83,22 @@ export class RaffstoreService {
   }
 
   /**
-   * Load raffstore configuration from JSON file
+   * Load raffstore configuration from BFF endpoint
    * @private
    */
   private loadConfigFromFile(): Observable<RaffstoreDatapoints[]> {
-    return this.http.get<RaffstoreConfigFile>('/assets/config/raffstore-config.json').pipe(
-      map(data => data.raffstores),
-      tap(() => console.log('[RaffstoreService] Successfully loaded config from raffstore-config.json'))
+    return this.http.get<any>(`${this.apiEndpoint}/config/raffstore`).pipe(
+      map(response => response.data.raffstores),
+      tap(() => console.log('[RaffstoreService] Successfully loaded config from BFF'))
     );
   }
 
   /**
-   * Initialize raffstore data from loaded config
+   * Initialize raffstore data from a loaded config
    * @private
    */
   private initializeFromConfig(): void {
-    // 1. Convert config to raffstore array
+    // 1. Convert config to a raffstore array
     const raffstores = this.mapConfigToRaffstores(this.raffstoreConfig);
 
     this.raffstores$.next(raffstores);

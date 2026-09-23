@@ -1,23 +1,55 @@
+# Gateway (KNX IoT Gateway) - runs independently in a separate stack
+# Configure access via GATEWAY_URL, CLIENT_ID, and CLIENT_SECRET
+
 services:
+  # Backend-for-Frontend (BFF) - Handles raffstore commands and events
+  bff:
+    container_name: knx-iot-bff
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bff
+    environment:
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      - GATEWAY_URL=${GATEWAY_URL}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - TZ=${TZ:-Europe/Vienna}
+      # Syslog Configuration (for UDP forwarding)
+      - SYSLOG_HOST=${SYSLOG_HOST}
+      - SYSLOG_PORT=${SYSLOG_PORT}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - knx-network
+
+  # Angular Frontend
   frontend:
     container_name: knx-iot-frontend
     build:
       context: .
       dockerfile: docker/Dockerfile
     environment:
-      - API_BASE=${API_BASE}
-      - WS_BASE=${WS_BASE}
+      - API_BASE=${API_BASE:-http://bff:3000}
+      - WS_BASE=${WS_BASE:-ws://bff:3000}
       # Use host timezone for logging consistency
       - TZ=${TZ:-Europe/Vienna}
-      # Syslog server configuration (for UDP forwarding via bridge)
-      - SYSLOG_HOST=${SYSLOG_HOST}
-      - SYSLOG_PORT=${SYSLOG_PORT}
-      # Log bridge service port
-      - LOG_BRIDGE_PORT=9514
     ports:
       - "8080:80"
-      - "9514:9514"
-    volumes:
-      # Mount custom raffstore config (optional - if not mounted, hardcoded config is used)
-      - ./config/raffstore-config.json:/usr/share/nginx/html/assets/config/raffstore-config.json:ro
+    depends_on:
+      - bff
     restart: unless-stopped
+    networks:
+      - knx-network
+
+networks:
+  knx-network:
+    driver: bridge

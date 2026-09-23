@@ -1,0 +1,27 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Copy BFF files
+COPY bff/package*.json ./
+COPY bff/tsconfig.json ./
+COPY bff/src ./src
+
+# Install dependencies
+RUN npm ci
+
+# Build TypeScript
+RUN npm run build
+
+# Remove source files, keep only compiled output
+RUN rm -rf src tsconfig.json
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Start server
+CMD ["npm", "start"]
