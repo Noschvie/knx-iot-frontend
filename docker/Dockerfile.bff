@@ -5,6 +5,7 @@ WORKDIR /app
 # Copy BFF files
 COPY bff/package*.json ./
 COPY bff/tsconfig.json ./
+COPY bff/patches ./patches
 COPY bff/src ./src
 
 # Install dependencies
