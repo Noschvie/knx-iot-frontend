@@ -37,15 +37,15 @@ export class GatewayService {
    * Discovers all datapoints and maps GA → DatapointID
    */
   async initializeDatapoints(gasToDiscover: string[]): Promise<void> {
-    try {
-      console.log('[GatewayService] Discovering datapoints for GAs:', gasToDiscover);
-      
-      // Get valid read token
-      const readToken = this.tokenService.getReadToken();
-      if (!readToken) {
-        throw new Error('No valid read token available');
-      }
+    console.log('[GatewayService] Discovering datapoints for GAs:', gasToDiscover);
 
+    // Get valid read token
+    const readToken = this.tokenService.getReadToken();
+    if (!readToken) {
+      throw new Error('No valid read token available');
+    }
+
+    try {
       // Query each GA individually to avoid URL length issues
       for (const ga of gasToDiscover) {
         try {
@@ -93,14 +93,14 @@ export class GatewayService {
    * Send command to gateway
    */
   async sendCommand(command: GatewayCommand): Promise<void> {
-    try {
-      console.log('[GatewayService] Sending command:', JSON.stringify(command));
-      
-      const writeToken = this.tokenService.getWriteToken();
-      if (!writeToken) {
-        throw new Error('No valid write token available');
-      }
+    console.log('[GatewayService] Sending command:', JSON.stringify(command));
 
+    const writeToken = this.tokenService.getWriteToken();
+    if (!writeToken) {
+      throw new Error('No valid write token available');
+    }
+
+    try {
       await this.client.put(this.getApiEndpoint('/datapoints/values'), command, {
         headers: {
           Authorization: `Bearer ${writeToken}`,
@@ -119,13 +119,13 @@ export class GatewayService {
    * Get status of a specific datapoint
    */
   async getDatapointValue(ga: string): Promise<string | number> {
-    try {
-      const datapointId = this.getDatapointId(ga);
-      const readToken = this.tokenService.getReadToken();
-      if (!readToken) {
-        throw new Error('No valid read token available');
-      }
+    const datapointId = this.getDatapointId(ga);
+    const readToken = this.tokenService.getReadToken();
+    if (!readToken) {
+      throw new Error('No valid read token available');
+    }
 
+    try {
       const response = await this.client.get(this.getApiEndpoint(`/datapoints/${datapointId}`), {
         headers: {
           Authorization: `Bearer ${readToken}`,
