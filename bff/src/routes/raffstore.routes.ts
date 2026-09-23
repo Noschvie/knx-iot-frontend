@@ -4,7 +4,7 @@
 
 import express, { Router, Request, Response } from 'express';
 import { RaffstoreService } from '../services/raffstore.service';
-import { BFFResponse, Favorite } from '../models';
+import { BFFResponse } from '../models';
 
 export function createRaffstoreRouter(raffstoreService: RaffstoreService): Router {
   const router = express.Router();

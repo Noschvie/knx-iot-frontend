@@ -8,10 +8,6 @@ import { map, tap, catchError } from 'rxjs/operators';
 import { DatapointService } from '@core/services/datapoint.service';
 import { Datapoint } from '@shared/models';
 
-interface RaffstoreConfigFile {
-  raffstores: RaffstoreDatapoints[];
-}
-
 /**
  * DPT 5.001 Mapping: Discrete steps (0-3 for height, 0-2 for an angle) ↔ KNX percent (0-100)
  */

@@ -2,7 +2,7 @@
  * RaffstoreService - Business logic for raffstore commands
  */
 
-import { RaffstoreDatapoints, Raffstore, Favorite, Command, Event, GatewayCommand } from '../models';
+import { RaffstoreDatapoints, Raffstore, Favorite, Event, GatewayCommand } from '../models';
 import { GatewayService } from './gateway.service';
 
 interface StepMapping {

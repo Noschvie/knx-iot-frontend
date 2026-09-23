@@ -12,7 +12,7 @@
  * - Better security and control
  */
 
-import { inject, Injectable, OnInit, OnDestroy } from '@angular/core';
+import { Injectable, OnInit, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, interval, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '@core/config/config.service';

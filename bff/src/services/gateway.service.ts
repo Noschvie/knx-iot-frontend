@@ -3,7 +3,7 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { GatewayDatapoint, GatewayCommand, RaffstoreDatapoints } from '../models';
+import { GatewayDatapoint, GatewayCommand } from '../models';
 
 export class GatewayService {
   private gatewayUrl: string;
