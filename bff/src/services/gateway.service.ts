@@ -55,7 +55,7 @@ export class GatewayService {
             params: { 'filter[ga]': ga },
             headers: { 
               Authorization: `Bearer ${readToken}`,
-              Accept: 'application/json'
+              Accept: 'application/vnd.api+json'
             }
           });
           
@@ -102,8 +102,8 @@ export class GatewayService {
       await this.client.put(this.getApiEndpoint('/datapoints/values'), command, {
         headers: {
           Authorization: `Bearer ${writeToken}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
+          Accept: 'application/vnd.api+json',
+          'Content-Type': 'application/vnd.api+json'
         }
       });
       console.log('[GatewayService] Command sent successfully');
@@ -127,7 +127,7 @@ export class GatewayService {
       const response = await this.client.get(this.getApiEndpoint(`/datapoints/${datapointId}`), {
         headers: {
           Authorization: `Bearer ${readToken}`,
-          Accept: 'application/json'
+          Accept: 'application/vnd.api+json'
         }
       });
       return response.data.data.attributes.value;
