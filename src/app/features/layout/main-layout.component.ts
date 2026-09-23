@@ -1,6 +1,5 @@
 ﻿import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '@core/auth/auth.service';
 
 interface NavItem {
   labelKey: string;
@@ -144,10 +143,10 @@ export class MainLayoutComponent {
     { labelKey: 'navigation.settings',   icon: 'settings',       route: '/settings'    },
   ];
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private router: Router) {}
 
   logout(): void {
-    this.auth.logout();
+    // Logout handled by backend (BFF)
     this.router.navigate(['/dashboard']);
   }
 }

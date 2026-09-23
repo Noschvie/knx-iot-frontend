@@ -8,8 +8,6 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { AuthService } from '../auth/auth.service';
-import { Router } from '@angular/router';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
@@ -19,22 +17,6 @@ export class ErrorInterceptor implements HttpInterceptor {
         // Don't intercept syslog requests - these are internal logging requests and cause infinite loops
         if (req.url.includes('/syslog')) {
             return next.handle(req);
-        }
-
-        // Don't intercept OAuth requests - errors should reach the login component
-        if (req.url.includes('/oauth/')) {
-            console.log(`[HTTP Interceptor] OAuth request: ${req.method} ${req.url}`);
-            return next.handle(req).pipe(
-                catchError((error: HttpErrorResponse) => {
-                    console.error(`[HTTP Interceptor] OAuth request failed:`, {
-                        url: req.url,
-                        method: req.method,
-                        status: error.status,
-                        message: error.message
-                    });
-                    return throwError(() => error);
-                })
-            );
         }
 
         console.log(`[HTTP Interceptor] Request: ${req.method} ${req.url}`);
@@ -63,8 +45,6 @@ export class ErrorInterceptor implements HttpInterceptor {
                     });
                 }
 
-                // TEST MODE: Don't auto-logout on 401/403 - let services handle gracefully
-                // In production, this should redirect to log in, but for testing we want resilience
                 return throwError(() => error);
             })
         );

@@ -7,7 +7,6 @@ import { ErrorInterceptor } from './http/error.interceptor';
 import { WebSocketService } from './websocket/websocket.service';
 
 import { ConfigService } from './config/config.service';
-import { AuthGuard } from './auth/auth.guard';
 
 // Data Services
 import { DatapointService } from './services/datapoint.service';
@@ -17,7 +16,6 @@ import { LocationService } from './services/location.service';
 @NgModule({
   imports: [CommonModule],
   providers: [
-    AuthGuard,
     WebSocketService,
     ConfigService,
 
