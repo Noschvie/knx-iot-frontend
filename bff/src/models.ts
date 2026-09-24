@@ -27,6 +27,10 @@ export interface Raffstore {
   angleStep: number;       // 0–2 (Offen, Schräg, Zu)
   isMoving?: boolean;
   autoMode?: boolean;
+  statusPositionPercent?: number; // Position feedback 0–100 % (100 % = down/closed)
+  statusLamellaPercent?: number;  // Lamella feedback 0–100 %
+  isEndTop?: boolean;             // Top end position reached
+  isEndBottom?: boolean;          // Bottom end position reached
   lastUpdate?: string;
 }
 
