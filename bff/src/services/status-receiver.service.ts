@@ -14,8 +14,8 @@ import axios, { AxiosInstance } from 'axios';
 import { RaffstoreDatapoints } from '../models';
 import { TokenService } from './token.service';
 import { RaffstoreService, StatusKind } from './raffstore.service';
+import { API_VERSION } from '../config/api';
 
-const API_VERSION = '/api/v2';
 const WS_SUBPROTOCOL = 'gw.knx.org';
 
 // Reconnect settings

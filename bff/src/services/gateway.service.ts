@@ -5,12 +5,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { GatewayDatapoint, GatewayCommand } from '../models';
 import { TokenService } from './token.service';
-
-/**
- * API Version - centralized configuration
- * Ensures all requests use the same API version
- */
-const API_VERSION = '/api/v2';
+import { API_VERSION } from '../config/api';
 
 export class GatewayService {
   private client: AxiosInstance;
