@@ -15,6 +15,7 @@ import { RaffstoreDatapoints } from '../models';
 import { TokenService } from './token.service';
 import { RaffstoreService, StatusKind } from './raffstore.service';
 import { API_VERSION } from '../config/api';
+import { selectCanonicalDatapoint, datapointIdOf } from '../utils/datapoint-select';
 
 const WS_SUBPROTOCOL = 'gw.knx.org';
 
@@ -149,11 +150,16 @@ export class StatusReceiverService {
         params: { 'filter[ga]': ga },
         headers: { Authorization: `Bearer ${readToken}`, Accept: 'application/vnd.api+json' }
       });
-      const d = response.data?.data?.[0];
-      if (!d) {
+      const selection = selectCanonicalDatapoint(response.data?.data);
+      if (!selection) {
         return null;
       }
-      return d.meta?.datapointId ?? d.id ?? null;
+      const { chosen, ignored } = selection;
+      if (ignored.length > 0) {
+        const ignoredIds = ignored.map((e) => datapointIdOf(e)).join(', ');
+        console.warn(`[StatusReceiver] GA ${ga} returned multiple datapoints; using ${datapointIdOf(chosen)}, ignoring: ${ignoredIds}`);
+      }
+      return datapointIdOf(chosen);
     } catch (error) {
       console.warn(`[StatusReceiver] Datapoint lookup failed for GA ${ga}:`, error);
       return null;

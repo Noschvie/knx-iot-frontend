@@ -6,6 +6,7 @@ import axios, { AxiosInstance } from 'axios';
 import { GatewayDatapoint, GatewayCommand, ResolvedDatapoint } from '../models';
 import { TokenService } from './token.service';
 import { API_VERSION } from '../config/api';
+import { selectCanonicalDatapoint, datapointIdOf } from '../utils/datapoint-select';
 
 export class GatewayService {
   private client: AxiosInstance;
@@ -53,23 +54,31 @@ export class GatewayService {
           });
           
           const datapoints: GatewayDatapoint[] = response.data.data || [];
-          for (const dp of datapoints) {
-            // The datapoints API returns JSON:API resources whose top-level `id`
-            // is the vendor resource UUID (used for command writes). The vendor
-            // `meta` carries the human-friendly `datapointId` (e.g. "GA-471") and
-            // `ga`, which are used for WS subscribe / read / logging. Since we query
-            // one GA at a time, the queried `ga` is the correct map key.
-            const resolved: ResolvedDatapoint = {
-              groupAddress: ga,
-              resourceId: dp.id,
-              datapointId: dp.meta?.datapointId ?? dp.id,
-              title: dp.attributes?.title,
-              dpt: dp.meta?.dpt ?? this.firstDpt(dp.attributes?.datapointType),
-              readable: dp.attributes?.readable,
-              writable: dp.attributes?.writable
-            };
-            this.gaToDatapoint.set(ga, resolved);
-            console.log(`[GatewayService] Mapped GA ${ga} → DP ${resolved.datapointId}`);
+          const selection = selectCanonicalDatapoint(datapoints);
+          if (!selection) {
+            continue;
+          }
+
+          const { chosen: dp, ignored } = selection;
+
+          // The top-level `id` is the vendor resource UUID (used for command
+          // writes). The vendor `meta` carries the human-friendly `datapointId`
+          // (e.g. "GA-471") and `ga`, used for WS subscribe / read / logging.
+          const resolved: ResolvedDatapoint = {
+            groupAddress: ga,
+            resourceId: dp.id,
+            datapointId: dp.meta?.datapointId ?? dp.id,
+            title: dp.attributes?.title,
+            dpt: dp.meta?.dpt ?? this.firstDpt(dp.attributes?.datapointType),
+            readable: dp.attributes?.readable,
+            writable: dp.attributes?.writable
+          };
+          this.gaToDatapoint.set(ga, resolved);
+          console.log(`[GatewayService] Mapped GA ${ga} → DP ${resolved.datapointId}`);
+
+          if (ignored.length > 0) {
+            const ignoredIds = ignored.map((e) => datapointIdOf(e)).join(', ');
+            console.warn(`[GatewayService] GA ${ga} returned ${datapoints.length} datapoints; using ${resolved.datapointId}, ignoring: ${ignoredIds}`);
           }
         } catch (error) {
           console.warn(`[GatewayService] Failed to initialize datapoint for GA ${ga}:`, error);
