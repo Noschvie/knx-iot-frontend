@@ -22,9 +22,9 @@ export interface Raffstore {
   id: string;
   name: string;
   floor: 'EG' | 'OG';
-  orientation?: 'NORD' | 'OST' | 'SUED' | 'WEST';
-  heightStep: number;      // 0–3 (Up, 1/3, 2/3, Down)
-  angleStep: number;       // 0–2 (Open, Tilted, Closed)
+  orientation: 'NORD' | 'OST' | 'SUED' | 'WEST';
+  heightStep: number;             // 0–3 (Up, 1/3, 2/3, Down)
+  angleStep: number;              // 0–2 (Open, Tilted, Closed)
   isMoving?: boolean;
   autoMode?: boolean;
   statusPositionPercent?: number; // Position feedback 0–100 % (100 % = down/closed)

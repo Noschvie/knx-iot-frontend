@@ -5,7 +5,7 @@ export interface Raffstore {
   id: string;
   name: string;
   floor: 'EG' | 'OG';
-  orientation?: 'NORD' | 'OST' | 'SUED' | 'WEST';
+  orientation: 'NORD' | 'OST' | 'SUED' | 'WEST';
   heightStep: number;    // 0–3 (Auf, 1/3, 2/3, Zu)
   angleStep: number;     // 0–2 (Offen, Schräg, Zu)
   isMoving?: boolean;
