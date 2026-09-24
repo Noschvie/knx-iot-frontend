@@ -24,6 +24,33 @@
     </button>
   </div>
 
+  <!-- Status feedback (Rückmeldung vom KNX-Backend) -->
+  <div class="status-section"
+       *ngIf="raffstore.statusPositionPercent != null || raffstore.statusLamellaPercent != null || raffstore.isEndTop || raffstore.isEndBottom">
+    <label class="status-label">Rückmeldung</label>
+
+    <div class="status-bar-row" *ngIf="raffstore.statusPositionPercent != null">
+      <span class="status-name">Position</span>
+      <div class="status-track">
+        <div class="status-fill" [style.width.%]="raffstore.statusPositionPercent"></div>
+      </div>
+      <span class="status-pct">{{ raffstore.statusPositionPercent }}%</span>
+    </div>
+
+    <div class="status-bar-row" *ngIf="raffstore.statusLamellaPercent != null">
+      <span class="status-name">Lamelle</span>
+      <div class="status-track">
+        <div class="status-fill status-fill-lamella" [style.width.%]="raffstore.statusLamellaPercent"></div>
+      </div>
+      <span class="status-pct">{{ raffstore.statusLamellaPercent }}%</span>
+    </div>
+
+    <div class="status-end-row" *ngIf="raffstore.isEndTop || raffstore.isEndBottom">
+      <span class="end-badge" *ngIf="raffstore.isEndTop" title="Endlage oben">▲ Endlage oben</span>
+      <span class="end-badge" *ngIf="raffstore.isEndBottom" title="Endlage unten">▼ Endlage unten</span>
+    </div>
+  </div>
+
   <!-- Height Stepper -->
   <div class="stepper-section">
     <label class="stepper-label">Höhe</label>

@@ -47,6 +47,23 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
     // Lade aktuelle Status-Werte vom Backend
     this.refreshStatus();
 
+    // Subscribe to live status feedback (position, lamella, end positions)
+    this.raffstoreService.getRaffstores()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => {
+        const updated = list.find(r => r.id === this.raffstore.id);
+        if (updated) {
+          this.raffstore = {
+            ...this.raffstore,
+            statusPositionPercent: updated.statusPositionPercent,
+            statusLamellaPercent: updated.statusLamellaPercent,
+            isEndTop: updated.isEndTop,
+            isEndBottom: updated.isEndBottom,
+            isMoving: updated.isMoving
+          };
+        }
+      });
+
     // DEBUG: Log raffstore and loaded datapoints
     console.log('[DetailComponent] Init - raffstoreId:', this.raffstore.id);
     setTimeout(() => {

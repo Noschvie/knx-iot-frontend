@@ -61,6 +61,39 @@
   &.icon-auto {
     color: #16a34a;
   }
+
+  &.icon-end {
+    color: #6b7280;
+    font-size: 11px;
+  }
+}
+
+.actual-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actual-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: #eef2ff;
+  overflow: hidden;
+}
+
+.actual-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #2563eb;
+  transition: width 0.3s ease;
+}
+
+.actual-pct {
+  font-size: 10px;
+  color: #2563eb;
+  min-width: 30px;
+  text-align: right;
 }
 
 .bar-row {

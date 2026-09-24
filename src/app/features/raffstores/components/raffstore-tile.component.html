@@ -5,16 +5,29 @@
     <div class="tile-icons">
       <!-- Movement Indicator -->
       <span *ngIf="raffstore.isMoving" class="icon icon-moving" title="Bewegung">↕</span>
+      <!-- End Position Indicators -->
+      <span *ngIf="raffstore.isEndTop" class="icon icon-end" title="Endlage oben">▲</span>
+      <span *ngIf="raffstore.isEndBottom" class="icon icon-end" title="Endlage unten">▼</span>
       <!-- Auto Mode Badge -->
       <span *ngIf="raffstore.autoMode && !raffstore.isMoving" class="icon icon-auto" title="Automatik aktiv">☀</span>
     </div>
   </div>
 
-  <!-- Height Bar - 4 Segmente -->
+  <!-- Height Bar - 4 Segmente (Sollwert) -->
   <div class="bar-row">
     <div *ngFor="let i of [0,1,2,3]" class="bar-segment" [class.filled]="i <= raffstore.heightStep"></div>
+  </div>
+
+  <!-- Actual position feedback (Ist) -->
+  <div class="actual-row" *ngIf="raffstore.statusPositionPercent != null"
+       title="Ist-Position {{ raffstore.statusPositionPercent }}%">
+    <div class="actual-track">
+      <div class="actual-fill" [style.width.%]="raffstore.statusPositionPercent"></div>
+    </div>
+    <span class="actual-pct">{{ raffstore.statusPositionPercent }}%</span>
   </div>
 
   <!-- Status Line -->
   <div class="tile-status">{{ HEIGHT_STEPS[raffstore.heightStep] }} · {{ ANGLE_STEPS[raffstore.angleStep] }}</div>
 </div>
+
