@@ -392,6 +392,7 @@ export class RaffstoreService {
     }
 
     this.updateRaffstore(raffstoreId, updates);
+    console.log(`[RaffstoreService] Status applied for ${raffstoreId}/${kind}: ${JSON.stringify(updates)}`);
     this.emitEvent({
       type: 'status_changed',
       raffstoreId,

@@ -276,6 +276,7 @@ export class StatusReceiverService {
     switch (parsed.type) {
       case 'update': {
         const entries = Array.isArray(parsed.data) ? parsed.data : [parsed.data];
+        console.log(`[StatusReceiver] Update received - ${entries.length} entrie(s): ${JSON.stringify(parsed.data)}`);
         for (const entry of entries) {
           this.handleUpdateEntry(entry);
         }
@@ -319,6 +320,7 @@ export class StatusReceiverService {
     const value = entry.attributes?.value;
 
     if (value === undefined) {
+      console.warn(`[StatusReceiver] Update entry without value (DP ${datapointId ?? '?'}, GA ${ga ?? '?'}) - skipped`);
       return;
     }
 
@@ -328,9 +330,11 @@ export class StatusReceiverService {
 
     if (!target) {
       // Update for a datapoint we did not subscribe to - ignore.
+      console.warn(`[StatusReceiver] No mapping for update (DP ${datapointId ?? '?'}, GA ${ga ?? '?'}) - ignored`);
       return;
     }
 
+    console.log(`[StatusReceiver] Applying update ${target.raffstoreId}/${target.kind} = ${JSON.stringify(value)} (DP ${datapointId ?? '?'}, GA ${ga ?? '?'})`);
     this.raffstoreService.applyStatusUpdate(target.raffstoreId, target.kind, value);
   }
 
