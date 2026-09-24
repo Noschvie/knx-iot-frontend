@@ -9,6 +9,11 @@ interface StepMapping {
   [key: number]: number;
 }
 
+/**
+ * Kind of status feedback received from the KNX backend for a raffstore.
+ */
+export type StatusKind = 'position' | 'lamella' | 'endTop' | 'endBottom';
+
 const STEP_TO_KNX = {
   height: { 0: 0, 1: 33, 2: 66, 3: 100 } as StepMapping,
   angle: { 0: 0, 1: 50, 2: 100 } as StepMapping
@@ -339,6 +344,87 @@ export class RaffstoreService {
         timestamp: Date.now()
       });
     }
+  }
+
+  /**
+   * Apply a status feedback update received from the KNX backend.
+   * Updates the raffstore's actual-value fields and emits a `status_changed` event.
+   */
+  applyStatusUpdate(raffstoreId: string, kind: StatusKind, rawValue: string | number | boolean): void {
+    const current = this.raffstores.get(raffstoreId);
+    if (!current) {
+      console.warn(`[RaffstoreService] Status update for unknown raffstore: ${raffstoreId}`);
+      return;
+    }
+
+    const updates: Partial<Raffstore> = {};
+
+    switch (kind) {
+      case 'position': {
+        const percent = this.parsePercent(rawValue);
+        if (percent === null) {
+          return;
+        }
+        updates.statusPositionPercent = percent;
+        break;
+      }
+      case 'lamella': {
+        const percent = this.parsePercent(rawValue);
+        if (percent === null) {
+          return;
+        }
+        updates.statusLamellaPercent = percent;
+        break;
+      }
+      case 'endTop': {
+        updates.isEndTop = this.parseBoolean(rawValue);
+        break;
+      }
+      case 'endBottom': {
+        updates.isEndBottom = this.parseBoolean(rawValue);
+        break;
+      }
+    }
+
+    // Reaching an end position means the raffstore has stopped moving.
+    if ((updates.isEndTop === true) || (updates.isEndBottom === true)) {
+      updates.isMoving = false;
+    }
+
+    this.updateRaffstore(raffstoreId, updates);
+    this.emitEvent({
+      type: 'status_changed',
+      raffstoreId,
+      raffstore: this.raffstores.get(raffstoreId),
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Parse a KNX DPT 5.001 percent value (0..100). Returns null if not parseable.
+   */
+  private parsePercent(rawValue: string | number | boolean): number | null {
+    const num = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+    if (Number.isNaN(num)) {
+      console.warn(`[RaffstoreService] Ignoring non-numeric percent value: ${JSON.stringify(rawValue)}`);
+      return null;
+    }
+    return Math.min(100, Math.max(0, Math.round(num)));
+  }
+
+  /**
+   * Parse a KNX DPT 1.001 boolean value.
+   * WebSocket delivers native booleans; REST delivers strings.
+   */
+  private parseBoolean(rawValue: string | number | boolean): boolean {
+    if (typeof rawValue === 'boolean') {
+      return rawValue;
+    }
+    if (typeof rawValue === 'number') {
+      return rawValue !== 0;
+    }
+    const normalized = String(rawValue).trim().toLowerCase();
+    return normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'alarm';
   }
 
   /**

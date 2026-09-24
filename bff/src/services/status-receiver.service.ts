@@ -329,7 +329,7 @@ export class StatusReceiverService {
   }
 
   /**
-   * Schedule a reconnect with exponential backoff (capped).
+   * Schedule a reconnection with exponential backoff (capped).
    */
   private scheduleReconnect(): void {
     if (this.shuttingDown) {

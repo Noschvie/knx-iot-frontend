@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { GatewayService } from './services/gateway.service';
 import { TokenService } from './services/token.service';
 import { RaffstoreService } from './services/raffstore.service';
+import { StatusReceiverService } from './services/status-receiver.service';
 import { createRaffstoreRouter } from './routes/raffstore.routes';
 import { createGatewayApiProxy, createGatewayWsProxy } from './routes/gateway-proxy';
 import { DEFAULT_RAFFSTORE_CONFIG, loadRaffstoreConfig } from './config/raffstore-config';
@@ -32,6 +33,7 @@ app.use(express.json());
 // Services
 let tokenService: TokenService | null = null;
 let raffstoreService: RaffstoreService | null = null;
+let statusReceiver: StatusReceiverService | null = null;
 
 // Raffstore configuration loaded from the mounted file (with built-in fallback)
 let raffstoreConfig: RaffstoreDatapoints[] = DEFAULT_RAFFSTORE_CONFIG;
@@ -92,6 +94,13 @@ async function initializeServices(): Promise<void> {
 
     // Create Raffstore Service
     raffstoreService = new RaffstoreService(gatewayService, raffstoreConfig);
+
+    // Start the status receiver (subscribes to KNX status feedback via WebSocket).
+    // Failure here must not prevent the BFF from serving commands.
+    statusReceiver = new StatusReceiverService(GATEWAY_URL, tokenService, raffstoreService, raffstoreConfig);
+    statusReceiver.start().catch((error) => {
+      console.error('[BFF] Status receiver failed to start:', error);
+    });
 
     console.log('[BFF] Services initialized successfully');
   } catch (error) {
@@ -212,6 +221,9 @@ async function start(): Promise<void> {
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
   console.log('[BFF] SIGTERM received, shutting down gracefully');
+  if (statusReceiver) {
+    statusReceiver.stop();
+  }
   if (tokenService) {
     tokenService.destroy();
   }
@@ -220,6 +232,9 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('[BFF] SIGINT received, shutting down gracefully');
+  if (statusReceiver) {
+    statusReceiver.stop();
+  }
   if (tokenService) {
     tokenService.destroy();
   }
