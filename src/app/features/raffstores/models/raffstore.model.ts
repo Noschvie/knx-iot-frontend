@@ -6,10 +6,14 @@ export interface Raffstore {
   name: string;
   floor: 'EG' | 'OG';
   orientation: 'NORD' | 'OST' | 'SUED' | 'WEST';
-  heightStep: number;    // 0–3 (Auf, 1/3, 2/3, Zu)
-  angleStep: number;     // 0–2 (Offen, Schräg, Zu)
+  heightStep: number;             // 0–3 (Up, 1/3, 2/3, Down)
+  angleStep: number;              // 0–2 (Open, Tilted, Closed)
   isMoving?: boolean;
   autoMode?: boolean;
+  statusPositionPercent?: number; // Position feedback 0–100 % (100 % = down/closed)
+  statusLamellaPercent?: number;  // Lamella feedback 0–100 %
+  isEndTop?: boolean;             // Top end position reached
+  isEndBottom?: boolean;          // Bottom end position reached
 }
 
 export const HEIGHT_STEPS: Record<number, string> = {
