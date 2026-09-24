@@ -16,6 +16,8 @@ interface TokenCache {
   readExpiresAt: number;
   write: string | null;
   writeExpiresAt: number;
+  manage: string | null;
+  manageExpiresAt: number;
 }
 
 export class TokenService {
@@ -28,7 +30,9 @@ export class TokenService {
     read: null,
     readExpiresAt: 0,
     write: null,
-    writeExpiresAt: 0
+    writeExpiresAt: 0,
+    manage: null,
+    manageExpiresAt: 0
   };
   private refreshTimeout?: NodeJS.Timeout;
   private readonly REFRESH_SKEW_SECONDS = 60;
@@ -53,34 +57,43 @@ export class TokenService {
   }
 
   /**
-   * Acquire both read and write tokens from the OAuth2 server
+   * Acquire read, write and manage tokens from the OAuth2 server
    */
-  async acquireTokens(): Promise<{ read: string; write: string }> {
+  async acquireTokens(): Promise<{ read: string; write: string; manage: string }> {
     try {
-      console.log('[TokenService] Acquiring OAuth2 tokens (read + write)...');
+      console.log('[TokenService] Acquiring OAuth2 tokens (read + write + manage)...');
 
-      const [readToken, writeToken] = await Promise.all([
+      const [readToken, writeToken, manageToken] = await Promise.all([
         this.fetchToken('read'),
-        this.fetchToken('write')
+        this.fetchToken('write'),
+        this.fetchToken('manage')
       ]);
 
-      console.log('[TokenService] Both tokens acquired successfully');
+      console.log('[TokenService] All tokens acquired successfully');
       console.log(`[TokenService] - Read token (expires in ${readToken.expires_in}s)`);
       console.log(`[TokenService] - Write token (expires in ${writeToken.expires_in}s)`);
+      console.log(`[TokenService] - Manage token (expires in ${manageToken.expires_in}s)`);
 
       // Cache tokens
       this.tokenCache.read = readToken.access_token;
       this.tokenCache.readExpiresAt = Date.now() + readToken.expires_in * 1000;
       this.tokenCache.write = writeToken.access_token;
       this.tokenCache.writeExpiresAt = Date.now() + writeToken.expires_in * 1000;
+      this.tokenCache.manage = manageToken.access_token;
+      this.tokenCache.manageExpiresAt = Date.now() + manageToken.expires_in * 1000;
 
       // Schedule automatic refresh
-      const minExpiresIn = Math.min(readToken.expires_in, writeToken.expires_in);
+      const minExpiresIn = Math.min(
+        readToken.expires_in,
+        writeToken.expires_in,
+        manageToken.expires_in
+      );
       this.scheduleRefresh(minExpiresIn);
 
       return {
         read: readToken.access_token,
-        write: writeToken.access_token
+        write: writeToken.access_token,
+        manage: manageToken.access_token
       };
     } catch (error) {
       console.error('[TokenService] Failed to acquire tokens:', error);
@@ -100,13 +113,24 @@ export class TokenService {
   }
 
   /**
-   * Get a valid write token (refresh if needed)
+   * Get a valid writing token (refresh if needed)
    */
   getWriteToken(): string | null {
     if (this.isTokenValid(this.tokenCache.writeExpiresAt)) {
       return this.tokenCache.write;
     }
     console.warn('[TokenService] Write token expired or invalid');
+    return null;
+  }
+
+  /**
+   * Get a valid manage token (refresh if needed)
+   */
+  getManageToken(): string | null {
+    if (this.isTokenValid(this.tokenCache.manageExpiresAt)) {
+      return this.tokenCache.manage;
+    }
+    console.warn('[TokenService] Manage token expired or invalid');
     return null;
   }
 
