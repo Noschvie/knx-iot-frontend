@@ -69,12 +69,63 @@ export interface BFFResponse<T = any> {
 }
 
 // Gateway-specific types
+
+/**
+ * Raw JSON:API datapoint resource as returned by the gateway
+ * (`GET /api/v2/datapoints`).
+ *
+ * Mind the two distinct identifiers (matching the KNX backend terminology):
+ *  - top-level `id`            → resource UUID (e.g. "d3bc7f97-…")
+ *  - `meta.datapointId`        → human-friendly datapoint id (e.g. "GA-471")
+ *  - `meta.ga`                 → group address (e.g. "2/4/66")
+ */
 export interface GatewayDatapoint {
+  /** JSON:API resource id — the datapoint UUID. */
   id: string;
+  type?: string;
+  attributes?: {
+    title?: string;
+    description?: string;
+    value?: string | number;
+    valueType?: string;
+    timestamp?: string;
+    readable?: boolean;
+    writable?: boolean;
+    unit?: string;
+    datapointType?: string | string[];
+    'knx:groupAddress'?: string | number;
+    [key: string]: unknown;
+  };
+  meta?: {
+    /** Vendor datapoint id, e.g. "GA-471" (NOT the resource UUID). */
+    datapointId?: string;
+    /** Group address, e.g. "2/4/66". */
+    ga?: string;
+    dpt?: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * Normalized datapoint record kept by the GatewayService, keyed by group address.
+ *
+ * Names follow the KNX backend on purpose. The two id fields are NOT
+ * interchangeable — pick deliberately:
+ *  - `resourceId`  → resource UUID, used for command writes (`PUT /datapoints/values`)
+ *  - `datapointId` → vendor id "GA-###", used for WS subscribe / read / logging
+ *  - `groupAddress`→ group address "2/4/66"
+ */
+export interface ResolvedDatapoint {
+  /** Group address, e.g. "2/4/66" (from `meta.ga`). */
   groupAddress: string;
-  name: string;
-  type: string;
-  value: string | number;
+  /** JSON:API resource UUID (from top-level `id`) — use this for command writes. */
+  resourceId: string;
+  /** Vendor datapoint id "GA-###" (from `meta.datapointId`) — use for WS subscribe / read / logging. */
+  datapointId: string;
+  title?: string;
+  dpt?: string;
+  readable?: boolean;
+  writable?: boolean;
 }
 
 export interface GatewayCommand {

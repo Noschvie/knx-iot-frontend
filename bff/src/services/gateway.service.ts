@@ -3,14 +3,14 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import { GatewayDatapoint, GatewayCommand } from '../models';
+import { GatewayDatapoint, GatewayCommand, ResolvedDatapoint } from '../models';
 import { TokenService } from './token.service';
 import { API_VERSION } from '../config/api';
 
 export class GatewayService {
   private client: AxiosInstance;
   private tokenService: TokenService;
-  private gaToDatapointId: Map<string, string> = new Map();
+  private gaToDatapoint: Map<string, ResolvedDatapoint> = new Map();
 
   constructor(gatewayUrl: string, tokenService: TokenService) {
     this.tokenService = tokenService;
@@ -55,18 +55,28 @@ export class GatewayService {
           const datapoints: GatewayDatapoint[] = response.data.data || [];
           for (const dp of datapoints) {
             // The datapoints API returns JSON:API resources whose top-level `id`
-            // is the vendor datapoint UUID; the group address is not present as a
-            // top-level `groupAddress` field. Since we query one GA at a time, the
-            // queried `ga` is the correct key for the returned datapoint(s).
-            this.gaToDatapointId.set(ga, dp.id);
-            console.log(`[GatewayService] Mapped GA ${ga} → DP ${dp.id}`);
+            // is the vendor resource UUID (used for command writes). The vendor
+            // `meta` carries the human-friendly `datapointId` (e.g. "GA-471") and
+            // `ga`, which are used for WS subscribe / read / logging. Since we query
+            // one GA at a time, the queried `ga` is the correct map key.
+            const resolved: ResolvedDatapoint = {
+              groupAddress: ga,
+              resourceId: dp.id,
+              datapointId: dp.meta?.datapointId ?? dp.id,
+              title: dp.attributes?.title,
+              dpt: dp.meta?.dpt ?? this.firstDpt(dp.attributes?.datapointType),
+              readable: dp.attributes?.readable,
+              writable: dp.attributes?.writable
+            };
+            this.gaToDatapoint.set(ga, resolved);
+            console.log(`[GatewayService] Mapped GA ${ga} → DP ${resolved.datapointId}`);
           }
         } catch (error) {
           console.warn(`[GatewayService] Failed to initialize datapoint for GA ${ga}:`, error);
         }
       }
 
-      console.log(`[GatewayService] Initialized ${this.gaToDatapointId.size} datapoint mappings`);
+      console.log(`[GatewayService] Initialized ${this.gaToDatapoint.size} datapoint mappings`);
     } catch (error) {
       console.error('[GatewayService] Failed to initialize datapoints:', error);
       throw error;
@@ -74,14 +84,33 @@ export class GatewayService {
   }
 
   /**
-   * Get DatapointID for a specific Group Address
+   * Get the full resolved datapoint for a specific Group Address
    */
-  getDatapointId(ga: string): string {
-    const id = this.gaToDatapointId.get(ga);
-    if (!id) {
+  getDatapoint(ga: string): ResolvedDatapoint {
+    const dp = this.gaToDatapoint.get(ga);
+    if (!dp) {
       throw new Error(`No datapoint found for GA: ${ga}`);
     }
-    return id;
+    return dp;
+  }
+
+  /**
+   * Get the resource UUID (`ResolvedDatapoint.resourceId`) for a Group Address.
+   * Use this for command writes (`PUT /datapoints/values`) — NOT the vendor
+   * `datapointId` ("GA-###"), which is meant for WS subscribe / read.
+   */
+  getDatapointId(ga: string): string {
+    return this.getDatapoint(ga).resourceId;
+  }
+
+  /**
+   * Pick the first datapoint type entry (the API may return a string or array)
+   */
+  private firstDpt(dpt?: string | string[]): string | undefined {
+    if (Array.isArray(dpt)) {
+      return dpt[0];
+    }
+    return dpt;
   }
 
   /**
