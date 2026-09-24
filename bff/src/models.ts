@@ -7,15 +7,15 @@ export interface RaffstoreDatapoints {
   name: string;
   floor: 'EG' | 'OG';
   orientation: 'NORD' | 'OST' | 'SUED' | 'WEST';
-  gaMove: string;           // 2/1/x - DPT 1.008 (Auf/Ab)
-  gaStep: string;           // 2/2/x - DPT 1.007 (Schritt/Stop)
-  gaPositionSet: string;    // 2/3/x - DPT 5.001 (Position Sollwert %)
-  gaLamellasSet: string;    // 2/4/x - DPT 5.001 (Lamellen Sollwert %)
-  gaStatusPosition: string; // 2/5/x - DPT 5.001 (Status Position %)
-  gaStatusLamellas: string; // 2/6/x - DPT 5.001 (Status Lamellen %)
-  gaLock: string;           // 2/7/x - DPT 1.001 (Sperre)
-  gaEndTop: string;         // 2/8/x - DPT 1.001 (Endlage Oben)
-  gaEndBottom: string;      // 2/9/x - DPT 1.001 (Endlage Unten)
+  gaMove: string;           // 2/1/x - DPT 1.008 (Up/Down)
+  gaStep: string;           // 2/2/x - DPT 1.007 (Step/Stop)
+  gaPositionSet: string;    // 2/3/x - DPT 5.001 (Position setpoint %)
+  gaLamellasSet: string;    // 2/4/x - DPT 5.001 (Lamella setpoint %)
+  gaStatusPosition: string; // 2/5/x - DPT 5.001 (Position status %)
+  gaStatusLamellas: string; // 2/6/x - DPT 5.001 (Lamella status %)
+  gaLock: string;           // 2/7/x - DPT 1.001 (Lock)
+  gaEndTop: string;         // 2/8/x - DPT 1.001 (Top end position)
+  gaEndBottom: string;      // 2/9/x - DPT 1.001 (Bottom end position)
 }
 
 export interface Raffstore {
@@ -23,8 +23,8 @@ export interface Raffstore {
   name: string;
   floor: 'EG' | 'OG';
   orientation?: 'NORD' | 'OST' | 'SUED' | 'WEST';
-  heightStep: number;      // 0–3 (Auf, 1/3, 2/3, Zu)
-  angleStep: number;       // 0–2 (Offen, Schräg, Zu)
+  heightStep: number;      // 0–3 (Up, 1/3, 2/3, Down)
+  angleStep: number;       // 0–2 (Open, Tilted, Closed)
   isMoving?: boolean;
   autoMode?: boolean;
   statusPositionPercent?: number; // Position feedback 0–100 % (100 % = down/closed)
