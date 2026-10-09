@@ -17,6 +17,10 @@ Unreleased
 
 ### Changed
 - Settings page now has real functionality (language switcher) instead of a placeholder
+- Bootstrap now uses `platformBrowser()` from `@angular/platform-browser`
+
+### Removed
+- Deprecated `@angular/platform-browser-dynamic` and unused `@angular/animations` dependencies
 
 ### Known limitations
 - CSV export headers in the logs page remain hardcoded in German, independent of the UI language

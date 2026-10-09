@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideAppInitializer, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
@@ -25,7 +24,6 @@ import { DEFAULT_LANGUAGE, resolveInitialLanguage } from './core/i18n/i18n.const
     ],
     providers: [
         provideHttpClient(withInterceptorsFromDi()),
-        provideAnimations(),
         provideTranslateService({
             lang: DEFAULT_LANGUAGE,
             fallbackLang: DEFAULT_LANGUAGE,
