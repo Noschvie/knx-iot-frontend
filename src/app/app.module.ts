@@ -5,14 +5,14 @@ import { provideAppInitializer, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
-import { AppComponent } from './app.component';
-import { AppRoutingModule } from './app-routing.module';
-import { CoreModule } from './core/core.module';
-import { LayoutModule } from './features/layout/layout.module';
-import { ConfigService } from './core/config/config.service';
-import { LoggerService } from './shared/services/logger.service';
-import { translateHttpLoaderProviders } from './core/i18n/translate-http-loader.provider';
-import { DEFAULT_LANGUAGE, resolveInitialLanguage } from './core/i18n/i18n.constants';
+import { AppComponent } from '@app/app.component';
+import { AppRoutingModule } from '@app/app-routing.module';
+import { CoreModule } from '@core/core.module';
+import { LayoutModule } from '@features/layout/layout.module';
+import { ConfigService } from '@core/config/config.service';
+import { LoggerService } from '@shared/services/logger.service';
+import { translateHttpLoaderProviders } from '@core/i18n/translate-http-loader.provider';
+import { DEFAULT_LANGUAGE, resolveInitialLanguage } from '@core/i18n/i18n.constants';
 
 @NgModule({
     declarations: [AppComponent],
