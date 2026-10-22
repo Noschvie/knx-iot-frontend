@@ -49,6 +49,7 @@ const getGatewayToken = (write: boolean): string | null => {
 };
 
 // Proxy native gateway traffic through the BFF (token injected server-side)
+const gatewayApiProxy = createGatewayApiProxy(GATEWAY_URL, getGatewayToken);
 const gatewayWsProxy = createGatewayWsProxy(GATEWAY_URL, getGatewayToken);
 
 /**
@@ -157,8 +158,16 @@ app.get('/config/raffstore', (req: Request, res: Response) => {
  */
 
 // Forward the native gateway REST API (/api/v2/*) and messaging WebSocket
-app.use(createGatewayApiProxy(GATEWAY_URL, getGatewayToken));
-app.use(gatewayWsProxy);
+app.use((req, res, next) => {
+  gatewayApiProxy
+    .then((proxy) => proxy(req, res, next))
+    .catch(next);
+});
+app.use((req, res, next) => {
+  gatewayWsProxy
+    .then((proxy) => proxy(req, res, next))
+    .catch(next);
+});
 
 app.use('/api', (req: Request, res: Response, next) => {
   if (!raffstoreService) {
@@ -203,6 +212,7 @@ async function start(): Promise<void> {
   try {
     await initializeServices();
 
+    const wsProxy = await gatewayWsProxy;
     const server = app.listen(PORT, () => {
       console.log(`[BFF] Server running on http://localhost:${PORT}`);
       console.log(`[BFF] Raffstores API: http://localhost:${PORT}/api/raffstores`);
@@ -211,7 +221,7 @@ async function start(): Promise<void> {
     });
 
     // Proxy WebSocket upgrades (/messaging/ws) to the gateway
-    server.on('upgrade', gatewayWsProxy.upgrade);
+    server.on('upgrade', wsProxy.upgrade);
   } catch (error) {
     console.error('[BFF] Failed to start server:', error);
     process.exit(1);
