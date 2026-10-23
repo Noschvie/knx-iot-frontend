@@ -18,11 +18,14 @@ export interface RaffstoreDatapoints {
   gaEndBottom: string;      // 2/9/x - DPT 1.001 (Bottom end position)
 }
 
+export type RaffstoreOrientation = 'NORD' | 'OST' | 'SUED' | 'WEST';
+export type RaffstoreFloor = 'EG' | 'OG';
+
 export interface Raffstore {
   id: string;
   name: string;
-  floor: 'EG' | 'OG';
-  orientation: 'NORD' | 'OST' | 'SUED' | 'WEST';
+  floor: RaffstoreFloor;
+  orientation: RaffstoreOrientation;
   heightStep: number;             // 0–3 (Up, 1/3, 2/3, Down)
   angleStep: number;              // 0–2 (Open, Tilted, Closed)
   isMoving?: boolean;
@@ -44,7 +47,8 @@ export interface Command {
   id?: string;
   type: 'move' | 'step' | 'setHeight' | 'setAngle' | 'setPosition' | 'applyFavorite' | 'toggleAutoMode' | 'groupCommand';
   raffstoreId?: string;
-  floor?: 'EG' | 'OG';
+  floor?: RaffstoreFloor;
+  orientation?: RaffstoreOrientation;
   direction?: 'up' | 'down';
   heightStep?: number;
   angleStep?: number;
