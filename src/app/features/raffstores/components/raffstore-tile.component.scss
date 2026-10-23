@@ -43,6 +43,7 @@
   display: flex;
   gap: 4px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .icon {
@@ -68,55 +69,54 @@
   }
 }
 
-.actual-row {
+.end-badge {
+  color: #4b5563;
+  background: #f3f4f6;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 16px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.feedback-row {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.actual-track {
+.feedback-label {
+  color: #6b7280;
+  font-size: 10px;
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.feedback-track {
   flex: 1;
   height: 5px;
   border-radius: 3px;
-  background: #eef2ff;
+  background: #e5e7eb;
   overflow: hidden;
 }
 
-.actual-fill {
+.feedback-fill {
   height: 100%;
   border-radius: 3px;
-  background: #2563eb;
   transition: width 0.3s ease;
 }
 
-.actual-pct {
+.position-fill {
+  background: #2563eb;
+}
+
+.lamella-fill {
+  background: #7c3aed;
+}
+
+.feedback-value {
   font-size: 10px;
-  color: #2563eb;
+  color: #4b5563;
   min-width: 30px;
   text-align: right;
 }
-
-.bar-row {
-  display: flex;
-  gap: 3px;
-  height: 6px;
-  align-items: stretch;
-}
-
-.bar-segment {
-  flex: 1;
-  border-radius: 3px;
-  background: #e5e7eb;
-  transition: background 0.2s ease;
-
-  &.filled {
-    background: #999;
-  }
-}
-
-.tile-status {
-  font-size: 11px;
-  color: #999;
-  text-align: left;
-}
-

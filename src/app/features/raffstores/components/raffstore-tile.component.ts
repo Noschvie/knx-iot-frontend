@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS } from '../models/raffstore.model';
+import { Raffstore } from '../models/raffstore.model';
 import { RaffstoreDetailComponent } from './raffstore-detail.component';
 
 @Component({
@@ -11,9 +11,6 @@ import { RaffstoreDetailComponent } from './raffstore-detail.component';
 })
 export class RaffstoreTileComponent {
   @Input() raffstore!: Raffstore;
-
-  HEIGHT_STEPS = HEIGHT_STEPS;
-  ANGLE_STEPS = ANGLE_STEPS;
 
   constructor(private dialog: MatDialog) {}
 
