@@ -53,14 +53,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
       .subscribe(list => {
         const updated = list.find(r => r.id === this.raffstore.id);
         if (updated) {
-          this.raffstore = {
-            ...this.raffstore,
-            statusPositionPercent: updated.statusPositionPercent,
-            statusLamellaPercent: updated.statusLamellaPercent,
-            isEndTop: updated.isEndTop,
-            isEndBottom: updated.isEndBottom,
-            isMoving: updated.isMoving
-          };
+          this.raffstore = { ...updated };
         }
       });
 

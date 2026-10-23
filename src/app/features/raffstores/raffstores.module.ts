@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogModule } from '@angular/material/dialog';
 import { RouterModule, Routes } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { RaffstoreOverviewComponent } from './components/raffstore-overview.component';
 import { RaffstoreTileComponent } from './components/raffstore-tile.component';
@@ -20,6 +21,7 @@ const routes: Routes = [
   imports: [
     CommonModule,
     MatDialogModule,
+    TranslatePipe,
     RouterModule.forChild(routes)
   ]
 })

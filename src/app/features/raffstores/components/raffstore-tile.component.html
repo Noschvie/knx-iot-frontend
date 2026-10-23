@@ -4,16 +4,16 @@
     <span class="tile-name">{{ raffstore.name }}</span>
     <div class="tile-icons">
       <!-- Movement Indicator -->
-      <span *ngIf="raffstore.isMoving" class="icon icon-moving" title="Bewegung">↕</span>
-      <span *ngIf="raffstore.isEndTop" class="end-badge" title="Endlage oben">▲ Oben</span>
-      <span *ngIf="raffstore.isEndBottom" class="end-badge" title="Endlage unten">▼ Unten</span>
+      <span *ngIf="raffstore.isMoving" class="icon icon-moving" [title]="'raffstore.movement' | translate">↕</span>
+      <span *ngIf="raffstore.isEndTop" class="end-badge">▲ {{ 'raffstore.endTop' | translate }}</span>
+      <span *ngIf="raffstore.isEndBottom" class="end-badge">▼ {{ 'raffstore.endBottom' | translate }}</span>
       <!-- Auto Mode Badge -->
-      <span *ngIf="raffstore.autoMode && !raffstore.isMoving" class="icon icon-auto" title="Automatik aktiv">☀</span>
+      <span *ngIf="raffstore.autoMode" class="icon icon-auto" [title]="'raffstore.automationActive' | translate">☀</span>
     </div>
   </div>
 
-  <div class="feedback-row" [title]="raffstore.statusPositionPercent != null ? 'Ist-Position ' + raffstore.statusPositionPercent + '%' : 'Keine Positionsrückmeldung'">
-    <span class="feedback-label">Position</span>
+  <div class="feedback-row" [title]="'raffstore.positionFeedback' | translate">
+    <span class="feedback-label">{{ 'raffstore.position' | translate }}</span>
     <div class="feedback-track">
       <div class="feedback-fill position-fill"
            [style.width.%]="raffstore.statusPositionPercent ?? 0"></div>
@@ -21,8 +21,8 @@
     <span class="feedback-value">{{ raffstore.statusPositionPercent != null ? raffstore.statusPositionPercent + '%' : '—' }}</span>
   </div>
 
-  <div class="feedback-row" [title]="raffstore.statusLamellaPercent != null ? 'Lamellenrückmeldung ' + raffstore.statusLamellaPercent + '%' : 'Keine Lamellenrückmeldung'">
-    <span class="feedback-label">Lamelle</span>
+  <div class="feedback-row" [title]="'raffstore.lamellaFeedback' | translate">
+    <span class="feedback-label">{{ 'raffstore.lamella' | translate }}</span>
     <div class="feedback-track">
       <div class="feedback-fill lamella-fill"
            [style.width.%]="raffstore.statusLamellaPercent ?? 0"></div>

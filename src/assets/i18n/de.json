@@ -65,7 +65,26 @@
     "title": "Raffstore Steuerung",
     "subtitle": "EG/OG – Prototype",
     "height": "Höhe",
-    "angle": "Lamellen",
+    "angle": "Lamellenwinkel",
+    "position": "Position",
+    "lamella": "Lamelle",
+    "actualFeedback": "Ist-Rückmeldung",
+    "targetPosition": "Soll-Position",
+    "positionFeedback": "Rückmeldung der aktuellen Position",
+    "lamellaFeedback": "Rückmeldung der aktuellen Lamellenstellung",
+    "favorites": "Favoriten",
+    "close": "Details schließen",
+    "endTop": "Oben",
+    "endBottom": "Unten",
+    "floors": {
+      "EG": "Erdgeschoss",
+      "OG": "Obergeschoss"
+    },
+    "commands": {
+      "up": "Auf",
+      "stop": "Stopp",
+      "down": "Zu"
+    },
     "auto": "Automatik",
     "manual": "Manuell",
     "autoOn": "Automatik AN",

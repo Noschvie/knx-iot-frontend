@@ -1,105 +1,109 @@
 <div class="detail-modal">
-  <!-- Header -->
   <div class="detail-header">
     <div class="header-content">
       <h2 class="title">{{ raffstore.name }}</h2>
-      <p class="location">{{ raffstore.floor === 'EG' ? 'Erdgeschoss' : 'Obergeschoss' }}</p>
+      <p class="location">{{ ('raffstore.floors.' + raffstore.floor) | translate }}</p>
     </div>
     <div class="header-right">
-      <span *ngIf="raffstore.autoMode" class="badge">Automatik</span>
-      <button class="close-btn" (click)="close()">✕</button>
+      <span *ngIf="raffstore.autoMode" class="badge">
+        <span aria-hidden="true">☀</span>
+        {{ 'raffstore.automationActive' | translate }}
+      </span>
+      <button class="close-btn" (click)="close()" [attr.aria-label]="'raffstore.close' | translate">✕</button>
     </div>
   </div>
 
-  <!-- Quick Commands: Auf / Stopp / Zu -->
   <div class="button-row">
-    <button class="move-btn move-up" (click)="moveUp()">
-      Auf
+    <button class="move-btn move-up" (click)="moveUp()" [disabled]="isCommandInProgress">
+      {{ 'raffstore.commands.up' | translate }}
     </button>
-    <button class="move-btn move-stop" (click)="moveStop()">
-      Stopp
+    <button class="move-btn move-stop" (click)="moveStop()" [disabled]="isCommandInProgress">
+      {{ 'raffstore.commands.stop' | translate }}
     </button>
-    <button class="move-btn move-down" (click)="moveDown()">
-      Zu
+    <button class="move-btn move-down" (click)="moveDown()" [disabled]="isCommandInProgress">
+      {{ 'raffstore.commands.down' | translate }}
     </button>
   </div>
 
-  <!-- Status feedback (Rückmeldung vom KNX-Backend) -->
-  <div class="status-section"
-       *ngIf="raffstore.statusPositionPercent != null || raffstore.statusLamellaPercent != null || raffstore.isEndTop || raffstore.isEndBottom">
-    <label class="status-label">Rückmeldung</label>
+  <div class="status-section">
+    <label class="status-label">{{ 'raffstore.actualFeedback' | translate }}</label>
 
-    <div class="status-bar-row" *ngIf="raffstore.statusPositionPercent != null">
-      <span class="status-name">Position</span>
+    <div class="status-bar-row">
+      <span class="status-name">{{ 'raffstore.position' | translate }}</span>
       <div class="status-track">
-        <div class="status-fill" [style.width.%]="raffstore.statusPositionPercent"></div>
+        <div class="status-fill position-fill" [style.width.%]="raffstore.statusPositionPercent ?? 0"></div>
       </div>
-      <span class="status-pct">{{ raffstore.statusPositionPercent }}%</span>
+      <span class="status-pct">
+        {{ raffstore.statusPositionPercent != null ? raffstore.statusPositionPercent + '%' : '—' }}
+      </span>
     </div>
 
-    <div class="status-bar-row" *ngIf="raffstore.statusLamellaPercent != null">
-      <span class="status-name">Lamelle</span>
+    <div class="status-bar-row">
+      <span class="status-name">{{ 'raffstore.lamella' | translate }}</span>
       <div class="status-track">
-        <div class="status-fill status-fill-lamella" [style.width.%]="raffstore.statusLamellaPercent"></div>
+        <div class="status-fill lamella-fill" [style.width.%]="raffstore.statusLamellaPercent ?? 0"></div>
       </div>
-      <span class="status-pct">{{ raffstore.statusLamellaPercent }}%</span>
+      <span class="status-pct">
+        {{ raffstore.statusLamellaPercent != null ? raffstore.statusLamellaPercent + '%' : '—' }}
+      </span>
     </div>
 
     <div class="status-end-row" *ngIf="raffstore.isEndTop || raffstore.isEndBottom">
-      <span class="end-badge" *ngIf="raffstore.isEndTop" title="Endlage oben">▲ Endlage oben</span>
-      <span class="end-badge" *ngIf="raffstore.isEndBottom" title="Endlage unten">▼ Endlage unten</span>
+      <span class="end-badge" *ngIf="raffstore.isEndTop">▲ {{ 'raffstore.endTop' | translate }}</span>
+      <span class="end-badge" *ngIf="raffstore.isEndBottom">▼ {{ 'raffstore.endBottom' | translate }}</span>
     </div>
   </div>
 
-  <!-- Height Stepper -->
+  <div class="target-label">{{ 'raffstore.targetPosition' | translate }}</div>
+
   <div class="stepper-section">
-    <label class="stepper-label">Höhe</label>
+    <label class="stepper-label">{{ 'raffstore.height' | translate }}</label>
     <div class="stepper-buttons">
       <button
         *ngFor="let step of heightSteps"
         class="step-btn"
         [class.active]="raffstore.heightStep === step.value"
         (click)="setHeight(step.value)"
+        [disabled]="isCommandInProgress"
       >
-        {{ step.label }}
+        {{ ('raffstore.positions.height.' + step.value) | translate }}
       </button>
     </div>
   </div>
 
-  <!-- Angle Stepper -->
   <div class="stepper-section">
-    <label class="stepper-label">Lamellenwinkel</label>
+    <label class="stepper-label">{{ 'raffstore.angle' | translate }}</label>
     <div class="stepper-buttons stepper-3col">
       <button
         *ngFor="let step of angleSteps"
         class="step-btn"
         [class.active]="raffstore.angleStep === step.value"
         (click)="setAngle(step.value)"
+        [disabled]="isCommandInProgress"
       >
-        {{ step.label }}
+        {{ ('raffstore.positions.angle.' + step.value) | translate }}
       </button>
     </div>
   </div>
 
-  <!-- Favorites -->
   <div class="favorites-section">
-    <label class="favorites-label">Favoriten</label>
+    <label class="favorites-label">{{ 'raffstore.favorites' | translate }}</label>
     <div class="favorites-grid">
       <button
         *ngFor="let fav of favorites"
         class="favorite-btn"
         (click)="applyFavorite(fav)"
+        [disabled]="isCommandInProgress"
       >
         {{ fav.label }}
       </button>
     </div>
   </div>
 
-  <!-- Footer: Auto Mode Toggle -->
   <div class="detail-footer">
-    <button class="auto-toggle" (click)="toggleAutoMode()">
+    <button class="auto-toggle" (click)="toggleAutoMode()" [disabled]="isCommandInProgress">
       <span class="icon">{{ raffstore.autoMode ? '☀' : '✋' }}</span>
-      {{ raffstore.autoMode ? 'Automatik AN' : 'Manuell' }}
+      {{ (raffstore.autoMode ? 'raffstore.autoOn' : 'raffstore.manual') | translate }}
     </button>
   </div>
 </div>
