@@ -4,12 +4,14 @@
 
 import express, { Router, Request, Response } from 'express';
 import { RaffstoreService } from '../services/raffstore.service';
-import { BFFResponse } from '../models';
+import { BFFResponse, RaffstoreOrientation } from '../models';
 
 export function createRaffstoreRouter(
   getRaffstoreService: () => RaffstoreService
 ): Router {
   const router = express.Router();
+  const isRaffstoreOrientation = (value: unknown): value is RaffstoreOrientation =>
+    value === 'NORD' || value === 'OST' || value === 'SUED' || value === 'WEST';
 
   /**
    * GET /raffstores/events
@@ -48,6 +50,29 @@ export function createRaffstoreRouter(
       res.json(response);
     } catch (error) {
       console.error('[API] Error getting raffstores:', error);
+      res.status(500).json({
+        success: false,
+        error: String(error),
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  /**
+   * GET /raffstores/group-options
+   * Returns configured orientations for each floor.
+   */
+  router.get('/raffstores/group-options', (req: Request, res: Response) => {
+    try {
+      const raffstoreService = getRaffstoreService();
+      const response: BFFResponse = {
+        success: true,
+        data: raffstoreService.getGroupOrientations(),
+        timestamp: Date.now()
+      };
+      res.json(response);
+    } catch (error) {
+      console.error('[API] Error getting raffstore group options:', error);
       res.status(500).json({
         success: false,
         error: String(error),
@@ -329,15 +354,16 @@ export function createRaffstoreRouter(
   });
 
   /**
-   * POST /raffstores/group/:floor/:direction
-   * Group command for all raffstores on a floor
-   * Params: floor (EG|OG), direction (up|down)
+   * POST /raffstores/group/:floor/:direction?orientation=NORD
+   * Group command for all raffstores on a floor, optionally filtered by orientation.
    */
   router.post('/raffstores/group/:floor/:direction', async (req: Request, res: Response) => {
     try {
       const raffstoreService = getRaffstoreService();
       const floor = req.params.floor as 'EG' | 'OG';
       const direction = req.params.direction as 'up' | 'down';
+      const orientationParam = req.query.orientation;
+      let orientation: RaffstoreOrientation | undefined;
 
       if (!['EG', 'OG'].includes(floor)) {
         return res.status(400).json({
@@ -355,7 +381,18 @@ export function createRaffstoreRouter(
         });
       }
 
-      await raffstoreService.groupCommand(floor, direction);
+      if (orientationParam !== undefined) {
+        if (!isRaffstoreOrientation(orientationParam)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid orientation: must be NORD, OST, SUED, or WEST',
+            timestamp: Date.now()
+          });
+        }
+        orientation = orientationParam;
+      }
+
+      await raffstoreService.groupCommand(floor, direction, orientation);
       const raffstores = raffstoreService.getRaffstores();
       const response: BFFResponse = {
         success: true,

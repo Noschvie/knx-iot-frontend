@@ -14,6 +14,23 @@
                 </button>
             </div>
         </div>
+        <div class="orientation-buttons">
+            @for (orientation of groupOrientations.EG; track orientation) {
+                <div class="orientation-group">
+                    <span class="orientation-label">{{ orientationLabels[orientation] }}</span>
+                    <button class="group-btn direction-btn"
+                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' auf'"
+                            (click)="onGroupCommandUp('EG', orientation)">
+                        <span class="icon">⬆</span>Auf
+                    </button>
+                    <button class="group-btn direction-btn"
+                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' zu'"
+                            (click)="onGroupCommandDown('EG', orientation)">
+                        <span class="icon">⬇</span>Zu
+                    </button>
+                </div>
+            }
+        </div>
         <div class="tile-grid">
             @for (rs of raffstoresEG; track rs.id) {
                 <app-raffstore-tile [raffstore]="rs"></app-raffstore-tile>
@@ -33,6 +50,23 @@
                     <span class="icon">⬇</span>Alle zu
                 </button>
             </div>
+        </div>
+        <div class="orientation-buttons">
+            @for (orientation of groupOrientations.OG; track orientation) {
+                <div class="orientation-group">
+                    <span class="orientation-label">{{ orientationLabels[orientation] }}</span>
+                    <button class="group-btn direction-btn"
+                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' auf'"
+                            (click)="onGroupCommandUp('OG', orientation)">
+                        <span class="icon">⬆</span>Auf
+                    </button>
+                    <button class="group-btn direction-btn"
+                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' zu'"
+                            (click)="onGroupCommandDown('OG', orientation)">
+                        <span class="icon">⬇</span>Zu
+                    </button>
+                </div>
+            }
         </div>
         <div class="tile-grid">
             @for (rs of raffstoresOG; track rs.id) {

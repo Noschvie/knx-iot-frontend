@@ -2,7 +2,15 @@
  * RaffstoreService - Business logic for raffstore commands
  */
 
-import { RaffstoreDatapoints, Raffstore, Favorite, Event, GatewayCommand } from '../models';
+import {
+  RaffstoreDatapoints,
+  Raffstore,
+  Favorite,
+  Event,
+  GatewayCommand,
+  RaffstoreFloor,
+  RaffstoreOrientation
+} from '../models';
 import { GatewayService } from './gateway.service';
 
 interface StepMapping {
@@ -67,6 +75,26 @@ export class RaffstoreService {
    */
   getRaffstores(): Raffstore[] {
     return Array.from(this.raffstores.values());
+  }
+
+  /**
+   * Get the orientations configured for each floor.
+   */
+  getGroupOrientations(): Record<RaffstoreFloor, RaffstoreOrientation[]> {
+    const orientations: Record<RaffstoreFloor, Set<RaffstoreOrientation>> = {
+      EG: new Set(),
+      OG: new Set()
+    };
+    const orientationOrder: RaffstoreOrientation[] = ['NORD', 'OST', 'SUED', 'WEST'];
+
+    for (const cfg of this.raffstoreConfig.values()) {
+      orientations[cfg.floor].add(cfg.orientation);
+    }
+
+    return {
+      EG: orientationOrder.filter(orientation => orientations.EG.has(orientation)),
+      OG: orientationOrder.filter(orientation => orientations.OG.has(orientation))
+    };
   }
 
   /**
@@ -315,11 +343,15 @@ export class RaffstoreService {
   /**
    * Execute command: groupCommand (all raffstores on a floor)
    */
-  async groupCommand(floor: 'EG' | 'OG', direction: 'up' | 'down'): Promise<void> {
+  async groupCommand(
+    floor: RaffstoreFloor,
+    direction: 'up' | 'down',
+    orientation?: RaffstoreOrientation
+  ): Promise<void> {
     const commands: GatewayCommand['data'] = [];
 
     for (const cfg of this.raffstoreConfig.values()) {
-      if (cfg.floor === floor) {
+      if (cfg.floor === floor && (!orientation || cfg.orientation === orientation)) {
         const gaMove = cfg.gaMove;
         const datapointId = this.gatewayService.getDatapointId(gaMove);
         const value = direction === 'up' ? '0' : '1';
@@ -340,7 +372,7 @@ export class RaffstoreService {
       await this.gatewayService.sendCommand({ data: commands });
       this.emitEvent({
         type: 'command_executed',
-        command: { type: 'groupCommand', floor, direction, timestamp: Date.now() },
+        command: { type: 'groupCommand', floor, orientation, direction, timestamp: Date.now() },
         timestamp: Date.now()
       });
     }

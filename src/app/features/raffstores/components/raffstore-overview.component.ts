@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { Raffstore } from '../models/raffstore.model';
+import { Raffstore, RaffstoreFloor, RaffstoreOrientation } from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 
 @Component({
@@ -13,6 +13,13 @@ import { RaffstoreService } from '../services/raffstore.service';
 export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
   raffstoresEG: Raffstore[] = [];
   raffstoresOG: Raffstore[] = [];
+  groupOrientations: Record<RaffstoreFloor, RaffstoreOrientation[]> = { EG: [], OG: [] };
+  readonly orientationLabels: Record<RaffstoreOrientation, string> = {
+    NORD: 'Nord',
+    OST: 'Ost',
+    SUED: 'Süd',
+    WEST: 'West'
+  };
   groupCommandInProgress: { EG?: boolean; OG?: boolean } = {};
 
   private destroy$ = new Subject<void>();
@@ -23,6 +30,16 @@ export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.raffstoreService.getGroupOrientations()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: options => {
+            this.groupOrientations = options;
+            this.cdr.detectChanges();
+          },
+          error: error => console.error('Failed to load raffstore group options:', error)
+        });
+
     this.raffstoreService.getRaffstores()
         .pipe(takeUntil(this.destroy$))
         .subscribe(raffstores => {
@@ -40,9 +57,9 @@ export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
   /**
    * Gruppbefehl: Alle auf (Höhe = 0)
    */
-  onGroupCommandUp(floor: 'EG' | 'OG'): void {
+  onGroupCommandUp(floor: RaffstoreFloor, orientation?: RaffstoreOrientation): void {
     this.groupCommandInProgress[floor] = true;
-    this.raffstoreService.groupCommand(floor, 'up').subscribe({
+    this.raffstoreService.groupCommand(floor, 'up', orientation).subscribe({
       next: () => {
         console.log(`✓ Group command UP completed for floor: ${floor}`);
         this.groupCommandInProgress[floor] = false;
@@ -57,9 +74,9 @@ export class RaffstoreOverviewComponent implements OnInit, OnDestroy {
   /**
    * Gruppbefehl: Alle zu (Höhe = 100)
    */
-  onGroupCommandDown(floor: 'EG' | 'OG'): void {
+  onGroupCommandDown(floor: RaffstoreFloor, orientation?: RaffstoreOrientation): void {
     this.groupCommandInProgress[floor] = true;
-    this.raffstoreService.groupCommand(floor, 'down').subscribe({
+    this.raffstoreService.groupCommand(floor, 'down', orientation).subscribe({
       next: () => {
         console.log(`✓ Group command DOWN completed for floor: ${floor}`);
         this.groupCommandInProgress[floor] = false;

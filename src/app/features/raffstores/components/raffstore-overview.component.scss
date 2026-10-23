@@ -34,6 +34,31 @@
 .floor-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.orientation-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.orientation-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+}
+
+.orientation-label {
+  margin: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
 }
 
 .group-btn {
@@ -62,6 +87,26 @@
 
   &:active {
     transform: scale(0.98);
+  }
+}
+
+.direction-btn {
+  padding: 6px 8px;
+  min-height: 32px;
+}
+
+@media (max-width: 640px) {
+  .floor-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .floor-name {
+    min-width: 0;
+  }
+
+  .floor-buttons {
+    justify-content: flex-start;
   }
 }
 

@@ -16,7 +16,14 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, interval, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ConfigService } from '@core/config/config.service';
-import { Raffstore, Favorite, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN } from '../models/raffstore.model';
+import {
+  Raffstore,
+  Favorite,
+  HEIGHT_STEP_UP,
+  HEIGHT_STEP_DOWN,
+  RaffstoreFloor,
+  RaffstoreOrientation
+} from '../models/raffstore.model';
 import { map, tap, catchError, switchMap, takeUntil, startWith } from 'rxjs/operators';
 
 interface BFFResponse<T = any> {
@@ -25,6 +32,8 @@ interface BFFResponse<T = any> {
   error?: string;
   timestamp: number;
 }
+
+export type RaffstoreGroupOptions = Record<RaffstoreFloor, RaffstoreOrientation[]>;
 
 @Injectable({ providedIn: 'root' })
 export class RaffstoreService implements OnDestroy {
@@ -174,6 +183,19 @@ export class RaffstoreService implements OnDestroy {
    */
   getRaffstores(): Observable<Raffstore[]> {
     return this.raffstores$.asObservable();
+  }
+
+  getGroupOrientations(): Observable<RaffstoreGroupOptions> {
+    return this.http.get<BFFResponse<RaffstoreGroupOptions>>(
+      `${this.bffEndpoint}/raffstores/group-options`
+    ).pipe(
+      map(response => {
+        if (!response.success || !response.data) {
+          throw new Error('Failed to load raffstore group options');
+        }
+        return response.data;
+      })
+    );
   }
 
   /**
@@ -357,9 +379,14 @@ export class RaffstoreService implements OnDestroy {
   /**
    * Group command (all raffstores on a floor)
    */
-  groupCommand(floor: 'EG' | 'OG', direction: 'up' | 'down'): Observable<Raffstore[]> {
+  groupCommand(
+    floor: RaffstoreFloor,
+    direction: 'up' | 'down',
+    orientation?: RaffstoreOrientation
+  ): Observable<Raffstore[]> {
+    const orientationParam = orientation ? `?orientation=${orientation}` : '';
     return this.http.post<BFFResponse<Raffstore[]>>(
-      `${this.bffEndpoint}/raffstores/group/${floor}/${direction}`,
+      `${this.bffEndpoint}/raffstores/group/${floor}/${direction}${orientationParam}`,
       {}
     ).pipe(
       tap(response => {
