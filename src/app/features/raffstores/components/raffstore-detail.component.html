@@ -14,13 +14,13 @@
   </div>
 
   <div class="button-row">
-    <button class="move-btn move-up" (click)="moveUp()" [disabled]="isCommandInProgress">
+    <button class="move-btn move-up" (click)="moveUp()">
       {{ 'raffstore.commands.up' | translate }}
     </button>
-    <button class="move-btn move-stop" (click)="moveStop()" [disabled]="isCommandInProgress">
+    <button class="move-btn move-stop" (click)="moveStop()">
       {{ 'raffstore.commands.stop' | translate }}
     </button>
-    <button class="move-btn move-down" (click)="moveDown()" [disabled]="isCommandInProgress">
+    <button class="move-btn move-down" (click)="moveDown()">
       {{ 'raffstore.commands.down' | translate }}
     </button>
   </div>
@@ -64,7 +64,6 @@
         class="step-btn"
         [class.active]="raffstore.heightStep === step.value"
         (click)="setHeight(step.value)"
-        [disabled]="isCommandInProgress"
       >
         {{ ('raffstore.positions.height.' + step.value) | translate }}
       </button>
@@ -79,7 +78,6 @@
         class="step-btn"
         [class.active]="raffstore.angleStep === step.value"
         (click)="setAngle(step.value)"
-        [disabled]="isCommandInProgress"
       >
         {{ ('raffstore.positions.angle.' + step.value) | translate }}
       </button>
@@ -93,7 +91,6 @@
         *ngFor="let fav of favorites"
         class="favorite-btn"
         (click)="applyFavorite(fav)"
-        [disabled]="isCommandInProgress"
       >
         {{ fav.label }}
       </button>
@@ -101,7 +98,7 @@
   </div>
 
   <div class="detail-footer">
-    <button class="auto-toggle" (click)="toggleAutoMode()" [disabled]="isCommandInProgress">
+    <button class="auto-toggle" (click)="toggleAutoMode()">
       <span class="icon">{{ raffstore.autoMode ? '☀' : '✋' }}</span>
       {{ (raffstore.autoMode ? 'raffstore.autoOn' : 'raffstore.manual') | translate }}
     </button>
