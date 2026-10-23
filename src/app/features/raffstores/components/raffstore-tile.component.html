@@ -5,8 +5,16 @@
     <div class="tile-icons">
       <!-- Movement Indicator -->
       <span *ngIf="raffstore.isMoving" class="icon icon-moving" [title]="'raffstore.movement' | translate">↕</span>
-      <span *ngIf="raffstore.isEndTop" class="end-badge">▲ {{ 'raffstore.endTop' | translate }}</span>
-      <span *ngIf="raffstore.isEndBottom" class="end-badge">▼ {{ 'raffstore.endBottom' | translate }}</span>
+      <span *ngIf="raffstore.isEndTop"
+            class="end-icon"
+            role="img"
+            [title]="'raffstore.endTop' | translate"
+            [attr.aria-label]="'raffstore.endTop' | translate">▲</span>
+      <span *ngIf="raffstore.isEndBottom"
+            class="end-icon"
+            role="img"
+            [title]="'raffstore.endBottom' | translate"
+            [attr.aria-label]="'raffstore.endBottom' | translate">▼</span>
       <!-- Auto Mode Badge -->
       <span *ngIf="raffstore.autoMode" class="icon icon-auto" [title]="'raffstore.automationActive' | translate">☀</span>
     </div>

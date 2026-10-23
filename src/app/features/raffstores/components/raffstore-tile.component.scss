@@ -69,14 +69,16 @@
   }
 }
 
-.end-badge {
+.end-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #4b5563;
   background: #f3f4f6;
   border-radius: 4px;
-  font-size: 10px;
-  line-height: 16px;
-  padding: 0 4px;
-  white-space: nowrap;
+  font-size: 11px;
 }
 
 .feedback-row {
