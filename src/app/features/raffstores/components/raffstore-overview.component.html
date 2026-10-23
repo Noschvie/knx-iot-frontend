@@ -3,33 +3,38 @@
 
     <!-- Erdgeschoss -->
     <div class="floor-section">
-        <div class="floor-header">
+        <div class="floor-toolbar">
             <span class="floor-name">Erdgeschoss</span>
-            <div class="floor-buttons">
-                <button class="group-btn" (click)="onGroupCommandUp('EG')">
-                    <span class="icon">⬆</span>Alle auf
-                </button>
-                <button class="group-btn" (click)="onGroupCommandDown('EG')">
-                    <span class="icon">⬇</span>Alle zu
-                </button>
-            </div>
-        </div>
-        <div class="orientation-buttons">
+            <div class="group-buttons">
+                <div class="orientation-group">
+                    <span class="orientation-label">Alle</span>
+                    <button class="group-btn direction-btn"
+                            aria-label="Erdgeschoss alle Raffstores auf"
+                            (click)="onGroupCommandUp('EG')">
+                        <span class="icon">⬆</span>Auf
+                    </button>
+                    <button class="group-btn direction-btn"
+                            aria-label="Erdgeschoss alle Raffstores zu"
+                            (click)="onGroupCommandDown('EG')">
+                        <span class="icon">⬇</span>Zu
+                    </button>
+                </div>
             @for (orientation of groupOrientations.EG; track orientation) {
                 <div class="orientation-group">
                     <span class="orientation-label">{{ orientationLabels[orientation] }}</span>
                     <button class="group-btn direction-btn"
-                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' auf'"
+                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' Raffstores auf'"
                             (click)="onGroupCommandUp('EG', orientation)">
                         <span class="icon">⬆</span>Auf
                     </button>
                     <button class="group-btn direction-btn"
-                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' zu'"
+                            [attr.aria-label]="'Erdgeschoss ' + orientationLabels[orientation] + ' Raffstores zu'"
                             (click)="onGroupCommandDown('EG', orientation)">
                         <span class="icon">⬇</span>Zu
                     </button>
                 </div>
             }
+            </div>
         </div>
         <div class="tile-grid">
             @for (rs of raffstoresEG; track rs.id) {
@@ -40,33 +45,38 @@
 
     <!-- Obergeschoss -->
     <div class="floor-section">
-        <div class="floor-header">
+        <div class="floor-toolbar">
             <span class="floor-name">Obergeschoss</span>
-            <div class="floor-buttons">
-                <button class="group-btn" (click)="onGroupCommandUp('OG')">
-                    <span class="icon">⬆</span>Alle auf
-                </button>
-                <button class="group-btn" (click)="onGroupCommandDown('OG')">
-                    <span class="icon">⬇</span>Alle zu
-                </button>
-            </div>
-        </div>
-        <div class="orientation-buttons">
+            <div class="group-buttons">
+                <div class="orientation-group">
+                    <span class="orientation-label">Alle</span>
+                    <button class="group-btn direction-btn"
+                            aria-label="Obergeschoss alle Raffstores auf"
+                            (click)="onGroupCommandUp('OG')">
+                        <span class="icon">⬆</span>Auf
+                    </button>
+                    <button class="group-btn direction-btn"
+                            aria-label="Obergeschoss alle Raffstores zu"
+                            (click)="onGroupCommandDown('OG')">
+                        <span class="icon">⬇</span>Zu
+                    </button>
+                </div>
             @for (orientation of groupOrientations.OG; track orientation) {
                 <div class="orientation-group">
                     <span class="orientation-label">{{ orientationLabels[orientation] }}</span>
                     <button class="group-btn direction-btn"
-                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' auf'"
+                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' Raffstores auf'"
                             (click)="onGroupCommandUp('OG', orientation)">
                         <span class="icon">⬆</span>Auf
                     </button>
                     <button class="group-btn direction-btn"
-                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' zu'"
+                            [attr.aria-label]="'Obergeschoss ' + orientationLabels[orientation] + ' Raffstores zu'"
                             (click)="onGroupCommandDown('OG', orientation)">
                         <span class="icon">⬇</span>Zu
                     </button>
                 </div>
             }
+            </div>
         </div>
         <div class="tile-grid">
             @for (rs of raffstoresOG; track rs.id) {
