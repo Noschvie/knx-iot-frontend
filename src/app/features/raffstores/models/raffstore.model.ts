@@ -16,6 +16,9 @@ export interface Raffstore {
   isEndBottom?: boolean;          // Bottom end position reached
 }
 
+export type RaffstoreOrientation = 'NORD' | 'OST' | 'SUED' | 'WEST';
+export type RaffstoreFloor = 'EG' | 'OG';
+
 export const HEIGHT_STEPS: Record<number, string> = {
   0: 'Auf',
   1: '1/3',
