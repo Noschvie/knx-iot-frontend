@@ -12,6 +12,27 @@ export function createRaffstoreRouter(
   const router = express.Router();
 
   /**
+   * GET /raffstores/events
+   * Get recent events (SSE - Server-Sent Events)
+   */
+  router.get('/raffstores/events', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const raffstoreService = getRaffstoreService();
+    const unsubscribe = raffstoreService.onEvent((event) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    });
+
+    req.on('close', () => {
+      unsubscribe();
+      res.end();
+    });
+  });
+
+  /**
    * GET /raffstores
    * Returns all raffstores
    */
@@ -350,27 +371,6 @@ export function createRaffstoreRouter(
         timestamp: Date.now()
       });
     }
-  });
-
-  /**
-   * GET /raffstores/events
-   * Get recent events (SSE - Server-Sent Events)
-   */
-  router.get('/raffstores/events', (req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    const raffstoreService = getRaffstoreService();
-    const unsubscribe = raffstoreService.onEvent((event) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    });
-
-    req.on('close', () => {
-      unsubscribe();
-      res.end();
-    });
   });
 
   return router;
