@@ -171,7 +171,7 @@ export function createRaffstoreRouter(
   router.put('/raffstores/:id/height', async (req: Request, res: Response) => {
     try {
       const raffstoreService = getRaffstoreService();
-      const { heightStep } = req.body;
+      const { heightStep } = req.body ?? {};
       if (heightStep === undefined || typeof heightStep !== 'number') {
         return res.status(400).json({
           success: false,
@@ -206,7 +206,7 @@ export function createRaffstoreRouter(
   router.put('/raffstores/:id/angle', async (req: Request, res: Response) => {
     try {
       const raffstoreService = getRaffstoreService();
-      const { angleStep } = req.body;
+      const { angleStep } = req.body ?? {};
       if (angleStep === undefined || typeof angleStep !== 'number') {
         return res.status(400).json({
           success: false,
@@ -241,7 +241,7 @@ export function createRaffstoreRouter(
   router.put('/raffstores/:id/position', async (req: Request, res: Response) => {
     try {
       const raffstoreService = getRaffstoreService();
-      const { heightStep, angleStep } = req.body;
+      const { heightStep, angleStep } = req.body ?? {};
       if (heightStep === undefined || angleStep === undefined) {
         return res.status(400).json({
           success: false,
@@ -276,7 +276,7 @@ export function createRaffstoreRouter(
   router.post('/raffstores/:id/favorite', async (req: Request, res: Response) => {
     try {
       const raffstoreService = getRaffstoreService();
-      const { favorite } = req.body;
+      const { favorite } = req.body ?? {};
       if (!favorite || favorite.heightStep === undefined || favorite.angleStep === undefined) {
         return res.status(400).json({
           success: false,

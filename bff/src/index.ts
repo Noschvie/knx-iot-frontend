@@ -28,7 +28,7 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ type: ['application/json', 'application/vnd.api+json'] }));
 
 // Services
 let tokenService: TokenService | null = null;
