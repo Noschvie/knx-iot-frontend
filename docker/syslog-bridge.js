@@ -66,7 +66,6 @@ const syslogClient = dgram.createSocket('udp4');
 const server = http.createServer((req, res) => {
 
   if (req.method === 'POST' && req.url === '/syslog') {
-    console.log(`[Syslog Bridge] [OK] Received POST /syslog from ${req.socket.remoteAddress}`);
     let body = '';
 
     req.on('data', (chunk) => {
