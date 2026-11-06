@@ -33,7 +33,13 @@ export const ANGLE_STEPS: Record<number, string> = {
 } as const;
 
 export const HEIGHT_STEP_UP = 0;
+export const HEIGHT_STEP_ONE_THIRD = 1;
+export const HEIGHT_STEP_TWO_THIRDS = 2;
 export const HEIGHT_STEP_DOWN = 3;
+
+export const ANGLE_STEP_OPEN = 0;
+export const ANGLE_STEP_TILTED = 1;
+export const ANGLE_STEP_CLOSED = 2;
 
 export interface Favorite {
   label: string;
