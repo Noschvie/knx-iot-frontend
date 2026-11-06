@@ -20,7 +20,12 @@ import {
   Raffstore,
   Favorite,
   HEIGHT_STEP_UP,
+  HEIGHT_STEP_ONE_THIRD,
+  HEIGHT_STEP_TWO_THIRDS,
   HEIGHT_STEP_DOWN,
+  ANGLE_STEP_OPEN,
+  ANGLE_STEP_TILTED,
+  ANGLE_STEP_CLOSED,
   RaffstoreFloor,
   RaffstoreOrientation
 } from '../models/raffstore.model';
@@ -50,14 +55,14 @@ export class RaffstoreService implements OnDestroy {
   // Favorites per floor
   private favorites: Record<'EG' | 'OG', Favorite[]> = {
     EG: [
-      { label: 'Sonnenschutz', heightStep: 1, angleStep: 1 },
-      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: 2 },
-      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: 0 }
+      { label: 'Sonnenschutz', heightStep: HEIGHT_STEP_TWO_THIRDS, angleStep: ANGLE_STEP_TILTED },
+      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: ANGLE_STEP_CLOSED },
+      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: ANGLE_STEP_OPEN }
     ],
     OG: [
-      { label: 'Sonnenschutz', heightStep: 1, angleStep: 1 },
-      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: 2 },
-      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: 0 }
+      { label: 'Sonnenschutz', heightStep: HEIGHT_STEP_TWO_THIRDS, angleStep: ANGLE_STEP_TILTED },
+      { label: 'Ganz zu', heightStep: HEIGHT_STEP_DOWN, angleStep: ANGLE_STEP_CLOSED },
+      { label: 'Ganz auf', heightStep: HEIGHT_STEP_UP, angleStep: ANGLE_STEP_OPEN }
     ]
   };
 
@@ -436,7 +441,10 @@ export class RaffstoreService implements OnDestroy {
         })),
         catchError(err => {
           console.error(`[RaffstoreService] Failed to load status for ${raffstoreId}:`, err);
-          return of({ heightStep: 1, angleStep: 1 });
+          return of({
+            heightStep: HEIGHT_STEP_ONE_THIRD,
+            angleStep: ANGLE_STEP_TILTED
+          });
         })
       );
   }
