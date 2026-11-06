@@ -130,7 +130,7 @@ export class StatusReceiverService {
         this.byDatapointId.set(datapointId, target);
         this.byGa.set(ga, target);
         datapointIds.push(datapointId);
-        console.log(`[StatusReceiver] Mapped ${cfg.id}/${kind} GA ${ga} -> DP ${datapointId}`);
+        // console.log(`[StatusReceiver] Mapped ${cfg.id}/${kind} GA ${ga} -> DP ${datapointId}`);
       }
 
       if (datapointIds.length > 0) {

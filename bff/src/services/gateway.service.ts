@@ -74,7 +74,7 @@ export class GatewayService {
             writable: dp.attributes?.writable
           };
           this.gaToDatapoint.set(ga, resolved);
-          console.log(`[GatewayService] Mapped GA ${ga} → DP ${resolved.datapointId}`);
+          // console.log(`[GatewayService] Mapped GA ${ga} → DP ${resolved.datapointId}`);
 
           if (ignored.length > 0) {
             const ignoredIds = ignored.map((e) => datapointIdOf(e)).join(', ');
