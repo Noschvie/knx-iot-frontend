@@ -1,6 +1,18 @@
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Raffstore, HEIGHT_STEPS, ANGLE_STEPS, HEIGHT_STEP_UP, HEIGHT_STEP_DOWN, Favorite } from '../models/raffstore.model';
+import {
+  Raffstore,
+  HEIGHT_STEPS,
+  ANGLE_STEPS,
+  HEIGHT_STEP_UP,
+  HEIGHT_STEP_ONE_THIRD,
+  HEIGHT_STEP_TWO_THIRDS,
+  HEIGHT_STEP_DOWN,
+  ANGLE_STEP_OPEN,
+  ANGLE_STEP_TILTED,
+  ANGLE_STEP_CLOSED,
+  Favorite
+} from '../models/raffstore.model';
 import { RaffstoreService } from '../services/raffstore.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -19,16 +31,16 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   ANGLE_STEPS = ANGLE_STEPS;
 
   heightSteps = [
-    { value: 0, label: 'Auf' },
-    { value: 1, label: '1/3' },
-    { value: 2, label: '2/3' },
-    { value: 3, label: 'Zu' }
+    { value: HEIGHT_STEP_UP, label: 'Auf' },
+    { value: HEIGHT_STEP_ONE_THIRD, label: '1/3' },
+    { value: HEIGHT_STEP_TWO_THIRDS, label: '2/3' },
+    { value: HEIGHT_STEP_DOWN, label: 'Zu' }
   ];
 
   angleSteps = [
-    { value: 0, label: 'Offen' },
-    { value: 1, label: 'Schräg' },
-    { value: 2, label: 'Zu' }
+    { value: ANGLE_STEP_OPEN, label: 'Offen' },
+    { value: ANGLE_STEP_TILTED, label: 'Schräg' },
+    { value: ANGLE_STEP_CLOSED, label: 'Zu' }
   ];
 
   private destroy$ = new Subject<void>();
