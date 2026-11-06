@@ -205,7 +205,9 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
     this.raffstore = {
       ...this.raffstore,
       heightStep: favorite.heightStep,
-      angleStep: favorite.angleStep
+      angleStep: favorite.heightStep === HEIGHT_STEP_UP
+        ? this.raffstore.angleStep
+        : favorite.angleStep
     };
 
     this.raffstoreService.applyFavorite(this.raffstore.id, favorite)

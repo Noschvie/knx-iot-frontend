@@ -366,6 +366,12 @@ export class RaffstoreService implements OnDestroy {
    * Apply favorite
    */
   applyFavorite(raffstoreId: string, favorite: Favorite): Observable<Raffstore> {
+    if (favorite.heightStep === HEIGHT_STEP_UP) {
+      return this.setHeight(raffstoreId, favorite.heightStep).pipe(
+        tap(() => console.log(`[RaffstoreService] Favorite applied: ${raffstoreId} → ${favorite.label}`))
+      );
+    }
+
     return this.http.post<BFFResponse<Raffstore>>(
       `${this.bffEndpoint}/raffstores/${raffstoreId}/favorite`,
       { favorite }
