@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {
   Raffstore,
@@ -48,7 +48,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { raffstore: Raffstore },
     private dialogRef: MatDialogRef<RaffstoreDetailComponent>,
-    private raffstoreService: RaffstoreService
+    private raffstoreService: RaffstoreService,
+    private cdr: ChangeDetectorRef
   ) {
     this.raffstore = { ...data.raffstore };
   }
@@ -65,6 +66,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
         const updated = list.find(r => r.id === this.raffstore.id);
         if (updated) {
           this.raffstore = { ...updated };
+          this.cdr.detectChanges();
         }
       });
 
@@ -94,6 +96,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
             angleStep: status.angleStep,
             statusPositionPercent: status.statusPositionPercent ?? this.raffstore.statusPositionPercent
           };
+          this.cdr.detectChanges();
           console.log(`[Detail] Status refreshed for ${this.raffstore.id}:`, status);
         },
         error => {
