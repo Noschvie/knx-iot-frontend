@@ -431,9 +431,13 @@ export class RaffstoreService implements OnDestroy {
   }
 
   /**
-   * Load current status (height + angle) for a raffstore from the BFF
+   * Load the current position and feedback from the BFF.
    */
-  loadCurrentStatus(raffstoreId: string): Observable<{ heightStep: number; angleStep: number }> {
+  loadCurrentStatus(raffstoreId: string): Observable<{
+    heightStep: number;
+    angleStep: number;
+    statusPositionPercent?: number;
+  }> {
     return this.http.get<BFFResponse<Raffstore>>(`${this.bffEndpoint}/raffstores/${raffstoreId}`)
       .pipe(
         tap(response => {
@@ -443,7 +447,8 @@ export class RaffstoreService implements OnDestroy {
         }),
         map(response => ({
           heightStep: response.data?.heightStep ?? 1,
-          angleStep: response.data?.angleStep ?? 1
+          angleStep: response.data?.angleStep ?? 1,
+          statusPositionPercent: response.data?.statusPositionPercent
         })),
         catchError(err => {
           console.error(`[RaffstoreService] Failed to load status for ${raffstoreId}:`, err);

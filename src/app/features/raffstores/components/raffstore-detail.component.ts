@@ -91,7 +91,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
           this.raffstore = {
             ...this.raffstore,
             heightStep: status.heightStep,
-            angleStep: status.angleStep
+            angleStep: status.angleStep,
+            statusPositionPercent: status.statusPositionPercent ?? this.raffstore.statusPositionPercent
           };
           console.log(`[Detail] Status refreshed for ${this.raffstore.id}:`, status);
         },
