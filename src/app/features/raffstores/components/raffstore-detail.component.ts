@@ -55,7 +55,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.favorites = this.raffstoreService.getFavorites(this.raffstore.floor);
-    // Lade aktuelle Status-Werte vom Backend
+    // Load the current status values from the backend
     this.refreshStatus();
 
     // Subscribe to live status feedback (position, lamella, end positions)
@@ -81,7 +81,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Lade aktuelle Position und Winkel vom Backend
+   * Load the current position and angle from the backend.
    */
   refreshStatus(): void {
     this.raffstoreService.loadCurrentStatus(this.raffstore.id)
@@ -102,7 +102,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Auf-Befehl: DPT 1.008 = 0 zu 2/1/x
+   * Move-up command: DPT 1.008 = 0 on 2/1/x.
    */
   moveUp(): void {
     console.log('[DetailComponent] moveUp clicked for:', this.raffstore.id);
@@ -122,7 +122,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Stop-Befehl: DPT 1.007 = 1 zu 2/2/x
+   * Stop command: DPT 1.007 = 1 on 2/2/x.
    */
   moveStop(): void {
     console.log('[DetailComponent] moveStop clicked for:', this.raffstore.id);
@@ -132,7 +132,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
       .subscribe(
         () => {
           this.raffstore = { ...this.raffstore, isMoving: false };
-          // Refresh aktuelle Position nach Stop
+          // Refresh the current position after stopping.
           setTimeout(() => this.refreshStatus(), 500);
           console.log(`✓ Move STOP completed`);
         },
@@ -143,7 +143,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Zu-Befehl: DPT 1.008 = 1 zu 2/1/x
+   * Move-down command: DPT 1.008 = 1 on 2/1/x.
    */
   moveDown(): void {
     console.log('[DetailComponent] moveDown clicked for:', this.raffstore.id);
@@ -162,7 +162,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Höhe setzen: DPT 5.001 (0-100) zu 2/3/x
+   * Set the height: DPT 5.001 (0-100) on 2/3/x.
    */
   setHeight(step: number): void {
     this.raffstore = { ...this.raffstore, heightStep: step };
@@ -181,7 +181,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Lamellenwinkel setzen: DPT 5.001 (0-100) zu 2/4/x
+   * Set the slat angle: DPT 5.001 (0-100) on 2/4/x.
    */
   setAngle(step: number): void {
     this.raffstore = { ...this.raffstore, angleStep: step };
@@ -199,12 +199,13 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Favorit anwenden
+   * Apply a favorite.
    */
   applyFavorite(favorite: Favorite): void {
     this.raffstore = {
       ...this.raffstore,
       heightStep: favorite.heightStep,
+      // Fully opening the blind should preserve its current slat angle.
       angleStep: favorite.heightStep === HEIGHT_STEP_UP
         ? this.raffstore.angleStep
         : favorite.angleStep
@@ -223,8 +224,8 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Automatik-Modus umschalten: DPT 1.001 zu 2/7/x
-   * 0 = Manuell (freigegeben), 1 = Automatik (gesperrt)
+   * Toggle automatic mode: DPT 1.001 on 2/7/x.
+   * 0 = Manual (released), 1 = Automatic (locked).
    */
   toggleAutoMode(): void {
     this.raffstoreService.toggleAutoMode(this.raffstore.id)
@@ -240,7 +241,7 @@ export class RaffstoreDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Schließe Dialog
+   * Close the dialog.
    */
   close(): void {
     this.dialogRef.close();
