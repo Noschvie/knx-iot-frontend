@@ -40,7 +40,7 @@ services:
       # Use host timezone for logging consistency
       - TZ=${TZ:-Europe/Vienna}
     ports:
-      - "8080:80"
+      - "8060:80"
     depends_on:
       - bff
     restart: unless-stopped
