@@ -19,7 +19,7 @@ The original **GUI-frontend-api.md** specification was written for a hypothetica
 |------|--------|-------|
 | **HTTP Endpoint Base** | `/api/` | `/api/v2/` (versioned) |
 | **Response Format** | Custom JSON | JSON:API 1.0 (KNX IoT standard) |
-| **Authentication** | JWT token | OAuth2 Bearer Token (RFC 6749) |
+| **Authentication** | Browser-held JWT token | BFF-managed OAuth2 bearer (RFC 6749) |
 | **Real-Time** | SignalR hub | WebSocket subscriptions |
 | **Total Endpoints** | 18 documented | 32+ implemented (fully mapped) |
 
@@ -36,7 +36,7 @@ The original **GUI-frontend-api.md** specification was written for a hypothetica
 
 ### For Developers
 - **30% more work** due to JSON:API format handling
-- **New OAuth2 flow** instead of simple JWT
+- **BFF-managed OAuth2 flow** instead of browser-held gateway tokens
 - **WebSocket management** instead of SignalR client
 - **JSON:API transformer** service required
 - **Benefit:** Spec-compliant, vendor-agnostic, industry standard
@@ -174,16 +174,16 @@ Week 5-6: Testing & Deployment
 
 ### OAuth2 Flow
 ```
-User → Frontend (Login Form)
-  → Backend (/oauth/access with grant_type=password)
-  → Backend returns access_token
-  → Frontend stores token + sends in Authorization header
+Browser → nginx frontend (same-origin)
+  → BFF obtains gateway OAuth tokens with CLIENT_ID/CLIENT_SECRET
+  → BFF injects bearer tokens for proxied gateway REST/WS calls
+  → Frontend never stores or sends gateway tokens
 ```
 **Benefit:** Industry standard, stateless, scalable
 
 ### WebSocket Subscriptions
 ```
-1. Connect to ws://gateway/messaging/ws with token
+1. Browser connects to wss://<frontend-host>/messaging/ws with subprotocol gw.knx.org (no browser token; BFF injects it)
 2. Receive messages: { type: "datapoint_updated", id: "1/2/3", value: "21.5" }
 3. Or batches: { type: "batch", updates: [...] }
 ```
@@ -214,7 +214,7 @@ Enables: Vendor-agnostic UI + vendor-specific backend
 
 ### 3. Real-Time
 ```
-❌ SignalR hub → ✅ WebSocket (ws://gateway/messaging/ws)
+❌ SignalR hub → ✅ Same-origin WebSocket (/messaging/ws via nginx → BFF → gateway)
 ```
 
 ### 4. Data Format

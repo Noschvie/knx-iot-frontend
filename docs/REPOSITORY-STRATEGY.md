@@ -189,9 +189,9 @@ Beide Repos sind **völlig unabhängig**, aber kommunizieren über API:
 ```
 Browser
   ├─ App (from knx-iot-frontend repo)
-  │   ├─ HTTP REST → semantic-knx-gateway:3000
-  │   ├─ WebSocket → semantic-knx-gateway:3000
-  │   └─ OAuth2 → semantic-knx-gateway:/oauth/access
+  │   ├─ HTTP REST → nginx same-origin → BFF → semantic-knx-gateway
+  │   ├─ WebSocket → nginx same-origin → BFF → semantic-knx-gateway
+  │   └─ OAuth2 tokens handled server-side by the BFF
 ```
 
 **API Contract:**
@@ -263,8 +263,10 @@ cp ../semantic-knx-gateway/docs/specifications/VALIDATION*.md ./docs/
 cp ../semantic-knx-gateway/docs/specifications/TEAM-*.md ./docs/
 
 # Create .env file
-echo "API_BASE=http://localhost:3000" > .env.example
-echo "WS_BASE=ws://localhost:3000" >> .env.example
+cat > .env.example <<'EOF'
+# Frontend is same-origin: nginx proxies /api, /info and /messaging/ws to the BFF.
+# No API_BASE/WS_BASE needed.
+EOF
 ```
 
 ### GitHub Actions CI/CD

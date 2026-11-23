@@ -15,7 +15,8 @@ bff/
 │   │   ├── gateway.service.ts   # KNX Gateway communication
 │   │   └── raffstore.service.ts # Business logic & commands
 │   └── routes/
-│       └── raffstore.routes.ts  # REST API endpoints
+│       ├── raffstore.routes.ts      # REST API endpoints
+│       └── gateway-proxy.ts         # Same-origin gateway REST/WS proxy
 ├── package.json
 ├── tsconfig.json
 └── .env.example
@@ -64,7 +65,8 @@ npm run watch
 ```bash
 PORT=3000                           # Server port
 GATEWAY_URL=http://localhost:8080   # KNX Gateway URL
-GATEWAY_TOKEN=your-token            # OAuth token for gateway
+CLIENT_ID=your-client-id            # OAuth client id for gateway
+CLIENT_SECRET=your-client-secret    # OAuth client secret for gateway
 LOG_LEVEL=debug                     # Logging level
 NODE_ENV=development                # Node environment
 ```
@@ -73,14 +75,12 @@ NODE_ENV=development                # Node environment
 
 ```
 Request Flow:
-1. Angular Client → POST /api/raffstores/:id/moveUp
-2. BFF Routes → Validate & route to service
-3. RaffstoreService → Create KNX command
-4. GatewayService → HTTP PUT to /api/v2/datapoints/values
-5. BFF → Update local state
-6. BFF → Emit event to subscribers
-7. Event Stream → Push to Angular via SSE
-8. Response → Return updated raffstore
+1. Browser → nginx frontend (same-origin)
+2. nginx proxies /api/, /info and /messaging/ to the BFF
+3. BFF obtains gateway OAuth tokens using CLIENT_ID/CLIENT_SECRET
+4. BFF injects read tokens for safe methods and write tokens for mutations
+5. BFF proxies native gateway REST (/api/v2/*) and WebSocket (/messaging/ws) to GATEWAY_URL
+6. Raffstore routes continue to serve domain-specific commands and SSE events
 ```
 
 ## 🧪 Testing
@@ -100,8 +100,9 @@ curl -N http://localhost:3000/api/raffstores/events
 ## 📦 Dependencies
 
 - **express** - Web framework
-- **cors** - CORS middleware
+- **cors** - CORS middleware for local/direct BFF development
 - **axios** - HTTP client for gateway communication
+- **http-proxy-middleware** - Native gateway REST/WebSocket proxy
 - **dotenv** - Environment variables
 
 ## 🐛 Troubleshooting
@@ -113,7 +114,8 @@ node --version  # Should be 18+
 
 # Check env vars
 echo $GATEWAY_URL
-echo $GATEWAY_TOKEN
+echo $CLIENT_ID
+echo $CLIENT_SECRET
 
 # Check gateway
 curl http://localhost:8080/health
@@ -127,8 +129,9 @@ npm run dev  # Will show detailed logs
 # Test gateway connection
 curl http://localhost:8080/api/v2/datapoints
 
-# Verify token
-echo $GATEWAY_TOKEN
+# Verify OAuth credentials
+echo $CLIENT_ID
+echo $CLIENT_SECRET
 ```
 
 **Events not received**

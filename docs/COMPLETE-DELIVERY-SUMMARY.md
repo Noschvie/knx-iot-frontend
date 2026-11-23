@@ -67,7 +67,7 @@ docs/specifications/
 - Testing scenarios (unit, integration, E2E)
 - Performance targets (1000 rows @ 60 FPS)
 - Accessibility requirements (WCAG 2.1 AA)
-- Security checklist (OWASP, CORS, CSP)
+- Security checklist (OWASP, CSP, same-origin proxy behavior)
 
 ### ✅ Complete Team Onboarding
 - Key technical concepts explained
@@ -158,7 +158,7 @@ docs/specifications/
 ### 5. Production Ready
 - Following Angular 20 best practices
 - Enterprise architecture patterns
-- Security considerations (OAuth2, CORS)
+- Security considerations (BFF-managed OAuth2, same-origin proxying)
 - Performance targets defined
 - Accessibility requirements (WCAG 2.1 AA)
 - DevOps & deployment included
@@ -230,7 +230,7 @@ After implementing this project, your team will understand:
 
 ### Professional Practices
 - ✅ Enterprise architecture patterns
-- ✅ Security best practices (OAuth2, HTTPS, CORS)
+- ✅ Security best practices (BFF-managed OAuth2, HTTPS, same-origin proxying)
 - ✅ Performance optimization techniques
 - ✅ Testing strategies (unit, integration, E2E)
 - ✅ Accessibility standards (WCAG 2.1 AA)

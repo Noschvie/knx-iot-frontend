@@ -33,9 +33,10 @@ A professional **Angular 20 SPA** that monitors and controls KNX building automa
 ### Architecture (High-Level)
 ```
 User Browser (Angular 20 SPA)
-         ↓
-    HTTP (JSON:API)
-    WebSocket (gw.knx.org)
+         ↓ same-origin HTTP/WebSocket
+nginx (frontend container)
+         ↓ proxies /api, /info, /messaging/ws
+BFF (injects gateway OAuth bearer token)
          ↓
 semantic-knx-gateway (/api/v2, /messaging/ws)
          ↓
@@ -101,30 +102,27 @@ API responses are in **JSON:API 1.0** format (not plain JSON):
 
 **Why?** Standard format, better tooling, schema validation, vendor independence.
 
-### 2. OAuth2 Bearer Token
-All API requests use OAuth2 (RFC 6749):
+### 2. BFF-managed OAuth2
+The browser never requests, stores, or sends gateway tokens:
 
 ```typescript
-// Login
-POST /oauth/access
-grant_type=password&username=user&password=pass
+// Browser calls same-origin endpoints.
+GET /api/v2/datapoints
 
-// Response
-{ access_token: "...", token_type: "Bearer", expires_in: 3600 }
-
-// Use in all requests
-Authorization: Bearer <access_token>
+// BFF obtains gateway OAuth tokens using CLIENT_ID/CLIENT_SECRET
+// and injects Authorization headers server-side.
 ```
 
-**Why?** Industry standard, stateless, scalable, more secure than JWT.
+**Why?** Gateway credentials and bearer tokens stay server-side, and browser CORS to the gateway is not needed.
 
 ### 3. WebSocket Subscriptions
 Real-time updates via WebSocket (not SignalR):
 
 ```typescript
 // Connect
-ws://gateway:3000/messaging/ws?token=<bearer>
+wss://<frontend-host>/messaging/ws
 Subprotocol: gw.knx.org
+// No browser token; the BFF adds it when proxying to the gateway.
 
 // Receive messages
 { type: "datapoint_updated", id: "1/2/3", value: "21.5" }
@@ -198,7 +196,7 @@ Each feature is a separate module loaded on-demand:
 - [ ] Write E2E tests (Protractor/Cypress)
 - [ ] Performance testing (1000 rows @ 60 FPS)
 - [ ] Accessibility testing (WCAG 2.1 AA)
-- [ ] Security testing (OWASP, CORS, CSP)
+- [ ] Security testing (OWASP, CSP, same-origin proxy behavior)
 - [ ] Browser compatibility testing
 
 ### DevOps/Deployment
@@ -223,7 +221,7 @@ Each feature is a separate module loaded on-demand:
 
 ### Day 2: Core Services
 ```
-1. Implement OAuthService
+1. Implement ConfigService and same-origin API services
 2. Implement HttpInterceptor (JSON:API)
 3. Implement WebSocketService
 4. Implement ConfigService
@@ -315,7 +313,7 @@ npm install @angular/cdk echarts ngx-echarts @ngx-translate/core
 mkdir -p src/app/{core/{auth,http,api,websocket},shared,features}
 
 # 5. Copy files
-# (OAuthService, Interceptors, etc.)
+# (ConfigService, Interceptors, API services, etc.)
 
 # 6. Start dev server
 npm start

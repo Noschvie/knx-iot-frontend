@@ -74,7 +74,7 @@ This document provides a complete GUI specification for an Angular-based KNX IoT
 ```typescript
 // App Routes
 setup                  # First-time setup (API connection, auth)
-login                  # JWT login
+login                  # Optional app login (gateway tokens stay in BFF)
 /                      # (Protected, authGuard)
   ├─ dashboard         # Real-time summary, key metrics
   ├─ live-view         # All datapoint values streaming
@@ -783,14 +783,14 @@ interface HistoryQueryParams {
 
 #### 3.7.1 Connection Settings
 - **Base URL** — Editable (validate on change)
-- **API Key** — Optional; if set, use `X-API-Key` header instead of JWT
+- **API Key** ? Optional app-level key; gateway tokens stay server-side in the BFF
 - **Timeout** — HTTP request timeout in ms
 - **Retry Attempts** — On transient failures
 - **Connection Status** — Live indicator + version info
 - **Test Connection** — Button to verify connectivity
 - **User Info** — Current logged-in user
 - **Change Password** — Dialog
-- **Logout All Devices** — Revoke all JWT tokens
+- **Logout All Devices** ? Revoke app sessions (gateway tokens are BFF-managed)
 
 #### 3.7.2 Recording Settings
 - **Enable Recording** — Checkbox
@@ -823,7 +823,7 @@ interface HistoryQueryParams {
 - `GET /.well-known/knx` → Gateway discovery
 - `GET /info` → API information
 - `GET /health` → Health status
-- `POST /oauth/access` → OAuth2 token endpoint (RFC 6749)
+- `POST /oauth/access` -> Gateway OAuth2 token endpoint (called by the BFF, not the browser)
 - `GET /api/v1/node` → Node/gateway information
 
 **Components:**
@@ -883,7 +883,7 @@ DEBUG   — Detailed trace information
 
 **API Endpoints:**
 - `GET /api/v1/events` → Get system events (paginated)
-- `ws://gateway/messaging/ws` → WebSocket for real-time events
+- `/messaging/ws` -> same-origin WebSocket for real-time events (nginx -> BFF -> gateway)
 
 **Components:**
 - **LogsComponent** (main)
@@ -954,17 +954,16 @@ DEBUG   — Detailed trace information
 - **Setup Wizard** (on first visit):
   - Discover gateway via `/.well-known/knx`
   - Query `GET /info` for API capabilities
-  - Initialize OAuth2 flow
-- **OAuth2 Login Page** (RFC 6749):
-  - Username + password (or client credentials)
-  - Exchange for Bearer token via `POST /oauth/access`
-  - Token stored in localStorage (secure: httpOnly cookie recommended)
+  - Initialize connection to the same-origin API
+- **Gateway Authentication** (BFF-managed OAuth2):
+  - Browser does not exchange or store gateway tokens
+  - BFF obtains OAuth tokens and injects bearer headers server-side
 
 **API Endpoints:**
 - `GET /.well-known/knx` → KNX IoT discovery
 - `GET /info` → API information
 - `GET /health` → Health check
-- `POST /oauth/access` → OAuth2 token endpoint
+- `POST /oauth/access` -> Gateway OAuth2 token endpoint (called by the BFF, not the browser)
 - `GET /api/v1/node` → Node/gateway details
 
 **Components:**
@@ -978,20 +977,20 @@ DEBUG   — Detailed trace information
 
 ### 4.1 WebSocket Subscription Endpoint
 
-**Endpoint:** `ws://gateway-host:3000/messaging/ws`  
+**Endpoint:** `wss://<frontend-host>/messaging/ws` (same-origin; `ws://` in local HTTP)
 **Subprotocol:** `gw.knx.org`  
-**Authentication:** Bearer token in URL or Authorization header  
+**Authentication:** No browser token. The BFF injects the gateway bearer token while proxying the upgrade.
 **Format:** JSON:API compliant subscription messages
 
 **Example WebSocket URL:**
 ```
-ws://localhost:3000/messaging/ws?token=<bearer-token>
+wss://<frontend-host>/messaging/ws
 ```
 
-Or with Authorization header:
+For local HTTP development:
 ```
-ws://localhost:3000/messaging/ws
-Header: Authorization: Bearer <token>
+ws://localhost/messaging/ws
+Subprotocol: gw.knx.org
 ```
 
 ### 4.2 Subscribe to Datapoint Changes
@@ -1000,7 +999,7 @@ Header: Authorization: Bearer <token>
 ```bash
 POST /api/v2/subscriptions
 Content-Type: application/vnd.api+json
-Authorization: Bearer <token>
+# Browser omits Authorization; BFF injects the gateway bearer token.
 
 {
   "data": {
@@ -1143,7 +1142,7 @@ export class LiveBufferService {
 │ └─ writeValues()     → PUT /api/v2/datapoints/values│
 ├──────────────────────────────────────────────────────┤
 │ WebSocketService (SubscriptionsService)              │
-│ ├─ connect()         → ws://gateway/messaging/ws    │
+│ ├─ connect()         -> /messaging/ws (same-origin)  │
 │ ├─ createSubscription()  → POST /api/v2/subscriptions
 │ ├─ datapoint$        → Observable stream            │
 │ └─ onDeviceStatusChange()                           │
@@ -1168,7 +1167,7 @@ export class LiveBufferService {
 │                         datapoints                  │
 ├──────────────────────────────────────────────────────┤
 │ AuthService (OAuth2)                                 │
-│ ├─ login(user, pass) → POST /oauth/access           │
+│ ├─ login(user, pass) -> handled by BFF/gateway auth  │
 │ ├─ logout()                                          │
 │ ├─ getToken()                                        │
 │ └─ getCurrentUser()                                  │
@@ -1235,7 +1234,7 @@ export class LiveBufferService {
 - [ ] Loading spinner, error state
 
 ### Services
-- [ ] AuthService (JWT)
+- [ ] BFF-managed gateway authentication
 - [ ] ApiService (HTTP base)
 - [ ] DatapointService (CRUD)
 - [ ] DatapointStreamService (SignalR)
@@ -1258,7 +1257,7 @@ export class LiveBufferService {
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/auth/login` | POST | Authenticate user |
-| `/api/auth/refresh` | POST | Refresh JWT token |
+| BFF token cache | internal | Refresh gateway OAuth tokens server-side |
 | `/api/datapoints` | GET | List all datapoints (paginated) |
 | `/api/datapoints/:id` | GET | Get single datapoint details |
 | `/api/datapoints/values` | GET | Latest values (limit, sort) |

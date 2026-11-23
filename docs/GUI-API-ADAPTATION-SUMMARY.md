@@ -34,7 +34,7 @@ The **GUI-frontend-api.md** specification has been updated to accurately reflect
 /api/v2/locations                  (NEW: Hierarchy)
 /api/v1/functions                  (NEW: Semantic layer)
 /api/v2/subscriptions              (NEW: WebSocket subscriptions)
-ws://gateway/messaging/ws          (WebSocket, gw.knx.org subprotocol)
+/messaging/ws                     (same-origin WebSocket via nginx → BFF → gateway, gw.knx.org subprotocol)
 ```
 
 ---
@@ -79,25 +79,15 @@ ws://gateway/messaging/ws          (WebSocket, gw.knx.org subprotocol)
 #### Before
 - JWT token via `POST /api/auth/login`
 - Custom refresh logic
-- Single token in localStorage
+- Single browser token in localStorage
 
-#### After (OAuth2)
+#### After (BFF-managed OAuth2)
 ```typescript
-// 1. Request token
-POST /oauth/access
-Content-Type: application/x-www-form-urlencoded
+// Browser calls same-origin endpoints only.
+GET /api/v2/datapoints
 
-grant_type=password&username=user&password=pass&client_id=...
-
-// 2. Response
-{
-  access_token: "eyJhbGc...",
-  token_type: "Bearer",
-  expires_in: 3600
-}
-
-// 3. Use token in headers
-Authorization: Bearer <access_token>
+// BFF uses CLIENT_ID/CLIENT_SECRET to obtain gateway OAuth tokens
+// and injects Authorization headers server-side.
 ```
 
 ### 3. Real-Time Updates
@@ -124,8 +114,9 @@ POST /api/v2/subscriptions
 }
 
 // 2. Connect to WebSocket
-ws://gateway/messaging/ws?token=<bearer>
+wss://<frontend-host>/messaging/ws
 Subprotocol: gw.knx.org
+// No browser token; the BFF adds it when proxying to the gateway.
 
 // 3. Receive messages
 {
@@ -256,10 +247,10 @@ class LocationService {
 }
 
 @Injectable()
-class AuthService {
-  login(username: string, password: string): Observable<OAuthToken>
-  getToken(): string
-  isTokenValid(): boolean
+class GatewayProxyAuth {
+  // Implemented in the BFF; browser services do not expose gateway tokens.
+  ensureReadToken(): Promise<void>
+  ensureWriteToken(): Promise<void>
 }
 ```
 
@@ -269,14 +260,13 @@ class AuthService {
 
 ### Before
 ```typescript
-// Add JWT to every request
-headers.set('Authorization', `Bearer ${jwt}`);
+// Browser added a token to every request.
+headers.set('Authorization', 'Bearer <token>');
 ```
 
 ### After
 ```typescript
-// Add OAuth2 Bearer token
-headers.set('Authorization', `Bearer ${oauthToken}`);
+// Browser does not add Authorization; the BFF injects gateway bearer tokens.
 
 // Ensure Accept header is JSON:API compliant
 headers.set('Accept', 'application/vnd.api+json');
@@ -333,7 +323,7 @@ GET /api/v2/datapoints?page[offset]=0&page[limit]=50&sort=-timestamp
 ## Feature Completeness Checklist
 
 ### Real-Time Features
-- [ ] WebSocket connection to `ws://gateway/messaging/ws`
+- [ ] WebSocket connection to same-origin `/messaging/ws` (nginx → BFF → gateway)
 - [ ] Subscribe to datapoint updates
 - [ ] Handle batch updates (>100/sec)
 - [ ] Reconnection logic (exponential backoff)
@@ -354,10 +344,10 @@ GET /api/v2/datapoints?page[offset]=0&page[limit]=50&sort=-timestamp
 - [ ] Custom metadata rendering
 
 ### Authentication
-- [ ] OAuth2 token request flow
-- [ ] Token storage and refresh
-- [ ] Bearer token header injection
-- [ ] Logout & token revocation
+- [ ] BFF OAuth2 token request flow
+- [ ] Server-side token caching/refresh
+- [ ] Server-side bearer header injection
+- [ ] Gateway credential error handling
 - [ ] Error handling for 401 responses
 
 ---
@@ -406,7 +396,7 @@ expect(http.post).toHaveBeenCalledWith(
 );
 
 // Test token storage
-expect(localStorage.setItem).toHaveBeenCalledWith('access_token', '...');
+// Browser token storage is no longer expected; BFF manages gateway tokens server-side.
 ```
 
 ---

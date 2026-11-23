@@ -145,17 +145,21 @@ Geklärte Entscheidungen (Anlagen-spezifisch bestätigt):
 
 ## 7. Nächste Schritte
 
-- [ ] `TokenService` um `manage`-Scope erweitern (inkl. Cache + Refresh).
-- [ ] `Raffstore`-Modell um Ist-Werte erweitern (`statusPositionPercent`,
+- [x] `TokenService` um `manage`-Scope erweitern (inkl. Cache + Refresh).
+- [x] `Raffstore`-Modell um Ist-Werte erweitern (`statusPositionPercent`,
       `statusLamellaPercent`, `isEndTop`, `isEndBottom`).
-- [ ] `StatusReceiverService` implementieren (Lookup + WS-Subscribe + Receiver + Reconnect),
+- [x] `StatusReceiverService` implementieren (Lookup + WS-Subscribe + Receiver + Reconnect),
       Muster aus §8 übernehmen; WS mit `manage`-Token verbinden.
-- [ ] `applyStatusUpdate` in `RaffstoreService` ergänzen (Position/Lamelle als `0..100 %`
+- [x] `applyStatusUpdate` in `RaffstoreService` ergänzen (Position/Lamelle als `0..100 %`
       übernehmen; optional `percentToStep` für UI-Stufen).
-- [ ] Endlagen (`gaEndTop`/`gaEndBottom`) auf `isEndTop`/`isEndBottom` abbilden (ohne Invertierung).
-- [ ] Datapoint-ID-Quelle in `GatewayService` angleichen (`meta.datapointId`).
-- [ ] Verdrahtung in `index.ts` inkl. sauberem Shutdown.
-- [ ] Frontend-Visualisierung der Ist-Werte (Soll vs. Ist).
+- [x] Endlagen (`gaEndTop`/`gaEndBottom`) auf `isEndTop`/`isEndBottom` abbilden (ohne Invertierung).
+- [x] Datapoint-ID-Quelle: der Receiver löst GA→`meta.datapointId` selbst auf (mit Fallback
+      `id`/`meta.ga`); `GatewayService` bleibt für Kommandos unverändert.
+- [x] Verdrahtung in `index.ts` inkl. sauberem Shutdown.
+- [x] Frontend-`Raffstore`-Modell um Ist-Werte erweitert (`raffstore.model.ts`).
+- [x] Frontend-Visualisierung der Ist-Werte (Soll vs. Ist) in den Komponenten
+      (`raffstore-tile`: Endlage-Icons + Ist-Positionsbalken; `raffstore-detail`:
+      Rückmelde-Sektion Position/Lamelle + Endlagen, Live-Abo).
 
 ---
 

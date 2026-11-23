@@ -16,56 +16,17 @@ npm install @angular/cdk  # Virtual scroll
 npm install axios          # Alternative to HttpClient (optional)
 ```
 
-### Step 1.2: Create OAuth2 Service
+### Step 1.2: BFF-managed Gateway Authentication
+
+The Angular app does not request, store, or send gateway OAuth tokens. It calls same-origin URLs, and nginx forwards `/api/`, `/info`, and `/messaging/` to the BFF. The BFF uses `GATEWAY_URL`, `CLIENT_ID`, and `CLIENT_SECRET` to obtain gateway tokens and injects the correct bearer token server-side.
 
 ```typescript
-// src/app/core/auth/oauth.service.ts
-
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-
-export interface OAuthToken {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
-@Injectable({ providedIn: 'root' })
-export class OAuthService {
-  private token$ = new BehaviorSubject<string | null>(null);
-  
-  constructor(private http: HttpClient, private config: ConfigService) {}
-  
-  login(username: string, password: string): Observable<OAuthToken> {
-    const body = new URLSearchParams({
-      grant_type: 'password',
-      username,
-      password,
-      client_id: this.config.clientId
-    });
-    
-    return this.http.post<OAuthToken>(
-      `${this.config.apiBase}/oauth/access`,
-      body.toString(),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-    ).pipe(
-      tap(token => {
-        localStorage.setItem('access_token', token.access_token);
-        this.token$.next(token.access_token);
-      })
-    );
-  }
-  
-  getToken(): string | null {
-    return this.token$.value || localStorage.getItem('access_token');
-  }
-  
-  logout(): void {
-    localStorage.removeItem('access_token');
-    this.token$.next(null);
-  }
-}
+// Runtime config stays same-origin.
+export const environment = {
+  apiBase: '', // same-origin: nginx proxies /api and /messaging/ws to the BFF
+  wsBase: '',
+  production: false
+};
 ```
 
 ### Step 1.3: Create HTTP Interceptor (JSON:API)
@@ -78,11 +39,9 @@ import { HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http'
 
 @Injectable()
 export class JsonApiInterceptor implements HttpInterceptor {
-  constructor(private auth: OAuthService) {}
   
   intercept(req: HttpRequest<any>, next: HttpHandler) {
     let headers = req.headers
-      .set('Authorization', `Bearer ${this.auth.getToken()}`)
       .set('Accept', 'application/vnd.api+json')
       .set('Content-Type', 'application/vnd.api+json');
     
@@ -260,14 +219,13 @@ export class WebSocketService {
   private ws: WebSocket | null = null;
   private message$ = new Subject<any>();
   
-  constructor(
-    private auth: OAuthService,
-    private config: ConfigService
-  ) {}
+  constructor(private config: ConfigService) {}
   
   connect(): Observable<any> {
     return new Observable(observer => {
-      const wsUrl = `${this.config.wsBase}/messaging/ws?token=${this.auth.getToken()}`;
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}${this.config.wsBase}/messaging/ws`;
+      // No browser token: the BFF appends the gateway token while proxying the upgrade.
       this.ws = new WebSocket(wsUrl, ['gw.knx.org']);
       
       this.ws.onopen = () => {
@@ -549,8 +507,8 @@ describe('DatapointService', () => {
 // src/environments/environment.ts
 
 export const environment = {
-  apiBase: 'http://localhost:3000',
-  wsBase: 'ws://localhost:3000',
+  apiBase: '', // same-origin: nginx proxies /api and /messaging/ws to the BFF
+  wsBase: '',
   clientId: 'frontend-app',
   production: false
 };
@@ -567,7 +525,7 @@ ng build --configuration production
 
 # Docker
 docker build -f frontend/Dockerfile -t knx-frontend .
-docker run -e API_BASE=http://gateway:3000 -p 80:4200 knx-frontend
+docker run -p 80:4200 knx-frontend
 ```
 
 ---
@@ -577,7 +535,7 @@ docker run -e API_BASE=http://gateway:3000 -p 80:4200 knx-frontend
 | Aspect | Spec | Reality | Note |
 |--------|------|---------|------|
 | API Base | `/api` | `/api/v2` | Versioned endpoints |
-| Auth | JWT | OAuth2 | RFC 6749 compliant |
+| Auth | Browser JWT | BFF-managed OAuth2 | Gateway tokens stay server-side |
 | Real-Time | SignalR | WebSocket | Standard WebSocket |
 | Response Format | Custom JSON | JSON:API | Spec-compliant |
 | Pagination | `skip`/`limit` | `page[offset]`/`page[limit]` | Standard format |

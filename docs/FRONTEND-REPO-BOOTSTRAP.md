@@ -60,8 +60,8 @@ npm start
 
 Create `.env` file:
 ```
-API_BASE=http://localhost:3000
-WS_BASE=ws://localhost:3000
+# Frontend is same-origin: nginx proxies /api, /info and /messaging/ws to the BFF.
+# No API_BASE/WS_BASE needed.
 CLIENT_ID=knx-frontend-dev
 ```
 
@@ -132,7 +132,7 @@ See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed architecture decision
 
 - OAuth2 Bearer Token authentication
 - HTTPS/WSS in production
-- CORS properly configured
+- Same-origin nginx proxy configured
 - CSP headers set
 - Input sanitization
 - XSS protection
@@ -361,14 +361,6 @@ http {
     access_log /var/log/nginx/access.log combined;
     error_log /var/log/nginx/error.log warn;
 
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
-    limit_req_zone $binary_remote_addr zone=api:10m rate=100r/s;
-
-    upstream gateway {
-        server gateway:3000;
-    }
-
     server {
         listen 80 default_server;
         server_name _;
@@ -389,10 +381,31 @@ http {
             add_header X-Content-Type-Options "nosniff";
         }
 
-        # API proxy (optional)
+        # Proxy API + config requests to the BFF (same-origin)
         location /api/ {
-            limit_req zone=api burst=20 nodelay;
-            proxy_pass http://gateway;
+            proxy_pass http://bff:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            # Server-Sent Events (raffstore events) need unbuffered streaming
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 3600s;
+        }
+
+        # BFF info endpoint
+        location = /info {
+            proxy_pass http://bff:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Proxy WebSocket (messaging) to the BFF, which forwards to the gateway
+        location /messaging/ {
+            proxy_pass http://bff:3000;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
@@ -400,32 +413,7 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_cache_bypass $http_upgrade;
-            proxy_read_timeout 60s;
-            proxy_connect_timeout 60s;
-        }
-
-        # WebSocket proxy (optional)
-        location /messaging/ws {
-            proxy_pass http://gateway;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "Upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_read_timeout 3600s;
-            proxy_send_timeout 3600s;
-        }
-
-        # OAuth endpoint (optional)
-        location /oauth/ {
-            proxy_pass http://gateway;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
         }
 
         # SPA: Route all non-API requests to index.html
@@ -457,9 +445,8 @@ http {
 ## 📄 File: .env.example
 
 ```
-# API Configuration
-API_BASE=http://localhost:3000
-WS_BASE=ws://localhost:3000
+# Frontend is same-origin: nginx proxies /api, /info and /messaging/ws to the BFF.
+# No API_BASE/WS_BASE needed.
 
 # OAuth2
 CLIENT_ID=knx-frontend-dev

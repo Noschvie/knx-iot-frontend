@@ -65,7 +65,7 @@
 - [x] `PATCH /api/v2/subscriptions/:id` — Update subscription
 - [x] `DELETE /api/v2/subscriptions/:id` — Delete subscription
 - [x] `GET /api/v2/subscriptions/:id/datapoints` — Subscription datapoints
-- [x] WebSocket protocol at `ws://gateway/messaging/ws`
+- [x] WebSocket protocol at same-origin `/messaging/ws` (nginx -> BFF -> gateway)
 
 ### Other Endpoints
 - [x] `GET /api/v2/node` — Node/gateway info
@@ -200,9 +200,9 @@
 ## 🔄 Real-Time Architecture Validation
 
 ### WebSocket Features
-- [x] Connection URL format: `ws://gateway/messaging/ws`
+- [x] Connection URL format: `wss://<frontend-host>/messaging/ws` (or `ws://` for local HTTP)
 - [x] Subprotocol: `gw.knx.org`
-- [x] Bearer token authentication
+- [x] BFF-injected gateway bearer token; no browser token
 - [x] Message types documented
 - [x] Batch updates for high-frequency streams
 - [x] Reconnection strategy recommended
@@ -233,7 +233,7 @@
 - [x] Filter construction tests
 
 ### Integration Tests
-- [x] OAuth2 token flow
+- [x] BFF-managed OAuth2 token flow
 - [x] WebSocket connection
 - [x] Message parsing
 - [x] Buffer management
@@ -251,7 +251,7 @@
 ## 🔧 Implementation Guidance
 
 ### Services Required
-- [x] `OAuthService` — OAuth2 token management
+- [x] BFF-managed OAuth2 token management
 - [x] `DatapointService` — CRUD operations
 - [x] `DeviceService` — Device operations
 - [x] `LocationService` — Location hierarchy
